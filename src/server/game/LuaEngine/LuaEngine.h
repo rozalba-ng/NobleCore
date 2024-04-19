@@ -10,7 +10,7 @@
 #include "Common.h"
 #include "SharedDefines.h"
 #include "DBCEnums.h"
-
+#include "Player.h"
 #include "Group.h"
 #include "Item.h"
 #include "Weather.h"
@@ -85,6 +85,9 @@ public:
     typedef std::recursive_mutex LockType;
     typedef std::lock_guard<LockType> Guard;
 
+    void ReloadEluna() { reload = true; }
+    bool ExecuteCall(int params, int res);
+
 private:
     static bool reload;
     static bool initialized;
@@ -113,6 +116,11 @@ private:
     uint8 push_counter;
     bool enabled;
 
+    //Map* const boundMap;
+
+    // Whether or not Eluna is in compatibility mode. Used in some method wrappers.
+    bool compatibilityMode;
+
     // Map from instance ID -> Lua table ref
     std::unordered_map<uint32, int> instanceDataRefs;
     // Map from map ID -> Lua table ref
@@ -130,11 +138,11 @@ private:
     void DestroyBindStores();
     void CreateBindStores();
     void InvalidateObjects();
-    bool ExecuteCall(int params, int res);
 
     // Use ReloadEluna() to make eluna reload
     // This is called on world update to reload eluna
     static void _ReloadEluna();
+
     static void LoadScriptPaths();
     static void GetScripts(std::string path);
     static void AddScriptPath(std::string filename, const std::string& fullpath);
@@ -190,6 +198,9 @@ public:
     lua_State* L;
     EventMgr* eventMgr;
 
+    QueryCallbackProcessor queryProcessor;
+    QueryCallbackProcessor& GetQueryProcessor() { return queryProcessor; }
+
     BindingMap< EventKey<Hooks::ServerEvents> >*     ServerEventBindings;
     BindingMap< EventKey<Hooks::PlayerEvents> >*     PlayerEventBindings;
     BindingMap< EventKey<Hooks::GuildEvents> >*      GuildEventBindings;
@@ -202,6 +213,7 @@ public:
     BindingMap< EntryKey<Hooks::GossipEvents> >*     CreatureGossipBindings;
     BindingMap< EntryKey<Hooks::GameObjectEvents> >* GameObjectEventBindings;
     BindingMap< EntryKey<Hooks::GossipEvents> >*     GameObjectGossipBindings;
+    BindingMap< EntryKey<Hooks::SpellEvents> >*      SpellEventBindings;
     BindingMap< EntryKey<Hooks::ItemEvents> >*       ItemEventBindings;
     BindingMap< EntryKey<Hooks::GossipEvents> >*     ItemGossipBindings;
     BindingMap< EntryKey<Hooks::GossipEvents> >*     PlayerGossipBindings;
@@ -213,7 +225,6 @@ public:
     static void Initialize();
     static void Uninitialize();
     // This function is used to make eluna reload
-    static void ReloadEluna() { LOCK_ELUNA; reload = true; }
     static LockType& GetLock() { return lock; };
     static bool IsInitialized() { return initialized; }
     // Never returns nullptr
@@ -301,6 +312,26 @@ public:
     InstanceData* GetInstanceData(Map* map);
     void FreeInstanceId(uint32 instanceId);
 
+    /*Map* GetBoundMap() const { return boundMap; }
+
+    int32 GetBoundMapId() const
+    {
+        if (const Map* map = GetBoundMap())
+            return map->GetId();
+
+        return -1;
+    }
+
+    uint32 GetBoundInstanceId() const
+    {
+        if (const Map* map = GetBoundMap())
+            return map->GetInstanceId();
+
+        return 0;
+    }*/
+
+    bool GetCompatibilityMode() const { return compatibilityMode; }
+
     /* Custom */
     void OnTimedEvent(int funcRef, uint32 delay, uint32 calls, WorldObject* obj);
     bool OnCommand(Player* player, const char* text);
@@ -328,6 +359,9 @@ public:
     bool OnExpire(Player* pPlayer, ItemTemplate const* pProto);
     bool OnRemove(Player* pPlayer, Item* item);
     void HandleGossipSelectOption(Player* pPlayer, Item* item, uint32 sender, uint32 action, const std::string& code = "");
+    void OnAdd(Player* pPlayer, Item* item);
+    void OnItemEquip(Player* pPlayer, Item* pItem, uint8 slot);
+    void OnItemUnEquip(Player* pPlayer, Item* pItem, uint8 slot);
 
     /* Creature */
     void OnDummyEffect(WorldObject* pCaster, uint32 spellId, SpellEffIndex effIndex, Creature* pTarget);
@@ -495,6 +529,9 @@ public:
     void OnBGEnd(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId, Team winner);
     void OnBGCreate(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
     void OnBGDestroy(BattleGround* bg, BattleGroundTypeId bgId, uint32 instanceId);
+
+    /* Spell */
+    void OnSpellCast(Spell* pSpell, bool skipCheck);
 };
 template<> Unit* Eluna::CHECKOBJ<Unit>(lua_State* L, int narg, bool error);
 template<> Object* Eluna::CHECKOBJ<Object>(lua_State* L, int narg, bool error);

@@ -21,8 +21,12 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/tokenizer.hpp>
 #include <G3D/Quat.h>
-#include <QueryPackets.h>
-#include <CreatureGroups.h>
+#include "QueryPackets.h"
+#include "CreatureGroups.h"
+#include "SpellInfo.h"
+#include "TemporarySummon.h"
+#include <CharacterCache.h>
+#include "ObjectAccessor.h"
 
 
 #pragma region Roleplay_MANAGER
@@ -329,13 +333,6 @@ void Roleplay::CreatureMove(Creature* creature, float x, float y, float z, float
     if (!creature)
         return;
 
-    // if (CreatureData const* data = sObjectMgr->GetCreatureData(creature->GetSpawnId()))
-    // {
-    //     const_cast<CreatureData*>(data)->posX = x;
-    //     const_cast<CreatureData*>(data)->posY = y;
-    //     const_cast<CreatureData*>(data)->posZ = z;
-    //     const_cast<CreatureData*>(data)->orientation = o;
-    // }
     // TODO: Check if this works
     creature->Relocate(x, y, z, o);
 
@@ -345,13 +342,6 @@ void Roleplay::CreatureMove(Creature* creature, float x, float y, float z, float
     if (creature->HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
         z += creature->GetHoverOffset();
     creature->Relocate(x, y, z, o);
-    //creature->GetMotionMaster()->Initialize();
-
-    //if (creature->IsAlive())                            // dead creature will reset movement generator at respawn
-    //{
-    //    creature->setDeathState(JUST_DIED);
-    //    creature->Respawn();
-    //}
 
     WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_UPD_CREATURE_POSITION);
 
@@ -369,6 +359,23 @@ void Roleplay::CreatureMove(Creature* creature, float x, float y, float z, float
 void Roleplay::CreatureTurn(Creature* creature, float o)
 {
     CreatureMove(creature, creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), o);
+}
+
+void Roleplay::CreatureScale(Creature* creature, float scale)
+{
+    if (!creature)
+        return;
+
+    float maxScale = sConfigMgr->GetFloatDefault("Roleplay.Creature.MaxScale", 15.0f);
+    float minScale = sConfigMgr->GetFloatDefault("Roleplay.Creature.MinScale", 0.0f);
+
+    if (scale < minScale)
+        scale = minScale;
+    if (scale > maxScale)
+        scale = maxScale;
+
+    creature->SetObjectScale(scale);
+    _creatureExtraStore[creature->GetSpawnId()].scale = scale;
 }
 
 void Roleplay::CreatureDelete(Creature* creature)
@@ -420,6 +427,7 @@ Creature* Roleplay::CreatureCreate(Player* creator, CreatureTemplate const* crea
 
     ObjectGuid::LowType db_guid = creature->GetSpawnId();
 
+    sRoleplay->CreatureScale(creature, creature->GetObjectScale());
     sRoleplay->CreatureSetFly(creature, creature->CanFly());
 
     // To call _LoadGoods(); _LoadQuests(); CreateTrainerSpells()
@@ -521,13 +529,19 @@ Creature* Roleplay::GetAnyCreature(ObjectGuid::LowType lowguid)
 {
     auto data = sObjectMgr->GetCreatureData(lowguid);
     if (!data)
+    {
+        TC_LOG_DEBUG("roleplay", "RoleplayMgr::GetAnyCreature failed to find creatureData for GUID: " SZFMTD, lowguid);
         return nullptr;
+    }
 
     auto objectGuid = ObjectGuid::Create<HighGuid::Creature>(data->mapId, data->id, lowguid);
     Map* map = sMapMgr->FindMap(data->mapId, 0);
 
     if (!map)
+    {
+        TC_LOG_DEBUG("roleplay", "RoleplayMgr::GetAnyCreature failed to find map %u for GUID: " SZFMTD, data->mapId, lowguid);
         return nullptr;
+    }
 
     Creature* creature = map->GetCreature(objectGuid);
 
@@ -536,7 +550,10 @@ Creature* Roleplay::GetAnyCreature(ObjectGuid::LowType lowguid)
     {
         auto bounds = map->GetCreatureBySpawnIdStore().equal_range(lowguid);
         if (bounds.first == bounds.second)
+        {
+            TC_LOG_DEBUG("roleplay", "RoleplayMgr::GetAnyCreature failed to find creature in spawnidstore on map %u for GUID: " SZFMTD, data->mapId, lowguid);
             return nullptr;
+        }
 
         return bounds.first->second;
     }
@@ -561,6 +578,21 @@ Creature* Roleplay::GetAnyCreature(Map* map, ObjectGuid::LowType lowguid, uint32
     }
 
     return creature;
+}
+
+Unit* Roleplay::GetAnyUnit(ObjectGuid::LowType guidLow)
+{
+    Creature* creature = GetAnyCreature(guidLow);
+    if (creature) {
+        return creature;
+    }
+
+    Player* player = ObjectAccessor::FindPlayerByLowGUID(guidLow);
+    if (player) {
+        return player;
+    }
+
+    return nullptr;
 }
 
 void Roleplay::SetCreatureSelectionForPlayer(ObjectGuid::LowType playerId, ObjectGuid::LowType creatureId)
@@ -1190,7 +1222,12 @@ void Roleplay::DeleteCustomNpc(std::string const& key)
     for (auto spawn : data.spawns) {
         TC_LOG_DEBUG("roleplay", "ROLEPLAY: Deleting spawn " UI64FMTD, spawn);
         Creature* creature = GetAnyCreature(spawn);
-        CreatureDelete(creature);
+        if (creature) {
+            CreatureDelete(creature);
+        }
+        else {
+            Creature::DeleteFromDB(spawn);
+        }
     }
     // Cleanup database
     WorldDatabaseTransaction trans = WorldDatabase.BeginTransaction();

@@ -3149,40 +3149,6 @@ void World::SendZoneText(uint32 zone, char const* text, WorldSession* self, Opti
     SendZoneMessage(zone, packet.Write(), self, team);
 }
 
-/// Send a System Message to all GMs (except self if mentioned)
-void World::SendMapText(uint32 mapid, uint32 string_id, ...)
-{
-
-    SessionMap::const_iterator itr;
-
-    va_list ap;
-    va_start(ap, string_id);
-
-    Trinity::WorldWorldTextBuilder wt_builder(string_id, &ap);
-    Trinity::LocalizedDo<Trinity::WorldWorldTextBuilder> wt_do(wt_builder);
-    for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
-    {
-        // Session should have permissions to receive global gm messages
-        WorldSession* session = itr->second;
-        WorldSession* self;
-
-
-        if (itr->second &&
-            itr->second->GetPlayer() &&
-            itr->second->GetPlayer()->IsInWorld() &&
-            itr->second->GetPlayer()->GetMapId() == mapid &&
-            itr->second != self)
-        {
-
-            wt_do(itr->second->GetPlayer());
-            va_end(ap);
-
-        }
-
-    }
-
-}
-
 /// Kick (and save) all players
 void World::KickAll()
 {

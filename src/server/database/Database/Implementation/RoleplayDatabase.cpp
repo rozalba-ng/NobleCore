@@ -25,7 +25,7 @@ void RoleplayDatabaseConnection::DoPrepareStatements()
 
     // SELECTS
     PrepareStatement(Roleplay_SEL_CREATUREEXTRA, "SELECT guid, scale, id_creator_bnet, id_creator_player, id_modifier_bnet, id_modifier_player, UNIX_TIMESTAMP(created), UNIX_TIMESTAMP(modified), phaseMask, displayLock, displayId, nativeDisplayId, genderLock, gender, swim, gravity, fly FROM creature_extra", CONNECTION_SYNCH);
-    PrepareStatement(Roleplay_SEL_CREATUREEXTRA_TEMPLATE, "SELECT id_entry, disabled FROM gameobject_template_extra", CONNECTION_SYNCH);
+    PrepareStatement(Roleplay_SEL_CREATUREEXTRA_TEMPLATE, "SELECT id_entry, disabled FROM creature_template_extra", CONNECTION_SYNCH);
     
     // DELETIONS
     PrepareStatement(Roleplay_DEL_CREATUREEXTRA, "DELETE FROM creature_extra WHERE guid = ?", CONNECTION_ASYNC);

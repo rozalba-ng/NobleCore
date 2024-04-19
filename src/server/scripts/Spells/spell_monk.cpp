@@ -1849,7 +1849,7 @@ public:
 
             if (Player* player = GetCaster()->ToPlayer())
             {
-                if (player->HasSpell(115294));
+                if (player->HasSpell(115294))
                 {
                     player->CastSpell(player, SPELL_MONK_MANA_TEA_STACKS, true);
                 }

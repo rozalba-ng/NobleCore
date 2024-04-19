@@ -143,6 +143,7 @@ CreatureEventBindings(NULL),
 CreatureGossipBindings(NULL),
 GameObjectEventBindings(NULL),
 GameObjectGossipBindings(NULL),
+SpellEventBindings(NULL),
 ItemEventBindings(NULL),
 ItemGossipBindings(NULL),
 PlayerGossipBindings(NULL),
@@ -236,6 +237,7 @@ void Eluna::CreateBindStores()
     CreatureGossipBindings   = new BindingMap< EntryKey<Hooks::GossipEvents> >(L);
     GameObjectEventBindings  = new BindingMap< EntryKey<Hooks::GameObjectEvents> >(L);
     GameObjectGossipBindings = new BindingMap< EntryKey<Hooks::GossipEvents> >(L);
+    SpellEventBindings       = new BindingMap< EntryKey<Hooks::SpellEvents> >(L);
     ItemEventBindings        = new BindingMap< EntryKey<Hooks::ItemEvents> >(L);
     ItemGossipBindings       = new BindingMap< EntryKey<Hooks::GossipEvents> >(L);
     PlayerGossipBindings     = new BindingMap< EntryKey<Hooks::GossipEvents> >(L);
@@ -258,6 +260,7 @@ void Eluna::DestroyBindStores()
     delete CreatureGossipBindings;
     delete GameObjectEventBindings;
     delete GameObjectGossipBindings;
+    delete SpellEventBindings;
     delete ItemEventBindings;
     delete ItemGossipBindings;
     delete PlayerGossipBindings;
@@ -278,6 +281,7 @@ void Eluna::DestroyBindStores()
     CreatureGossipBindings = NULL;
     GameObjectEventBindings = NULL;
     GameObjectGossipBindings = NULL;
+    SpellEventBindings = NULL;
     ItemEventBindings = NULL;
     ItemGossipBindings = NULL;
     PlayerGossipBindings = NULL;
@@ -1082,6 +1086,16 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                 auto key = EntryKey<Hooks::GossipEvents>((Hooks::GossipEvents)event_id, entry);
                 bindingID = GameObjectGossipBindings->Insert(key, functionRef, shots);
                 createCancelCallback(L, bindingID, GameObjectGossipBindings);
+                return 1; // Stack: callback
+            }
+            break;
+
+        case Hooks::REGTYPE_SPELL:
+            if (event_id < Hooks::SPELL_EVENT_COUNT)
+            {
+                auto key = EntryKey<Hooks::SpellEvents>((Hooks::SpellEvents)event_id, entry);
+                bindingID = SpellEventBindings->Insert(key, functionRef, shots);
+                createCancelCallback(L, bindingID, SpellEventBindings);
                 return 1; // Stack: callback
             }
             break;

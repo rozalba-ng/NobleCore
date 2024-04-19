@@ -76,15 +76,48 @@ namespace LuaGlobalFunctions
     /**
      * Returns emulator's supported expansion.
      *
-     * Expansion is 7 for BFA
+     * Expansion is 9 for DF
      *
      * @return int32 expansion
      */
     int GetCoreExpansion(lua_State* L)
     {
-        Eluna::Push(L, 7);
+        Eluna::Push(L, 9);
         return 1;
     }
+
+    /**
+     * Returns the [Map] pointer of the Lua state. Returns null for the "World" state.
+     *
+     * @return [Map] map
+     */
+    /*int GetStateMap(lua_State* L)
+    {
+        Eluna::Push(L, Eluna::GetEluna(L)->GetBoundMap());
+        return 1;
+    }*/
+
+    /**
+     * Returns the map ID of the Lua state. Returns -1 for the "World" state.
+     *
+     * @return int32 mapId
+     */
+    /*int GetStateMapId(lua_State* L)
+    {
+        Eluna::Push(L, Eluna::GetEluna(L)->GetBoundMapId());
+        return 1;
+    }*/
+
+    /**
+     * Returns the instance ID of the Lua state. Returns 0 for continent maps and the world state.
+     *
+     * @return uint32 instanceId
+     */
+    /*int GetStateInstanceId(lua_State* L)
+    {
+        Eluna::Push(L, Eluna::GetEluna(L)->GetBoundInstanceId());
+        return 1;
+    }*/
 
     /**
      * Returns [Quest] template
@@ -108,8 +141,8 @@ namespace LuaGlobalFunctions
      */
     int GetPlayerByGUID(lua_State* L)
     {
-        uint64 guid = Eluna::CHECKVAL<uint64>(L, 1);
-        Eluna::Push(L, eObjectAccessor()FindPlayer(ObjectGuid::Create<HIGHGUID_PLAYER>(guid)));
+        ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 1);
+        Eluna::Push(L, eObjectAccessor()FindPlayer(guid));
         return 1;
     }
 
@@ -133,7 +166,7 @@ namespace LuaGlobalFunctions
      */
     int GetGameTime(lua_State* L)
     {
-        Eluna::Push(L, GameTime::GetGameTime());
+        Eluna::Push(L, uint32(GameTime::GetGameTime()));
         return 1;
     }
 
@@ -184,6 +217,56 @@ namespace LuaGlobalFunctions
     }
 
     /**
+     * Returns a table with all the current [Player]s on the states map.
+     *
+     * Does not return players that may be teleporting or otherwise not on the map.
+     *
+     *     enum TeamId
+     *     {
+     *         TEAM_ALLIANCE = 0,
+     *         TEAM_HORDE = 1,
+     *         TEAM_NEUTRAL = 2
+     *     };
+     *
+     * In multistate, this method is only available in the MAP state
+     *
+     * @param [TeamId] team = TEAM_NEUTRAL : optional check team of the [Player], Alliance, Horde or Neutral (All)
+     * @param bool onlyGM = false : optional check if GM only
+     * @return table mapPlayers
+     */
+    //int GetPlayersOnMap(lua_State* L)
+    //{
+    //    uint32 team = Eluna::CHECKVAL<uint32>(L, 1, TEAM_NEUTRAL);
+    //    bool onlyGM = Eluna::CHECKVAL<bool>(L, 2, false);
+
+    //    lua_newtable(L);
+    //    int tbl = lua_gettop(L);
+    //    uint32 i = 0;
+
+    //    Map::PlayerList const& players = Eluna::GetEluna(L)->GetBoundMap()->GetPlayers();
+    //    if (!players.isEmpty())
+    //    {
+    //        for (Map::PlayerList::const_iterator it = players.begin(); it != players.end(); ++it)
+    //        {
+    //            if (Player* player = it->GetSource())
+    //            {
+    //                if (!player->IsInWorld())
+    //                    continue;
+
+    //                if ((team == TEAM_NEUTRAL || uint32(player->GetTeamId()) == team) && (!onlyGM || player->IsGameMaster()))
+    //                {
+    //                    Eluna::Push(L, player);
+    //                    lua_rawseti(L, tbl, ++i);
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    lua_settop(L, tbl); // push table to top of stack
+    //    return 1;
+    //}
+
+    /**
      * Returns a [Guild] by name.
      *
      * @param string name
@@ -220,8 +303,9 @@ namespace LuaGlobalFunctions
      */
     int GetGuildByLeaderGUID(lua_State* L)
     {
-        uint64 guid = Eluna::CHECKVAL<uint64>(L, 1);
-        Eluna::Push(L, eGuildMgr->GetGuildByLeader(ObjectGuid::Create<HIGHGUID_PLAYER>(guid)));
+        ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 1);
+
+        Eluna::Push(L, eGuildMgr->GetGuildByLeader(guid));
         return 1;
     }
 
@@ -249,7 +333,7 @@ namespace LuaGlobalFunctions
     int GetPlayerGUID(lua_State* L)
     {
         uint32 lowguid = Eluna::CHECKVAL<uint32>(L, 1);
-        Eluna::Push(L, ObjectGuid::Create<HIGHGUID_PLAYER>(lowguid));
+        Eluna::Push(L, ObjectGuid::Create<HighGuid::Player>(lowguid));
         return 1;
     }
 
@@ -265,7 +349,7 @@ namespace LuaGlobalFunctions
     int GetItemGUID(lua_State* L)
     {
         uint32 lowguid = Eluna::CHECKVAL<uint32>(L, 1);
-        Eluna::Push(L, ObjectGuid::Create<HIGHGUID_ITEM>(lowguid));
+        Eluna::Push(L, ObjectGuid::Create<HighGuid::Item>(lowguid));
         return 1;
     }
 
@@ -278,7 +362,7 @@ namespace LuaGlobalFunctions
      *
      * @param uint32 lowguid : low GUID of the [GameObject]
      * @param uint32 entry : entry ID of the [GameObject]
-     * @param uint32 mapId : map ID of the [GameObject]             <<< BFA ONLY
+     * @param uint32 mapId : map ID of the [GameObject]             <<< BFA, SL, DF
      * @return ObjectGuid guid
      */
     int GetObjectGUID(lua_State* L)
@@ -286,7 +370,7 @@ namespace LuaGlobalFunctions
         uint32 lowguid = Eluna::CHECKVAL<uint32>(L, 1);
         uint32 entry = Eluna::CHECKVAL<uint32>(L, 2);
         uint32 mapId = Eluna::CHECKVAL<uint32>(L, 3);
-        Eluna::Push(L, ObjectGuid::Create<HIGHGUID_GAMEOBJECT>(mapId, entry, lowguid));
+        Eluna::Push(L, ObjectGuid::Create<HighGuid::GameObject>(mapId, entry, lowguid));
         return 1;
     }
 
@@ -299,7 +383,7 @@ namespace LuaGlobalFunctions
      *
      * @param uint32 lowguid : low GUID of the [Creature]
      * @param uint32 entry : entry ID of the [Creature]
-     * @param uint32 mapId : map ID of the [Creature]             <<< BFA ONLY
+     * @param uint32 mapId : map ID of the [Creature]             <<< BFA, SL, DF
      * @return ObjectGuid guid
      */
     int GetUnitGUID(lua_State* L)
@@ -308,7 +392,7 @@ namespace LuaGlobalFunctions
         uint32 entry = Eluna::CHECKVAL<uint32>(L, 2);
         uint32 mapId = Eluna::CHECKVAL<uint32>(L, 3);
 
-        Eluna::Push(L, ObjectGuid::Create<HIGHGUID_UNIT>(mapId, entry, lowguid));
+        Eluna::Push(L, ObjectGuid::Create<HighGuid::Creature>(mapId, entry, lowguid));
         return 1;
     }
 
@@ -371,9 +455,12 @@ namespace LuaGlobalFunctions
             return luaL_argerror(L, 1, "valid ItemEntry expected");
 
         std::string name = temp->GetName(static_cast<LocaleConstant>(locale));
+
         std::ostringstream oss;
         oss << "|c" << std::hex << ItemQualityColors[temp->GetQuality()] << std::dec <<
-            "|Hitem:" << entry << ":0:0:0:0:0:0:0:0:0|h[" << name << "]|h|r";
+            "|Hitem:" << entry << ":0:" <<
+            "0:0:0:0:" <<
+            "0:0:0:0|h[" << name << "]|h|r";
 
         Eluna::Push(L, oss.str());
         return 1;
@@ -393,7 +480,7 @@ namespace LuaGlobalFunctions
     {
         ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 1);
 
-        Eluna::Push(L, guid.GetTypeId());
+        Eluna::Push(L, static_cast<int>(guid.GetTypeId()));
         return 1;
     }
 
@@ -876,6 +963,9 @@ namespace LuaGlobalFunctions
      *     ITEM_EVENT_ON_QUEST_ACCEPT                      = 3,    // (event, player, item, quest) - Can return true
      *     ITEM_EVENT_ON_EXPIRE                            = 4,    // (event, player, itemid) - Can return true
      *     ITEM_EVENT_ON_REMOVE                            = 5,    // (event, player, item) - Can return true
+     *     ITEM_EVENT_ON_ADD                               = 6,    // (event, player, item)
+     *     ITEM_EVENT_ON_EQUIP                             = 7,    // (event, player, item, slot)
+     *     ITEM_EVENT_ON_UNEQUIP                           = 8,    // (event, player, item, slot)
      *     ITEM_EVENT_COUNT
      * };
      * </pre>
@@ -1170,11 +1260,52 @@ namespace LuaGlobalFunctions
     }
 
     /**
+     * Registers a [Spell] event handler.
+     *
+     * <pre>
+     * enum SpellEvents
+     * {
+     *     SPELL_EVENT_ON_CAST                             = 1,    // (event, spell, skipCheck)
+     *     SPELL_EVENT_COUNT
+     * };
+     * </pre>
+     *
+     * @proto cancel = (entry, event, function)
+     * @proto cancel = (entry, event, function, shots)
+     *
+     * @param uint32 entry : [Spell] entry Id
+     * @param uint32 event : [Spell] event Id, refer to SpellEvents above
+     * @param function function : function to register
+     * @param uint32 shots = 0 : the number of times the function will be called, 0 means "always call this function"
+     *
+     * @return function cancel : a function that cancels the binding when called
+     */
+    int RegisterSpellEvent(lua_State* L)
+    {
+        return RegisterEntryHelper(L, Hooks::REGTYPE_SPELL);
+    }
+
+    /**
      * Reloads the Lua engine.
      */
-    int ReloadEluna(lua_State* /*L*/)
+    int ReloadEluna(lua_State* L)
     {
-        Eluna::ReloadEluna();
+        Eluna::GetEluna(L)->ReloadEluna();
+        return 0;
+    }
+
+    /**
+     * Runs a command.
+     *
+     * @param string command : the command to run
+     */
+    int RunCommand(lua_State* L)
+    {
+        const char* command = Eluna::CHECKVAL<const char*>(L, 1);
+        // ignores output of the command
+
+        eWorld->QueueCliCommand(new CliCommandHolder(nullptr, command, [](void*, std::string_view) {}, [](void*, bool) {}));
+
         return 0;
     }
 
@@ -1213,7 +1344,7 @@ namespace LuaGlobalFunctions
 
         ElunaQuery result = WorldDatabase.Query(query);
         if (result)
-            Eluna::Push(L, new ElunaQuery(result));
+            Eluna::Push(L, &result);
         else
             Eluna::Push(L);
 
@@ -1241,6 +1372,62 @@ namespace LuaGlobalFunctions
     }
 
     /**
+     * Initiates an asynchronous SQL query on the world database with a callback function.
+     *
+     * The query is executed asynchronously, and the provided Lua function is called when the query completes.
+     * The callback function parameter is the query result (an [ElunaQuery] or nil if no rows found).
+     *
+     * <pre>
+     * WorldDBQueryAsync("SELECT entry, name FROM creature_template LIMIT 10", function(results)
+     *    if results then
+     *        repeat
+     *            local entry, name = results:GetUInt32(0), results:GetString(1)
+     *            print(entry, name)
+     *        until not results:NextRow()
+     *    end
+     * end)
+     * </pre>
+     *
+     * @param string sql : query to execute asynchronously
+     * @param function callback : the callback function to be called with the query results
+     */
+    int WorldDBQueryAsync(lua_State* L)
+    {
+        const char* query = Eluna::CHECKVAL<const char*>(L, 1);
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+
+        // Push the Lua function onto the stack and create a reference
+        lua_pushvalue(L, 2);
+        int funcRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+        // Validate the function reference
+        if (funcRef == LUA_REFNIL || funcRef == LUA_NOREF)
+        {
+            luaL_argerror(L, 2, "unable to make a ref to function");
+            return 0;
+        }
+
+        // Add an asynchronous query callback
+        Eluna::GetEluna(L)->GetQueryProcessor().AddCallback(WorldDatabase.AsyncQuery(query).WithCallback([L, funcRef](QueryResult result)
+            {
+                ElunaQuery* eq = result ? &result : nullptr;
+
+                // Get the Lua function from the registry
+                lua_rawgeti(L, LUA_REGISTRYINDEX, funcRef);
+
+                // Push the query results as a parameter
+                Eluna::Push(L, eq);
+
+                // Call the Lua function
+                Eluna::GetEluna(L)->ExecuteCall(1, 0);
+
+                // Unreference the Lua function
+                luaL_unref(L, LUA_REGISTRYINDEX, funcRef);
+            }));
+        return 0;
+    }
+
+    /**
      * Executes a SQL query on the character database and returns an [ElunaQuery].
      *
      * The query is always executed synchronously
@@ -1257,7 +1444,7 @@ namespace LuaGlobalFunctions
 
         QueryResult result = CharacterDatabase.Query(query);
         if (result)
-            Eluna::Push(L, new QueryResult(result));
+            Eluna::Push(L, &result);
         else
             Eluna::Push(L);
 
@@ -1281,6 +1468,53 @@ namespace LuaGlobalFunctions
     {
         const char* query = Eluna::CHECKVAL<const char*>(L, 1);
         CharacterDatabase.Execute(query);
+        return 0;
+    }
+
+    /**
+     * Initiates an asynchronous SQL query on the character database with a callback function.
+     *
+     * The query is executed asynchronously, and the provided Lua function is called when the query completes.
+     * The callback function parameter is the query result (an [ElunaQuery] or nil if no rows found).
+     *
+     * For an example see [Global:WorldDBQueryAsync].
+     *
+     * @param string sql : query to execute asynchronously
+     * @param function callback : the callback function to be called with the query results
+     */
+    int CharDBQueryAsync(lua_State* L)
+    {
+        const char* query = Eluna::CHECKVAL<const char*>(L, 1);
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+
+        // Push the Lua function onto the stack and create a reference
+        lua_pushvalue(L, 2);
+        int funcRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+        // Validate the function reference
+        if (funcRef == LUA_REFNIL || funcRef == LUA_NOREF)
+        {
+            luaL_argerror(L, 2, "unable to make a ref to function");
+            return 0;
+        }
+
+        // Add an asynchronous query callback
+        Eluna::GetEluna(L)->GetQueryProcessor().AddCallback(CharacterDatabase.AsyncQuery(query).WithCallback([L, funcRef](QueryResult result)
+            {
+                ElunaQuery* eq = result ? &result : nullptr;
+
+                // Get the Lua function from the registry
+                lua_rawgeti(L, LUA_REGISTRYINDEX, funcRef);
+
+                // Push the query results as a parameter
+                Eluna::Push(L, eq);
+
+                // Call the Lua function
+                Eluna::GetEluna(L)->ExecuteCall(1, 0);
+
+                // Unreference the Lua function
+                luaL_unref(L, LUA_REGISTRYINDEX, funcRef);
+            }));
         return 0;
     }
 
@@ -1325,6 +1559,53 @@ namespace LuaGlobalFunctions
     {
         const char* query = Eluna::CHECKVAL<const char*>(L, 1);
         LoginDatabase.Execute(query);
+        return 0;
+    }
+
+    /**
+     * Initiates an asynchronous SQL query on the login database with a callback function.
+     *
+     * The query is executed asynchronously, and the provided Lua function is called when the query completes.
+     * The callback function parameter is the query result (an [ElunaQuery] or nil if no rows found).
+     *
+     * For an example see [Global:WorldDBQueryAsync].
+     *
+     * @param string sql : query to execute asynchronously
+     * @param function callback : the callback function to be called with the query results
+     */
+    int AuthDBQueryAsync(lua_State* L)
+    {
+        const char* query = Eluna::CHECKVAL<const char*>(L, 1);
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+
+        // Push the Lua function onto the stack and create a reference
+        lua_pushvalue(L, 2);
+        int funcRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+        // Validate the function reference
+        if (funcRef == LUA_REFNIL || funcRef == LUA_NOREF)
+        {
+            luaL_argerror(L, 2, "unable to make a ref to function");
+            return 0;
+        }
+
+        // Add an asynchronous query callback
+        Eluna::GetEluna(L)->GetQueryProcessor().AddCallback(LoginDatabase.AsyncQuery(query).WithCallback([L, funcRef](QueryResult result)
+            {
+                ElunaQuery* eq = result ? &result : nullptr;
+
+                // Get the Lua function from the registry
+                lua_rawgeti(L, LUA_REGISTRYINDEX, funcRef);
+
+                // Push the query results as a parameter
+                Eluna::Push(L, eq);
+
+                // Call the Lua function
+                Eluna::GetEluna(L)->ExecuteCall(1, 0);
+
+                // Unreference the Lua function
+                luaL_unref(L, LUA_REGISTRYINDEX, funcRef);
+            }));
         return 0;
     }
 
@@ -1457,6 +1738,7 @@ namespace LuaGlobalFunctions
                 Creature* creature = new Creature;
                 if (!creature->CreateCreature(entry, map, pos))
                 {
+                    delete creature;
                     Eluna::Push(L);
                     return 1;
                 }
@@ -1468,8 +1750,8 @@ namespace LuaGlobalFunctions
                 // current "creature" variable is deleted and created fresh new, otherwise old values might trigger asserts or cause undefined behavior
                 creature->CleanupsBeforeDelete();
                 delete creature;
-
                 creature = new Creature;
+
                 if (!creature->LoadFromDB(db_guid, map, true, true))
                 {
                     delete creature;
@@ -1477,7 +1759,7 @@ namespace LuaGlobalFunctions
                     return 1;
                 }
 
-                eObjectMgr->AddCreatureToGrid(sObjectMgr->GetCreatureData(db_guid));
+                eObjectMgr->AddCreatureToGrid(eObjectMgr->GetCreatureData(db_guid));
                 Eluna::Push(L, creature);
             }
             else
@@ -1518,8 +1800,9 @@ namespace LuaGlobalFunctions
             uint32 guidLow = map->GenerateLowGuid<HighGuid::GameObject>();
             QuaternionData rot = QuaternionData::fromEulerAnglesZYX(o, 0.f, 0.f);
 
-            if (!object->CreateGameObject(entry, map, { x, y, z, o }, rot, 0, GO_STATE_ACTIVE))
+            if (!object->CreateGameObject(entry, map, Position(x, y, z, o), rot, 0, GO_STATE_READY))
             {
+                delete object;
                 Eluna::Push(L);
                 return 1;
             }
@@ -1533,6 +1816,11 @@ namespace LuaGlobalFunctions
                 object->SaveToDB();
                 guidLow = object->GetSpawnId();
 
+                // delete the old object and do a clean load from DB with a fresh new GameObject instance.
+                // this is required to avoid weird behavior and memory leaks
+                delete object;
+
+                object = new GameObject();
                 // this will generate a new lowguid if the object is in an instance
                 if (!object->LoadFromDB(guidLow, map, true))
                 {
@@ -1589,18 +1877,17 @@ namespace LuaGlobalFunctions
         uint32 incrtime = Eluna::CHECKVAL<uint32>(L, 4);
         uint32 extendedcost = Eluna::CHECKVAL<uint32>(L, 5);
 
-        VendorItem* vendorItem = new VendorItem;
-        vendorItem->maxcount = maxcount;
-        vendorItem->incrtime = incrtime;
-        vendorItem->item = item;
-        vendorItem->ExtendedCost = extendedcost;
+        VendorItem vItem;
+        vItem.item = item;
+        vItem.maxcount = maxcount;
+        vItem.incrtime = incrtime;
+        vItem.ExtendedCost = extendedcost;
 
-        if (!eObjectMgr->IsVendorItemValid(entry, *vendorItem))
+        if (!eObjectMgr->IsVendorItemValid(entry, vItem))
             return 0;
 
-        eObjectMgr->AddVendorItem(entry, *vendorItem);
+        eObjectMgr->AddVendorItem(entry, vItem);
 
-        delete vendorItem;
         return 0;
     }
 
@@ -1617,7 +1904,7 @@ namespace LuaGlobalFunctions
         if (!eObjectMgr->GetCreatureTemplate(entry))
             return luaL_argerror(L, 1, "valid CreatureEntry expected");
 
-        eObjectMgr->RemoveVendorItem(entry, item, 0);
+        eObjectMgr->RemoveVendorItem(entry, item, 1);
         return 0;
     }
 
@@ -1636,7 +1923,7 @@ namespace LuaGlobalFunctions
 
         auto const itemlist = items->m_items;
         for (auto itr = itemlist.begin(); itr != itemlist.end(); ++itr)
-            eObjectMgr->RemoveVendorItem(entry, itr->item, 0);
+            eObjectMgr->RemoveVendorItem(entry, itr->item, 1);
 
         return 0;
     }
@@ -1803,7 +2090,7 @@ namespace LuaGlobalFunctions
                 continue;
             }
 
-            if (amount < 1 || (item_proto->GetMaxCount() > 0 && amount > uint32(item_proto->GetMaxCount())))
+            if (amount < 1 || (item_proto->ExtendedData->MaxCount > 0 && amount > uint32(item_proto->ExtendedData->MaxCount)))
             {
                 luaL_error(L, "Item entry %d has invalid amount %d", entry, amount);
                 continue;
@@ -1818,9 +2105,10 @@ namespace LuaGlobalFunctions
             }
         }
 
-        Player* receiverPlayer = eObjectAccessor()FindPlayer(ObjectGuid::Create<HIGHGUID_PLAYER>(receiverGUIDLow));
+        Player* receiverPlayer = eObjectAccessor()FindPlayer(ObjectGuid::Create<HighGuid::Player>(receiverGUIDLow));
         draft.SendMailTo(trans, MailReceiver(receiverPlayer, receiverGUIDLow), sender, MAIL_CHECK_MASK_NONE, delay);
         CharacterDatabase.CommitTransaction(trans);
+
         return addedItems;
     }
 
@@ -2029,20 +2317,33 @@ namespace LuaGlobalFunctions
             nodeEntry->Pos.Z = entry.Loc.Z;
             nodeEntry->MountCreatureID[0] = mountH;
             nodeEntry->MountCreatureID[1] = mountA;
+            sTaxiNodesStore.SetEntry(nodeId++, nodeEntry);
             sTaxiPathNodesByPath[pathId][index++] = new TaxiPathNodeEntry(entry);
         }
 
         if (startNode >= nodeId)
             return 1;
 
-        //sTaxiPathSetBySource[startNode][nodeId - 1] = TaxiPathBySourceAndDestination(pathId, price); //sTaxiPathSetBySource was deleted now
         TaxiPathEntry* pathEntry = new TaxiPathEntry();
         pathEntry->FromTaxiNode = startNode;
         pathEntry->ToTaxiNode = nodeId - 1;
         pathEntry->Cost = price;
         pathEntry->ID = pathId;
 
+        sTaxiPathStore.SetEntry(pathId, pathEntry);
+
         Eluna::Push(L, pathId);
+        return 1;
+    }
+
+    /**
+     * Returns `true` if Eluna is in compatibility mode, `false` if in multistate.
+     *
+     * @return bool isCompatibilityMode
+     */
+    int IsCompatibilityMode(lua_State* L)
+    {
+        Eluna::Push(L, Eluna::GetEluna(L)->GetCompatibilityMode());
         return 1;
     }
 
@@ -2363,9 +2664,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::CREATURE_EVENT_COUNT; ++i)
-                E->CreatureEventBindings->Clear(Key((Hooks::CreatureEvents)i, entry));
+            Eluna::GetEluna(L)->CreatureEventBindings->Clear(Key((Hooks::CreatureEvents)i, entry));
         }
         else
         {
@@ -2401,9 +2701,8 @@ namespace LuaGlobalFunctions
             ObjectGuid guid = Eluna::CHECKVAL<ObjectGuid>(L, 1);
             uint32 instanceId = Eluna::CHECKVAL<uint32>(L, 2);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::CREATURE_EVENT_COUNT; ++i)
-                E->CreatureUniqueBindings->Clear(Key((Hooks::CreatureEvents)i, guid, instanceId));
+            Eluna::GetEluna(L)->CreatureUniqueBindings->Clear(Key((Hooks::CreatureEvents)i, guid, instanceId));
         }
         else
         {
@@ -2438,9 +2737,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::GOSSIP_EVENT_COUNT; ++i)
-                E->CreatureGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
+            Eluna::GetEluna(L)->CreatureGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
         }
         else
         {
@@ -2474,9 +2772,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::GAMEOBJECT_EVENT_COUNT; ++i)
-                E->GameObjectEventBindings->Clear(Key((Hooks::GameObjectEvents)i, entry));
+            Eluna::GetEluna(L)->GameObjectEventBindings->Clear(Key((Hooks::GameObjectEvents)i, entry));
         }
         else
         {
@@ -2510,9 +2807,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::GOSSIP_EVENT_COUNT; ++i)
-                E->GameObjectGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
+            Eluna::GetEluna(L)->GameObjectGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
         }
         else
         {
@@ -2600,9 +2896,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::ITEM_EVENT_COUNT; ++i)
-                E->ItemEventBindings->Clear(Key((Hooks::ItemEvents)i, entry));
+            Eluna::GetEluna(L)->ItemEventBindings->Clear(Key((Hooks::ItemEvents)i, entry));
         }
         else
         {
@@ -2636,9 +2931,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::GOSSIP_EVENT_COUNT; ++i)
-                E->ItemGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
+            Eluna::GetEluna(L)->ItemGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
         }
         else
         {
@@ -2669,9 +2963,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::PACKET_EVENT_COUNT; ++i)
-                E->PacketEventBindings->Clear(Key((Hooks::PacketEvents)i, entry));
+            Eluna::GetEluna(L)->PacketEventBindings->Clear(Key((Hooks::PacketEvents)i, entry));
         }
         else
         {
@@ -2729,9 +3022,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::GOSSIP_EVENT_COUNT; ++i)
-                E->PlayerGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
+            Eluna::GetEluna(L)->PlayerGossipBindings->Clear(Key((Hooks::GossipEvents)i, entry));
         }
         else
         {
@@ -2789,9 +3081,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::INSTANCE_EVENT_COUNT; ++i)
-                E->MapEventBindings->Clear(Key((Hooks::InstanceEvents)i, entry));
+            Eluna::GetEluna(L)->MapEventBindings->Clear(Key((Hooks::InstanceEvents)i, entry));
         }
         else
         {
@@ -2823,9 +3114,8 @@ namespace LuaGlobalFunctions
         {
             uint32 entry = Eluna::CHECKVAL<uint32>(L, 1);
 
-            Eluna* E = Eluna::GetEluna(L);
             for (uint32 i = 1; i < Hooks::INSTANCE_EVENT_COUNT; ++i)
-                E->InstanceEventBindings->Clear(Key((Hooks::InstanceEvents)i, entry));
+            Eluna::GetEluna(L)->InstanceEventBindings->Clear(Key((Hooks::InstanceEvents)i, entry));
         }
         else
         {

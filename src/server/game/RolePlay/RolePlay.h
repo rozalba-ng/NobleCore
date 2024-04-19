@@ -88,6 +88,7 @@ public:
     void CreatureSetModifyHistory(Creature* creature, Player* modifier);
     void CreatureMove(Creature* creature, float x, float y, float z, float o);
     void CreatureTurn(Creature* creature, float o);
+    void CreatureScale(Creature* creature, float scale);
     void CreatureDelete(Creature* creature);
     void CreatureSetEmote(Creature* creature, uint32 emoteId);
     void CreatureSetMount(Creature* creature, uint32 mountId);
@@ -108,6 +109,7 @@ public:
     ObjectGuid::LowType GetSelectedCreatureGuidFromPlayer(ObjectGuid::LowType playerId);
     Creature* GetAnyCreature(ObjectGuid::LowType lowguid);
     Creature* GetAnyCreature(Map* map, ObjectGuid::LowType lowguid, uint32 entry);
+    Unit* GetAnyUnit(ObjectGuid::LowType lowguid);
 
     // Misc
     std::string GetMapName(uint32 mapId);

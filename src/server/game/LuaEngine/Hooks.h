@@ -80,6 +80,7 @@ namespace Hooks
         REGTYPE_CREATURE_GOSSIP,
         REGTYPE_GAMEOBJECT,
         REGTYPE_GAMEOBJECT_GOSSIP,
+        REGTYPE_SPELL,
         REGTYPE_ITEM,
         REGTYPE_ITEM_GOSSIP,
         REGTYPE_PLAYER_GOSSIP,
@@ -313,6 +314,12 @@ namespace Hooks
         GAMEOBJECT_EVENT_COUNT
     };
 
+    enum SpellEvents
+    {
+        SPELL_EVENT_ON_CAST = 1,    // (event, spell, skipCheck)
+        SPELL_EVENT_COUNT
+    };
+
     enum ItemEvents
     {
         ITEM_EVENT_ON_DUMMY_EFFECT                      = 1,    // (event, caster, spellid, effindex, item)
@@ -320,6 +327,12 @@ namespace Hooks
         ITEM_EVENT_ON_QUEST_ACCEPT                      = 3,    // (event, player, item, quest) - Can return true
         ITEM_EVENT_ON_EXPIRE                            = 4,    // (event, player, itemid) - Can return true
         ITEM_EVENT_ON_REMOVE                            = 5,    // (event, player, item) - Can return true
+
+        // Custom
+        ITEM_EVENT_ON_ADD                               = 6,    // (event, player, item)
+        ITEM_EVENT_ON_EQUIP                             = 7,    // (event, player, item, slot)
+        ITEM_EVENT_ON_UNEQUIP                           = 8,    // (event, player, item, slot)
+
         ITEM_EVENT_COUNT
     };
 
