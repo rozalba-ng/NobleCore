@@ -17,7 +17,11 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
-#include <Windows.h>
+#ifdef _WIN32
+    #include <Windows.h>
+#else
+    #include <sys/stat.h>
+#endif
 
 #include "MapManager.h"
 
@@ -132,9 +136,15 @@ void ElunaLoader::ReadFiles(lua_State* L, std::string path)
         {
             std::string fullpath = dir_iter->path().generic_string();
             // Check if file is hidden
+#ifdef _WIN32
             DWORD dwAttrib = GetFileAttributes(fullpath.c_str());
             if (dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_HIDDEN))
                 continue;
+#else
+            struct stat st;
+            if (stat(fullpath.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR)
+                continue;
+#endif
 
             // load subfolder
             if (fs::is_directory(dir_iter->status()))
