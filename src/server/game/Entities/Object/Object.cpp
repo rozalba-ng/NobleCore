@@ -59,6 +59,7 @@
 #include <G3D/Vector3.h>
 #ifdef ELUNA
 #include "LuaEngine.h"
+#include "ElunaConfig.h"
 #include "ElunaEventMgr.h"
 #endif
 #include <sstream>
@@ -881,8 +882,11 @@ void MovementInfo::OutDebug()
 }
 
 WorldObject::WorldObject(bool isWorldObject) : Object(), WorldLocation(), LastUsedScriptID(0),
+#ifdef ELUNA
+elunaEvents(NULL),
+#endif
 m_movementInfo(), m_name(), m_isActive(false), m_isFarVisible(false), m_isStoredInWorldObjectGridContainer(isWorldObject), m_zoneScript(nullptr),
-ElunaEvents(NULL), m_transport(nullptr), m_zoneId(0), m_areaId(0), m_staticFloorZ(VMAP_INVALID_HEIGHT), m_outdoors(false), m_liquidStatus(LIQUID_MAP_NO_WATER),
+m_transport(nullptr), m_zoneId(0), m_areaId(0), m_staticFloorZ(VMAP_INVALID_HEIGHT), m_outdoors(false), m_liquidStatus(LIQUID_MAP_NO_WATER),
 m_currMap(nullptr), m_InstanceId(0), _dbPhase(0), m_notifyflags(0)
 {
     m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE | GHOST_VISIBILITY_GHOST);
@@ -892,8 +896,8 @@ m_currMap(nullptr), m_InstanceId(0), _dbPhase(0), m_notifyflags(0)
 WorldObject::~WorldObject()
 {
 #ifdef ELUNA
-    delete ElunaEvents;
-    ElunaEvents = NULL;
+    delete elunaEvents;
+    elunaEvents = NULL;
 #endif
 
     // this may happen because there are many !create/delete
@@ -912,6 +916,11 @@ WorldObject::~WorldObject()
 void WorldObject::Update(uint32 diff)
 {
     m_Events.Update(diff);
+
+#ifdef ELUNA
+    if (elunaEvents) // can be null on maps without eluna
+        elunaEvents->Update(diff);
+#endif
 }
 
 void WorldObject::SetIsStoredInWorldObjectGridContainer(bool on)
@@ -1816,9 +1825,19 @@ void WorldObject::SetMap(Map* map)
     m_InstanceId = map->GetInstanceId();
 
 #ifdef ELUNA
-    delete ElunaEvents;
-    // On multithread replace this with a pointer to map's Eluna pointer stored in a map
-    ElunaEvents = new ElunaEventProcessor(&Eluna::GEluna, this);
+    //@todo: possibly look into cleanly clearing all pending events from previous map's event mgr.
+
+    // if multistate, delete elunaEvents and set to nullptr. events shouldn't move across states.
+    // in single state, the timed events should move across maps
+    if (!sElunaConfig->IsElunaCompatibilityMode())
+    {
+        delete elunaEvents;
+        elunaEvents = nullptr; // set to null in case map doesn't use eluna
+    }
+
+    if (Eluna* e = map->GetEluna())
+        if (!elunaEvents)
+            elunaEvents = new ElunaEventProcessor(e, this);
 #endif
 
     if (IsStoredInWorldObjectGridContainer())
@@ -1832,11 +1851,6 @@ void WorldObject::ResetMap()
     if (IsStoredInWorldObjectGridContainer())
         m_currMap->RemoveWorldObject(this);
     m_currMap = nullptr;
-
-#ifdef ELUNA
-    delete ElunaEvents;
-    ElunaEvents = NULL;
-#endif
 
     //maybe not for corpse
     //m_mapId = 0;
@@ -3835,6 +3849,16 @@ std::string WorldObject::GetDebugInfo() const
          << "Name: " << GetName();
     return sstr.str();
 }
+
+#ifdef ELUNA
+Eluna* WorldObject::GetEluna() const
+{
+    if (const Map* map = FindMap())
+        return map->GetEluna();
+
+    return nullptr;
+}
+#endif
 
 std::list<Creature*> WorldObject::FindAllCreaturesInRange(float range)
 {

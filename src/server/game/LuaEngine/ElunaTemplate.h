@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010 - 2020 Eluna Lua Engine <http://emudevs.com/>
+* Copyright (C) 2010 - 2024 Eluna Lua Engine <https://elunaluaengine.github.io/>
 * This program is free software licensed under GPL version 3
 * Please see the included DOCS/LICENSE.md for more information
 */
@@ -15,16 +15,25 @@ extern "C"
 };
 #include "LuaEngine.h"
 #include "ElunaUtility.h"
+#include "ElunaCompat.h"
 #include "SharedDefines.h"
 
 class ElunaGlobal
 {
 public:
+    struct ElunaRegister
+    {
+        const char* name;
+        int(*func)(Eluna*);
+        MethodRegisterState regState = METHOD_REG_ALL;
+    };
+
     static int thunk(lua_State* L)
     {
-        luaL_Reg* l = static_cast<luaL_Reg*>(lua_touserdata(L, lua_upvalueindex(1)));
+        ElunaRegister* l = static_cast<ElunaRegister*>(lua_touserdata(L, lua_upvalueindex(1)));
+        Eluna* E = static_cast<Eluna*>(lua_touserdata(L, lua_upvalueindex(2)));
         int top = lua_gettop(L);
-        int expected = l->func(L);
+        int expected = l->func(E);
         int args = lua_gettop(L) - top;
         if (args < 0 || args > expected)
         {
@@ -35,87 +44,132 @@ public:
         return expected;
     }
 
-    static void SetMethods(Eluna* E, luaL_Reg* methodTable)
+    static void SetMethods(Eluna* E, ElunaRegister* methodTable)
     {
         ASSERT(E);
         ASSERT(methodTable);
 
         lua_pushglobaltable(E->L);
 
-        for (; methodTable && methodTable->name && methodTable->func; ++methodTable)
+        for (; methodTable && methodTable->name; ++methodTable)
         {
             lua_pushstring(E->L, methodTable->name);
+
+            // if the method should not be registered, push a closure to error output function
+            if (methodTable->regState == METHOD_REG_NONE)
+            {
+                lua_pushcclosure(E->L, MethodUnimpl, 0);
+                lua_rawset(E->L, -3);
+                continue;
+            }
+
+            // if we're in multistate mode, we need to check whether a method is flagged as a world or a map specific method
+            if (!E->GetCompatibilityMode() && methodTable->regState != METHOD_REG_ALL)
+            {
+                // if the method should not be registered, push a closure to error output function
+                if ((E->GetBoundMapId() == -1 && methodTable->regState == METHOD_REG_MAP) ||
+                    (E->GetBoundMapId() != -1 && methodTable->regState == METHOD_REG_WORLD))
+                {
+                    lua_pushcclosure(E->L, MethodWrongState, 0);
+                    lua_rawset(E->L, -3);
+                    continue;
+                }
+            }
+
+            // push method table and Eluna object pointers as light user data
             lua_pushlightuserdata(E->L, (void*)methodTable);
-            lua_pushcclosure(E->L, thunk, 1);
+            lua_pushlightuserdata(E->L, (void*)E);
+
+            // push a closure to the thunk function with 2 upvalues (method table and Eluna object)
+            lua_pushcclosure(E->L, thunk, 2);
             lua_rawset(E->L, -3);
         }
 
         lua_remove(E->L, -1);
     }
+
+    static int MethodWrongState(lua_State* L) { luaL_error(L, "attempt to call a method that does not exist for state: %d", Eluna::GetEluna(L)->GetBoundMapId()); return 0; }
+    static int MethodUnimpl(lua_State* L) { luaL_error(L, "attempt to call a method that is not implemented for this emulator"); return 0; }
 };
 
 class ElunaObject
 {
 public:
-    template<typename T>
-    ElunaObject(T * obj, bool manageMemory);
+    ElunaObject(Eluna* E, char const* tname) : E(E), type_name(tname)
+    {
+    }
 
-    ~ElunaObject()
+    virtual ~ElunaObject()
     {
     }
 
     // Get wrapped object pointer
-    void* GetObj() const { return object; }
+    virtual void* GetObj() const = 0;
     // Returns whether the object is valid or not
-    bool IsValid() const { return !callstackid || callstackid == sEluna->GetCallstackId(); }
-    // Returns whether the object can be invalidated or not
-    bool CanInvalidate() const { return _invalidate; }
+    virtual bool IsValid() const = 0;
     // Returns pointer to the wrapped object's type name
     const char* GetTypeName() const { return type_name; }
-
-    // Sets the object pointer that is wrapped
-    void SetObj(void* obj)
-    {
-        ASSERT(obj);
-        object = obj;
-        SetValid(true);
-    }
-    // Sets the object pointer to valid or invalid
-    void SetValid(bool valid)
-    {
-        ASSERT(!valid || (valid && object));
-        if (valid)
-            if (CanInvalidate())
-                callstackid = sEluna->GetCallstackId();
-            else
-                callstackid = 0;
-        else
-            callstackid = 1;
-    }
-    // Sets whether the pointer will be invalidated at end of calls
-    void SetValidation(bool invalidate)
-    {
-        _invalidate = invalidate;
-    }
     // Invalidates the pointer if it should be invalidated
-    void Invalidate()
-    {
-        if (CanInvalidate())
-            callstackid = 1;
-    }
+    virtual void Invalidate() = 0;
 
-private:
-    uint64 callstackid;
-    bool _invalidate;
-    void* object;
+protected:
+    Eluna* E;
     const char* type_name;
 };
+
+template <typename T>
+class ElunaObjectImpl : public ElunaObject
+{
+public:
+    ElunaObjectImpl(Eluna* E, T* obj, char const* tname) : ElunaObject(E, tname), _obj(obj), callstackid(E->GetCallstackId())
+    {
+    }
+
+    void* GetObj() const override { return _obj; }
+    bool IsValid() const override { return callstackid == E->GetCallstackId(); }
+    void Invalidate() override { callstackid = 1; }
+
+private:
+    void* _obj;
+    uint64 callstackid;
+};
+
+template <typename T>
+class ElunaObjectValueImpl : public ElunaObject
+{
+public:
+    ElunaObjectValueImpl(Eluna* E, T* obj, char const* tname) : ElunaObject(E, tname), _obj(*obj /*always a copy, what gets passed here might be pointing to something not owned by us*/)
+    {
+    }
+
+    void* GetObj() const override { return const_cast<T*>(&_obj); }
+    bool IsValid() const override { return true; }
+    void Invalidate() override { }
+
+private:
+    T _obj;
+};
+
+#define MAKE_ELUNA_OBJECT_VALUE_IMPL(type) \
+template <> \
+class ElunaObjectImpl<type> : public ElunaObjectValueImpl<type> \
+{ \
+public: \
+    using ElunaObjectValueImpl::ElunaObjectValueImpl; \
+}
+
+MAKE_ELUNA_OBJECT_VALUE_IMPL(long long);
+MAKE_ELUNA_OBJECT_VALUE_IMPL(unsigned long long);
+MAKE_ELUNA_OBJECT_VALUE_IMPL(ObjectGuid);
+MAKE_ELUNA_OBJECT_VALUE_IMPL(WorldPacket);
+MAKE_ELUNA_OBJECT_VALUE_IMPL(ElunaQuery);
 
 template<typename T>
 struct ElunaRegister
 {
     const char* name;
-    int(*mfunc)(lua_State*, T*);
+    int(*mfunc)(Eluna*, T*);
+    MethodRegisterState regState = METHOD_REG_ALL;
 };
 
 template<typename T>
@@ -123,13 +177,12 @@ class ElunaTemplate
 {
 public:
     static const char* tname;
-    static bool manageMemory;
 
     // name will be used as type name
     // If gc is true, lua will handle the memory management for object pushed
     // gc should be used if pushing for example WorldPacket,
     // that will only be needed on lua side and will not be managed by TC/mangos/<core>
-    static void Register(Eluna* E, const char* name, bool gc = false)
+    static void Register(Eluna* E, const char* name)
     {
         ASSERT(E);
         ASSERT(name);
@@ -142,7 +195,6 @@ public:
         lua_pop(E->L, 1);
 
         tname = name;
-        manageMemory = gc;
 
         // create metatable for userdata of this type
         luaL_newmetatable(E->L, tname);
@@ -160,6 +212,7 @@ public:
         lua_pushcfunction(E->L, CollectGarbage);
         lua_setfield(E->L, metatable, "__gc");
 
+        // TODO: Safe to remove this?
         // make methods accessible through metatable
         lua_pushvalue(E->L, metatable);
         lua_setfield(E->L, metatable, "__index");
@@ -220,10 +273,6 @@ public:
         lua_pushcfunction(E->L, GetType);
         lua_setfield(E->L, metatable, "GetObjectType");
 
-        // special method to decide object invalidation at end of call
-        lua_pushcfunction(E->L, SetInvalidation);
-        lua_setfield(E->L, metatable, "SetInvalidation");
-
         // pop metatable
         lua_pop(E->L, 1);
     }
@@ -240,34 +289,65 @@ public:
         lua_rawget(E->L, LUA_REGISTRYINDEX);
         ASSERT(lua_istable(E->L, -1));
 
-        for (; methodTable && methodTable->name && methodTable->mfunc; ++methodTable)
+        // load all core-specific methods
+        for (; methodTable && methodTable->name; ++methodTable)
         {
+            // push the method name to the Lua stack
             lua_pushstring(E->L, methodTable->name);
+
+            // if the method should not be registered, push a closure to error output function
+            if (methodTable->regState == METHOD_REG_NONE)
+            {
+                lua_pushcclosure(E->L, MethodUnimpl, 0);
+                lua_rawset(E->L, -3);
+                continue;
+            }
+
+            // if we're in multistate mode, we need to check whether a method is flagged as a world or a map specific method
+            if (!E->GetCompatibilityMode() && methodTable->regState != METHOD_REG_ALL)
+            {
+                // if the method should not be registered, push a closure to error output function
+                if ((E->GetBoundMapId() == -1 && methodTable->regState == METHOD_REG_MAP) ||
+                    (E->GetBoundMapId() != -1 && methodTable->regState == METHOD_REG_WORLD))
+                {
+                    lua_pushcclosure(E->L, MethodWrongState, 0);
+                    lua_rawset(E->L, -3);
+                    continue;
+                }
+            }
+
+            // push method table and Eluna object pointers as light user data
             lua_pushlightuserdata(E->L, (void*)methodTable);
-            lua_pushcclosure(E->L, CallMethod, 1);
+            lua_pushlightuserdata(E->L, (void*)E);
+
+            // push a closure to the thunk function with 2 upvalues (method table and Eluna object)
+            lua_pushcclosure(E->L, thunk, 2);
             lua_rawset(E->L, -3);
         }
 
         lua_pop(E->L, 1);
     }
 
-    static int Push(lua_State* L, T const* obj)
+    static int Push(Eluna* E, T const* obj)
     {
+        lua_State* L = E->L;
         if (!obj)
         {
             lua_pushnil(L);
             return 1;
         }
 
+        typedef ElunaObjectImpl<T> ElunaObjectType;
+
         // Create new userdata
-        ElunaObject** ptrHold = static_cast<ElunaObject**>(lua_newuserdata(L, sizeof(ElunaObject*)));
-        if (!ptrHold)
+        ElunaObjectType* elunaObject = static_cast<ElunaObjectType*>(lua_newuserdata(L, sizeof(ElunaObjectType)));
+        if (!elunaObject)
         {
             ELUNA_LOG_ERROR("%s could not create new userdata", tname);
             lua_pushnil(L);
             return 1;
         }
-        *ptrHold = new ElunaObject(const_cast<T*>(obj), manageMemory);
+        new (elunaObject) ElunaObjectType(E, const_cast<T*>(obj), tname);
 
         // Set metatable for it
         lua_pushstring(L, tname);
@@ -283,9 +363,11 @@ public:
         return 1;
     }
 
-    static T* Check(lua_State* L, int narg, bool error = true)
+    static T* Check(Eluna* E, int narg, bool error = true)
     {
-        ElunaObject* elunaObj = Eluna::CHECKTYPE(L, narg, tname, error);
+        lua_State* L = E->L;
+
+        ElunaObject* elunaObj = E->CHECKTYPE(narg, tname, error);
         if (!elunaObj)
             return NULL;
 
@@ -312,23 +394,17 @@ public:
         return 1;
     }
 
-    static int SetInvalidation(lua_State* L)
+    static int thunk(lua_State* L)
     {
-        ElunaObject* elunaObj = Eluna::CHECKOBJ<ElunaObject>(L, 1);
-        bool invalidate = Eluna::CHECKVAL<bool>(L, 2);
+        ElunaRegister<T>* l = static_cast<ElunaRegister<T>*>(lua_touserdata(L, lua_upvalueindex(1)));
+        Eluna* E = static_cast<Eluna*>(lua_touserdata(L, lua_upvalueindex(2)));
 
-        elunaObj->SetValidation(invalidate);
-        return 0;
-    }
-
-    static int CallMethod(lua_State* L)
-    {
-        T* obj = Eluna::CHECKOBJ<T>(L, 1); // get self
+        T* obj = E->CHECKOBJ<T>(1); // get self
         if (!obj)
             return 0;
-        ElunaRegister<T>* l = static_cast<ElunaRegister<T>*>(lua_touserdata(L, lua_upvalueindex(1)));
+
         int top = lua_gettop(L);
-        int expected = l->mfunc(L, obj);
+        int expected = l->mfunc(E, obj);
         int args = lua_gettop(L) - top;
         if (args < 0 || args > expected)
         {
@@ -344,17 +420,19 @@ public:
     // Remember special cases like ElunaTemplate<Vehicle>::CollectGarbage
     static int CollectGarbage(lua_State* L)
     {
+        Eluna* E = Eluna::GetEluna(L);
+
         // Get object pointer (and check type, no error)
-        ElunaObject* obj = Eluna::CHECKOBJ<ElunaObject>(L, 1, false);
-        if (obj && manageMemory)
-            delete static_cast<T*>(obj->GetObj());
-        delete obj;
+        ElunaObject* obj = E->CHECKOBJ<ElunaObject>(1, false);
+        obj->~ElunaObject();
         return 0;
     }
 
     static int ToString(lua_State* L)
     {
-        T* obj = Eluna::CHECKOBJ<T>(L, 1, true); // get self
+        Eluna* E = Eluna::GetEluna(L);
+
+        T* obj = E->CHECKOBJ<T>(1, true); // get self
         lua_pushfstring(L, "%s: %p", tname, obj);
         return 1;
     }
@@ -370,19 +448,15 @@ public:
     static int UnaryMinus(lua_State* L) { return ArithmeticError(L); }
     static int Concat(lua_State* L) { return luaL_error(L, "attempt to concatenate a %s value", tname); }
     static int Length(lua_State* L) { return luaL_error(L, "attempt to get length of a %s value", tname); }
-    static int Equal(lua_State* L) { Eluna::Push(L, Eluna::CHECKOBJ<T>(L, 1) == Eluna::CHECKOBJ<T>(L, 2)); return 1; }
+    static int Equal(lua_State* L) { Eluna* E = Eluna::GetEluna(L); E->Push(E->CHECKOBJ<T>(1) == E->CHECKOBJ<T>(2)); return 1; }
     static int Less(lua_State* L) { return CompareError(L); }
     static int LessOrEqual(lua_State* L) { return CompareError(L); }
     static int Call(lua_State* L) { return luaL_error(L, "attempt to call a %s value", tname); }
+
+    static int MethodWrongState(lua_State* L) { luaL_error(L, "attempt to call a method that does not exist for state: %d", Eluna::GetEluna(L)->GetBoundMapId()); return 0; }
+    static int MethodUnimpl(lua_State* L) { luaL_error(L, "attempt to call a method that is not implemented for this emulator"); return 0; }
 };
 
-template<typename T>
-ElunaObject::ElunaObject(T * obj, bool manageMemory) : callstackid(1), _invalidate(!manageMemory), object(obj), type_name(ElunaTemplate<T>::tname)
-{
-    SetValid(true);
-}
-
 template<typename T> const char* ElunaTemplate<T>::tname = NULL;
-template<typename T> bool ElunaTemplate<T>::manageMemory = false;
 
 #endif

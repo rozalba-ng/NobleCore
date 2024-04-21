@@ -80,7 +80,8 @@ void WorldSession::HandleRepopRequest(WorldPackets::Misc::RepopRequest& /*packet
     }
 
 #ifdef ELUNA
-    sEluna->OnRepop(GetPlayer());
+    if (Eluna* e = GetPlayer()->GetEluna())
+        e->OnRepop(GetPlayer());
 #endif
 
     //this is spirit release confirm?

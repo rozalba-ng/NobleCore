@@ -36,6 +36,9 @@
 #include "UpdateFields.h"
 #include <list>
 #include <unordered_map>
+#ifdef ELUNA
+#include "LuaValue.h"
+#endif
 
 class AreaTrigger;
 class Conversation;
@@ -65,6 +68,7 @@ class WorldPacket;
 class ZoneScript;
 #ifdef ELUNA
 class ElunaEventProcessor;
+class Eluna;
 #endif
 struct FactionTemplateEntry;
 struct Loot;
@@ -755,6 +759,15 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
 
         uint32  LastUsedScriptID;
 
+#ifdef ELUNA
+        ElunaEventProcessor* elunaEvents;
+
+        Eluna* GetEluna() const;
+
+        LuaVal lua_data = LuaVal({});
+#endif
+
+
         // Transports
         TransportBase* GetTransport() const { return m_transport; }
         float GetTransOffsetX() const { return m_movementInfo.transport.pos.GetPositionX(); }
@@ -788,10 +801,6 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         virtual uint16 GetAIAnimKitId() const { return 0; }
         virtual uint16 GetMovementAnimKitId() const { return 0; }
         virtual uint16 GetMeleeAnimKitId() const { return 0; }
-
-#ifdef ELUNA
-        ElunaEventProcessor* ElunaEvents;
-#endif
 
         // Watcher
         bool IsPrivateObject() const { return !_privateObjectOwner.IsEmpty(); }

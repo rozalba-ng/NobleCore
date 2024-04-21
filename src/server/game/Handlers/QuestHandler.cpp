@@ -80,8 +80,9 @@ void WorldSession::HandleQuestgiverHelloOpcode(WorldPackets::Quest::QuestGiverHe
     _player->PlayerTalkClass->ClearMenus();
 	
 #ifdef ELUNA
-    if (sEluna->OnGossipHello(_player, creature))
-        return;
+    if (Eluna* e = GetPlayer()->GetEluna())
+        if (e->OnGossipHello(_player, creature))
+            return;
 #endif
 	
     if (creature->AI()->OnGossipHello(_player))

@@ -35,6 +35,7 @@
 #include "WorldStateMgr.h"
 #ifdef ELUNA
 #include "LuaEngine.h"
+#include "ElunaConfig.h"
 #endif
 #include <boost/dynamic_bitset.hpp>
 #include <numeric>
@@ -55,11 +56,10 @@ void MapManager::Initialize()
     int num_threads(sWorld->getIntConfig(CONFIG_NUMTHREADS));
 	
 #if ELUNA
-    if (num_threads > 1)
+    if (sElunaConfig->IsElunaEnabled() && sElunaConfig->IsElunaCompatibilityMode() && num_threads > 4)
     {
-        // Force 1 thread for Eluna as lua is single threaded. By default thread count is 1
-        // This should allow us not to use mutex locks
-        TC_LOG_ERROR("maps", "Map update threads set to %i, when Eluna only allows 1, changing to 1", num_threads);
+        // Force 1 thread for Eluna if compatibility mode is enabled. Compatibility mode is single state and does not allow more update threads.
+        TC_LOG_ERROR("maps", "Map update threads set to {}, when Eluna in compatibility mode only allows 4, changing to 4", num_threads);
         num_threads = 4;
     }
 #endif
@@ -484,7 +484,8 @@ void MapManager::FreeInstanceId(uint32 instanceId)
     _freeInstanceIds->set(instanceId, true);
 	
 #ifdef ELUNA
-    sEluna->FreeInstanceId(instanceId);
+    if (Eluna* e = sWorld->GetEluna())
+    e->FreeInstanceId(instanceId);
 #endif
 }
 

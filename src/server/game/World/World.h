@@ -38,6 +38,9 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef ELUNA
+class Eluna;
+#endif
 class Player;
 class WorldPacket;
 class WorldSession;
@@ -791,6 +794,11 @@ class TC_GAME_API World
         void TriggerGuidAlert();
         bool IsGuidWarning() { return _guidWarn; }
         bool IsGuidAlert() { return _guidAlert; }
+
+#ifdef ELUNA
+        Eluna* GetEluna() const { return eluna; }
+        Eluna* eluna;
+#endif
 
         // War mode balancing
         void SetForcedWarModeFactionBalanceState(TeamId team, int32 reward = 0);

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010 - 2020 Eluna Lua Engine <http://emudevs.com/>
+* Copyright (C) 2010 - 2024 Eluna Lua Engine <https://elunaluaengine.github.io/>
 * This program is free software licensed under GPL version 3
 * Please see the included DOCS/LICENSE.md for more information
 */
@@ -7,26 +7,18 @@
 #include "Hooks.h"
 #include "LuaEngine.h"
 #include "BindingMap.h"
+#include "ElunaCompat.h"
+#include "ElunaConfig.h"
 #include "ElunaEventMgr.h"
 #include "ElunaIncludes.h"
+#include "ElunaLoader.h"
 #include "ElunaTemplate.h"
 #include "ElunaUtility.h"
 #include "ElunaCreatureAI.h"
 #include "ElunaInstanceAI.h"
-#include <iostream>
+#include "ItemTemplate.h"
+#include <sstream>
 
-#ifdef TRINITY_PLATFORM && defined(TRINITY_PLATFORM_WINDOWS)
-#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
-#define ELUNA_WINDOWS
-#endif
-#else
-#error Eluna could not determine platform
-#endif
-
-#define USING_BOOST
-
-#include <boost/filesystem.hpp>
-#include <string>
 
 extern "C"
 {
@@ -38,95 +30,30 @@ extern "C"
 // Additional lua libraries
 };
 
-Eluna::ScriptList Eluna::lua_scripts;
-Eluna::ScriptList Eluna::lua_extensions;
-std::string Eluna::lua_folderpath;
-std::string Eluna::lua_requirepath;
-Eluna* Eluna::GEluna = NULL;
-bool Eluna::reload = false;
-bool Eluna::initialized = false;
-Eluna::LockType Eluna::lock;
-
 extern void RegisterFunctions(Eluna* E);
-
-void Eluna::Initialize()
-{
-    LOCK_ELUNA;
-    ASSERT(!IsInitialized());
-
-    CharacterDatabase.DirectExecute("ALTER TABLE `instance` CHANGE COLUMN `data` `data` TEXT NOT NULL");
-
-    LoadScriptPaths();
-
-    // Must be before creating GEluna
-    // This is checked on Eluna creation
-    initialized = true;
-
-    // Create global eluna
-    GEluna = new Eluna();
-}
-
-void Eluna::Uninitialize()
-{
-    LOCK_ELUNA;
-    ASSERT(IsInitialized());
-
-    delete GEluna;
-    GEluna = NULL;
-
-    lua_scripts.clear();
-    lua_extensions.clear();
-
-    initialized = false;
-}
-
-void Eluna::LoadScriptPaths()
-{
-    uint32 oldMSTime = ElunaUtil::GetCurrTime();
-
-    lua_scripts.clear();
-    lua_extensions.clear();
-
-    lua_folderpath = eConfigMgr->GetStringDefault("Eluna.ScriptPath", "lua_scripts");
-    ELUNA_LOG_INFO("[Eluna]: Searching scripts from `{}`", lua_folderpath.c_str());
-    lua_requirepath.clear();
-    GetScripts(lua_folderpath);
-    // Erase last ;
-    if (!lua_requirepath.empty())
-        lua_requirepath.erase(lua_requirepath.end() - 1);
-
-    ELUNA_LOG_DEBUG("[Eluna]: Loaded '{}' scripts in '{}' ms", uint32(lua_scripts.size() + lua_extensions.size()), ElunaUtil::GetTimeDiff(oldMSTime));
-}
 
 void Eluna::_ReloadEluna()
 {
-    LOCK_ELUNA;
-    ASSERT(IsInitialized());
-
-    eWorld->SendServerMessage(SERVER_MSG_STRING, "Reloading Eluna...");
-
     // Remove all timed events
-    sEluna->eventMgr->SetStates(LUAEVENT_STATE_ERASE);
+    eventMgr->SetStates(LUAEVENT_STATE_ERASE);
 
     // Close lua
-    sEluna->CloseLua();
+    CloseLua();
 
-    // Reload script paths
-    LoadScriptPaths();
+    // Open new lua and libraries
+    OpenLua();
 
-    // Open new lua and libaraies
-    sEluna->OpenLua();
-
-    // Run scripts from laoded paths
-    sEluna->RunScripts();
+    // Run scripts from loaded paths
+    RunScripts();
 
     reload = false;
 }
 
-Eluna::Eluna() :
+Eluna::Eluna(Map* map, bool compatMode) :
 event_level(0),
 push_counter(0),
-enabled(false),
+boundMap(map),
+compatibilityMode(compatMode),
 
 L(NULL),
 eventMgr(NULL),
@@ -152,23 +79,14 @@ InstanceEventBindings(NULL),
 
 CreatureUniqueBindings(NULL)
 {
-    ASSERT(IsInitialized());
-
     OpenLua();
-
-    // Replace this with map insert if making multithread version
-
-    // Set event manager. Must be after setting sEluna
-    // on multithread have a map of state pointers and here insert this pointer to the map and then save a pointer of that pointer to the EventMgr
-    eventMgr = new EventMgr(&Eluna::GEluna);
+    eventMgr = new EventMgr(this);
+    RunScripts();
 }
 
 Eluna::~Eluna()
 {
-    ASSERT(IsInitialized());
-
     CloseLua();
-
     delete eventMgr;
     eventMgr = NULL;
 }
@@ -183,20 +101,35 @@ void Eluna::CloseLua()
     if (L)
         lua_close(L);
     L = NULL;
+    stacktraceFunctionStackIndex = 0;
 
     instanceDataRefs.clear();
     continentDataRefs.clear();
 }
 
+static int PrecompiledLoader(lua_State* L)
+{
+    const char* modname = lua_tostring(L, 1);
+    if (modname == NULL)
+        return 0;
+    auto it = std::find_if(sElunaLoader->combined_scripts.begin(), sElunaLoader->combined_scripts.end(), [modname](const LuaScript& script) { return script.filename == modname; });
+    if (it == sElunaLoader->combined_scripts.end()) {
+        lua_pushfstring(L, "\n\tno precompiled script '%s' found", modname);
+        return 1;
+    }
+    if (luaL_loadbuffer(L, reinterpret_cast<const char*>(&it->bytecode[0]), it->bytecode.size(), it->filename.c_str()))
+    {
+        // Stack: modname, errmsg
+        return lua_error(L);
+    }
+    // Stack: modname, filefunction
+    lua_pushstring(L, it->filepath.c_str());
+    // Stack: modname, filefunction, modpath
+    return 2;
+}
+
 void Eluna::OpenLua()
 {
-    enabled = eConfigMgr->GetBoolDefault("Eluna.Enabled", true);
-    if (!IsEnabled())
-    {
-        ELUNA_LOG_INFO("[Eluna]: Eluna is disabled in config");
-        return;
-    }
-
     L = luaL_newstate();
 
     lua_pushlightuserdata(L, this);
@@ -214,11 +147,30 @@ void Eluna::OpenLua()
 
     // Set lua require folder paths (scripts folder structure)
     lua_getglobal(L, "package");
-    lua_pushstring(L, lua_requirepath.c_str());
+    lua_pushstring(L, sElunaLoader->lua_requirepath.c_str());
     lua_setfield(L, -2, "path");
-    lua_pushstring(L, ""); // erase cpath
+    lua_pushstring(L, sElunaLoader->lua_requirecpath.c_str());
     lua_setfield(L, -2, "cpath");
-    lua_pop(L, 1);
+    // Set package.loaders loader for precompiled scripts
+    lua_getfield(L, -1, "loaders");
+    if (lua_isnil(L, -1)) {
+        // Lua 5.2+ uses searchers instead of loaders
+        lua_pop(L, 1);
+        lua_getfield(L, -1, "searchers");
+    }
+    // insert the new loader to the loaders table by shifting other elements down by one
+    const int newLoaderIndex = 1;
+    for (int i = lua_rawlen(L, -1); i >= newLoaderIndex; --i) {
+        lua_rawgeti(L, -1, i);
+        lua_rawseti(L, -2, i + 1);
+    }
+    lua_pushcfunction(L, &PrecompiledLoader);
+    lua_rawseti(L, -2, newLoaderIndex);
+    lua_pop(L, 2); // pop loaders/searchers table, pop package table
+
+    // Leave StackTrace function on stack and save reference to it
+    lua_pushcfunction(L, &StackTrace);
+    stacktraceFunctionStackIndex = lua_gettop(L);
 }
 
 void Eluna::CreateBindStores()
@@ -292,155 +244,58 @@ void Eluna::DestroyBindStores()
     CreatureUniqueBindings = NULL;
 }
 
-void Eluna::AddScriptPath(std::string filename, const std::string& fullpath)
-{
-    ELUNA_LOG_DEBUG("[Eluna]: AddScriptPath Checking file `{}`", fullpath.c_str());
-
-    // split file name
-    std::size_t extDot = filename.find_last_of('.');
-    if (extDot == std::string::npos)
-        return;
-    std::string ext = filename.substr(extDot);
-    filename = filename.substr(0, extDot);
-
-    // check extension and add path to scripts to load
-    if (ext != ".lua" && ext != ".dll" && ext != ".so" && ext != ".ext")
-        return;
-    bool extension = ext == ".ext";
-
-    LuaScript script;
-    script.fileext = ext;
-    script.filename = filename;
-    script.filepath = fullpath;
-    script.modulepath = fullpath.substr(0, fullpath.length() - filename.length() - ext.length());
-    if (extension)
-        lua_extensions.push_back(script);
-    else
-        lua_scripts.push_back(script);
-    ELUNA_LOG_DEBUG("[Eluna]: AddScriptPath add path `{}`", fullpath.c_str());
-}
-
-// Finds lua script files from given path (including subdirectories) and pushes them to scripts
-void Eluna::GetScripts(std::string path)
-{
-    ELUNA_LOG_DEBUG("[Eluna]: GetScripts from path `{}`", path.c_str());
-
-    boost::filesystem::path someDir(path);
-    boost::filesystem::directory_iterator end_iter;
-
-    if (boost::filesystem::exists(someDir) && boost::filesystem::is_directory(someDir))
-    {
-        lua_requirepath +=
-            path + "/?.lua;" +
-            path + "/?.ext;" +
-            path + "/?.dll;" +
-            path + "/?.so;";
-
-        for (boost::filesystem::directory_iterator dir_iter(someDir); dir_iter != end_iter; ++dir_iter)
-        {
-            std::string fullpath = dir_iter->path().generic_string();
-
-            // Check if file is hidden
-            std::string name = dir_iter->path().filename().generic_string().c_str();
-            if (name[0] == '.')
-                continue;
-
-            // load subfolder
-            if (boost::filesystem::is_directory(dir_iter->status()))
-            {
-                GetScripts(fullpath);
-                continue;
-            }
-
-            if (boost::filesystem::is_regular_file(dir_iter->status()))
-            {
-                // was file, try add
-                std::string filename = dir_iter->path().filename().generic_string();
-                AddScriptPath(filename, fullpath);
-            }
-        }
-    }
-}
-
-static bool ScriptPathComparator(const LuaScript& first, const LuaScript& second)
-{
-    return first.filepath < second.filepath;
-}
-
 void Eluna::RunScripts()
 {
-    LOCK_ELUNA;
-    if (!IsEnabled())
-        return;
+    int32 const boundMapId = GetBoundMapId();
+    uint32 const boundInstanceId = GetBoundInstanceId();
+    ELUNA_LOG_DEBUG("[Eluna]: Running scripts for state: %i, instance: %u", boundMapId, boundInstanceId);
 
     uint32 oldMSTime = ElunaUtil::GetCurrTime();
     uint32 count = 0;
 
-    ScriptList scripts;
-    lua_extensions.sort(ScriptPathComparator);
-    lua_scripts.sort(ScriptPathComparator);
-    scripts.insert(scripts.end(), lua_extensions.begin(), lua_extensions.end());
-    scripts.insert(scripts.end(), lua_scripts.begin(), lua_scripts.end());
-
     std::unordered_map<std::string, std::string> loaded; // filename, path
 
-    lua_getglobal(L, "package");
-    // Stack: package
-    luaL_getsubtable(L, -1, "loaded");
-    // Stack: package, modules
-    int modules = lua_gettop(L);
-    for (ScriptList::const_iterator it = scripts.begin(); it != scripts.end(); ++it)
+    lua_getglobal(L, "require");
+    // Stack: require
+
+    for (auto it = sElunaLoader->combined_scripts.begin(); it != sElunaLoader->combined_scripts.end(); ++it)
     {
+        // if the Eluna state is in compatibility mode, it should load all scripts, including those tagged with a specific map ID
+        if (!GetCompatibilityMode())
+        {
+            // check that the script file is either global or meant to be loaded for this map
+            if (it->mapId != -1 && it->mapId != boundMapId)
+            {
+                ELUNA_LOG_DEBUG("[Eluna]: `%s` is tagged %i and will not load for map: %i", it->filename.c_str(), it->mapId, boundMapId);
+                continue;
+            }
+        }
+
         // Check that no duplicate names exist
         if (loaded.find(it->filename) != loaded.end())
         {
-            ELUNA_LOG_ERROR("[Eluna]: Error loading `{}`. File with same name already loaded from `{}`, rename either file", it->filepath.c_str(), loaded[it->filename].c_str());
+            ELUNA_LOG_ERROR("[Eluna]: Error loading `%s`. File with same name already loaded from `%s`, rename either file", it->filepath.c_str(), loaded[it->filename].c_str());
             continue;
         }
         loaded[it->filename] = it->filepath;
 
-        lua_getfield(L, modules, it->filename.c_str());
-        // Stack: package, modules, module
-        if (!lua_isnoneornil(L, -1))
+        // We call require on the filename to load the script
+        // A custom loader is used to load the script from the combined_scripts table
+        // The loader is set up in Eluna::OpenLua
+        lua_pushvalue(L, -1); // Stack: require, require
+        lua_pushstring(L, it->filename.c_str()); // Stack: require, require, filename
+        if (ExecuteCall(1, 0))
         {
-            lua_pop(L, 1);
-            ELUNA_LOG_DEBUG("[Eluna]: `{}` was already loaded or required", it->filepath.c_str());
-            continue;
-        }
-        lua_pop(L, 1);
-        // Stack: package, modules
-
-        if (luaL_loadfile(L, it->filepath.c_str()))
-        {
-            // Stack: package, modules, errmsg
-            ELUNA_LOG_ERROR("[Eluna]: Error loading `{}`", it->filepath.c_str());
-            Report(L);
-            // Stack: package, modules
-            continue;
-        }
-        // Stack: package, modules, filefunc
-
-        if (ExecuteCall(0, 1))
-        {
-            // Stack: package, modules, result
-            if (lua_isnoneornil(L, -1) || (lua_isboolean(L, -1) && !lua_toboolean(L, -1)))
-            {
-                // if result evaluates to false, change it to true
-                lua_pop(L, 1);
-                Push(L, true);
-            }
-            lua_setfield(L, modules, it->filename.c_str());
-            // Stack: package, modules
-
-            // successfully loaded and ran file
-            ELUNA_LOG_DEBUG("[Eluna]: Successfully loaded `{}`", it->filepath.c_str());
+            // Successfully called require on the script
+            ELUNA_LOG_DEBUG("[Eluna]: Successfully loaded `%s`", it->filepath.c_str());
             ++count;
             continue;
         }
+        // Stack: require
     }
-    // Stack: package, modules
-    lua_pop(L, 2);
-    ELUNA_LOG_INFO("[Eluna]: Executed {} Lua scripts in {} ms", count, ElunaUtil::GetTimeDiff(oldMSTime));
+    // Stack: require
+    lua_pop(L, 1);
+    ELUNA_LOG_INFO("[Eluna]: Executed %u Lua scripts in %u ms for map: %i, instance: %u", count, ElunaUtil::GetTimeDiff(oldMSTime), boundMapId, boundInstanceId);
 
     OnLuaStateOpen();
 }
@@ -454,12 +309,12 @@ void Eluna::InvalidateObjects()
 void Eluna::Report(lua_State* _L)
 {
     const char* msg = lua_tostring(_L, -1);
-    ELUNA_LOG_ERROR("{}", msg);
+    ELUNA_LOG_ERROR("%s", msg);
     lua_pop(_L, 1);
 }
 
 // Borrowed from http://stackoverflow.com/questions/12256455/print-stacktrace-from-c-code-with-embedded-lua
-int Eluna::StackTrace(lua_State *_L)
+int Eluna::StackTrace(lua_State* _L)
 {
     // Stack: errmsg
     if (!lua_isstring(_L, -1))  /* 'message' not a string? */
@@ -499,29 +354,21 @@ bool Eluna::ExecuteCall(int params, int res)
     // Check function type
     if (!lua_isfunction(L, base))
     {
-        ELUNA_LOG_ERROR("[Eluna]: Cannot execute call: registered value is {}, not a function.", luaL_tolstring(L, base, NULL));
+        ELUNA_LOG_ERROR("[Eluna]: Cannot execute call: registered value is %s, not a function.", luaL_tolstring(L, base, NULL));
         ASSERT(false); // stack probably corrupt
     }
 
-    bool usetrace = eConfigMgr->GetBoolDefault("Eluna.TraceBack", false);
-    if (usetrace)
+    bool usetrace = sElunaConfig->GetConfig(CONFIG_ELUNA_TRACEBACK);
+    if (usetrace && !lua_iscfunction(L, stacktraceFunctionStackIndex))
     {
-        lua_pushcfunction(L, &StackTrace);
-        // Stack: function, [parameters], traceback
-        lua_insert(L, base);
-        // Stack: traceback, function, [parameters]
+        ELUNA_LOG_ERROR("[Eluna]: Cannot execute call: registered value is %s, not a c-function.", luaL_tolstring(L, stacktraceFunctionStackIndex, NULL));
+        ASSERT(false); // stack probably corrupt
     }
 
     // Objects are invalidated when event_level hits 0
     ++event_level;
-    int result = lua_pcall(L, params, res, usetrace ? base : 0);
+    int result = lua_pcall(L, params, res, usetrace ? stacktraceFunctionStackIndex : 0);
     --event_level;
-
-    if (usetrace)
-    {
-        // Stack: traceback, [results or errmsg]
-        lua_remove(L, base);
-    }
     // Stack: [results or errmsg]
 
     // lua_pcall returns 0 on success.
@@ -545,182 +392,142 @@ bool Eluna::ExecuteCall(int params, int res)
     return true;
 }
 
-void Eluna::Push(lua_State* luastate)
+void Eluna::Push()
 {
-    lua_pushnil(luastate);
+    lua_pushnil(L);
 }
-
-void Eluna::Push(lua_State* luastate, const long long l)
+void Eluna::Push(const Milliseconds l)
 {
-    ElunaTemplate<long long>::Push(luastate, new long long(l));
+    // pushing pointer to local is fine, a copy of value will be stored, not pointer itself
+    ElunaTemplate<Milliseconds>::Push(this, &l);
 }
-
-void Eluna::Push(lua_State* luastate, Milliseconds l)
+void Eluna::Push(const long long l)
 {
-    ElunaTemplate<Milliseconds>::Push(luastate, new Milliseconds(l));
+    // pushing pointer to local is fine, a copy of value will be stored, not pointer itself
+    ElunaTemplate<long long>::Push(this, &l);
 }
-
-void Eluna::Push(lua_State* luastate, const unsigned long long l)
+void Eluna::Push(const unsigned long long l)
 {
-    ElunaTemplate<unsigned long long>::Push(luastate, new unsigned long long(l));
+    // pushing pointer to local is fine, a copy of value will be stored, not pointer itself
+    ElunaTemplate<unsigned long long>::Push(this, &l);
 }
-
-void Eluna::Push(lua_State* luastate, const long l)
+void Eluna::Push(const long l)
 {
-    Push(luastate, static_cast<long long>(l));
+    Push(static_cast<long long>(l));
 }
-
-void Eluna::Push(lua_State* luastate, const unsigned long l)
+void Eluna::Push(const unsigned long l)
 {
-    Push(luastate, static_cast<unsigned long long>(l));
+    Push(static_cast<unsigned long long>(l));
 }
-
-void Eluna::Push(lua_State* luastate, const int i)
+void Eluna::Push(const int i)
 {
-    lua_pushinteger(luastate, i);
+    lua_pushinteger(L, i);
 }
-
-void Eluna::Push(lua_State* luastate, const unsigned int u)
+void Eluna::Push(const unsigned int u)
 {
-    lua_pushunsigned(luastate, u);
+    lua_pushunsigned(L, u);
 }
-
-void Eluna::Push(lua_State* luastate, const double d)
+void Eluna::Push(const double d)
 {
-    lua_pushnumber(luastate, d);
+    lua_pushnumber(L, d);
 }
-
-void Eluna::Push(lua_State* luastate, const float f)
+void Eluna::Push(const float f)
 {
-    lua_pushnumber(luastate, f);
+    lua_pushnumber(L, f);
 }
-
-void Eluna::Push(lua_State* luastate, const bool b)
+void Eluna::Push(const bool b)
 {
-    lua_pushboolean(luastate, b);
+    lua_pushboolean(L, b);
 }
-
-void Eluna::Push(lua_State* luastate, const std::string& str)
+void Eluna::Push(const std::string& str)
 {
-    lua_pushstring(luastate, str.c_str());
+    lua_pushstring(L, str.c_str());
 }
-
-void Eluna::Push(lua_State* luastate, const char* str)
+void Eluna::Push(const char* str)
 {
-    lua_pushstring(luastate, str);
+    lua_pushstring(L, str);
 }
-/**
- * type :
- *  - Global
- *  - MapSpecific
- */
-void Eluna::Push(lua_State* luastate, ObjectGuid const guid)
+void Eluna::Push(Pet const* pet)
 {
-    std::string str = std::to_string(guid.GetRawValue(0)) + "-" + std::to_string(guid.GetRawValue(1));
-    lua_pushstring(luastate, str.c_str());
-    /* Doesn't work, always returns 32768 in case of a NPC
-    char errorBuffer[64];
-
-    uint64 objectGuid = uint64(type) << 4;
-    objectGuid = guid.GetCounter() << 8;
-    objectGuid = uint64(guid.GetHigh()) << 12;
-    switch (type)
-    {
-        case 1: //< Global
-            Push(luastate, objectGuid);
-            break;
-        case 2: //< MapSpecific
-            objectGuid = uint64(guid.GetMapId() << 16);
-            objectGuid = uint64(guid.GetEntry() << 20);
-            Push(luastate, objectGuid);
-            break;
-        default:
-            snprintf(errorBuffer, 64, "incorrect typeId");
-            break;
-    }
-    */
+    Push<Creature>(pet);
 }
-
-void Eluna::Push(lua_State* luastate, Pet const* pet)
+void Eluna::Push(TempSummon const* summon)
 {
-    Push<Creature>(luastate, pet);
+    Push<Creature>(summon);
 }
-
-void Eluna::Push(lua_State* luastate, TempSummon const* summon)
-{
-    Push<Creature>(luastate, summon);
-}
-
-void Eluna::Push(lua_State* luastate, Unit const* unit)
+void Eluna::Push(Unit const* unit)
 {
     if (!unit)
     {
-        Push(luastate);
+        Push();
         return;
     }
     switch (unit->GetTypeId())
     {
         case TYPEID_UNIT:
-            Push(luastate, unit->ToCreature());
+            Push(unit->ToCreature());
             break;
         case TYPEID_PLAYER:
-            Push(luastate, unit->ToPlayer());
+            Push(unit->ToPlayer());
             break;
         default:
-            ElunaTemplate<Unit>::Push(luastate, unit);
+            ElunaTemplate<Unit>::Push(this, unit);
     }
 }
-
-void Eluna::Push(lua_State* luastate, WorldObject const* obj)
+void Eluna::Push(WorldObject const* obj)
 {
     if (!obj)
     {
-        Push(luastate);
+        Push();
         return;
     }
     switch (obj->GetTypeId())
     {
         case TYPEID_UNIT:
-            Push(luastate, obj->ToCreature());
+            Push(obj->ToCreature());
             break;
         case TYPEID_PLAYER:
-            Push(luastate, obj->ToPlayer());
+            Push(obj->ToPlayer());
             break;
         case TYPEID_GAMEOBJECT:
-            Push(luastate, obj->ToGameObject());
+            Push(obj->ToGameObject());
             break;
         case TYPEID_CORPSE:
-            Push(luastate, obj->ToCorpse());
+            Push(obj->ToCorpse());
             break;
         default:
-            ElunaTemplate<WorldObject>::Push(luastate, obj);
+            ElunaTemplate<WorldObject>::Push(this, obj);
     }
 }
-
-void Eluna::Push(lua_State* luastate, Object const* obj)
+void Eluna::Push(Object const* obj)
 {
     if (!obj)
     {
-        Push(luastate);
+        Push();
         return;
     }
     switch (obj->GetTypeId())
     {
         case TYPEID_UNIT:
-            Push(luastate, obj->ToCreature());
+            Push(obj->ToCreature());
             break;
         case TYPEID_PLAYER:
-            Push(luastate, obj->ToPlayer());
+            Push(obj->ToPlayer());
             break;
         case TYPEID_GAMEOBJECT:
-            Push(luastate, obj->ToGameObject());
+            Push(obj->ToGameObject());
             break;
         case TYPEID_CORPSE:
-            Push(luastate, obj->ToCorpse());
+            Push(obj->ToCorpse());
             break;
         default:
-            ElunaTemplate<Object>::Push(luastate, obj);
+            ElunaTemplate<Object>::Push(this, obj);
     }
+}
+void Eluna::Push(ObjectGuid const guid)
+{
+    // pushing pointer to local is fine, a copy of value will be stored, not pointer itself
+    ElunaTemplate<ObjectGuid>::Push(this, &guid);
 }
 
 static int CheckIntegerRange(lua_State* luastate, int narg, int min, int max)
@@ -730,13 +537,13 @@ static int CheckIntegerRange(lua_State* luastate, int narg, int min, int max)
 
     if (value > max)
     {
-        snprintf(error_buffer, 64, "value must be less than or equal to {}", max);
+        snprintf(error_buffer, 64, "value must be less than or equal to %i", max);
         return luaL_argerror(luastate, narg, error_buffer);
     }
 
     if (value < min)
     {
-        snprintf(error_buffer, 64, "value must be greater than or equal to {}", min);
+        snprintf(error_buffer, 64, "value must be greater than or equal to %i", min);
         return luaL_argerror(luastate, narg, error_buffer);
     }
 
@@ -753,152 +560,148 @@ static unsigned int CheckUnsignedRange(lua_State* luastate, int narg, unsigned i
     if (value > max)
     {
         char error_buffer[64];
-        snprintf(error_buffer, 64, "value must be less than or equal to {}", max);
+        snprintf(error_buffer, 64, "value must be less than or equal to %u", max);
         return luaL_argerror(luastate, narg, error_buffer);
     }
 
     return static_cast<unsigned int>(value);
 }
 
-template<> bool Eluna::CHECKVAL<bool>(lua_State* luastate, int narg)
+template<> bool Eluna::CHECKVAL<bool>(int narg)
 {
-    return lua_toboolean(luastate, narg) != 0;
+    return lua_toboolean(L, narg) != 0;
 }
-template<> float Eluna::CHECKVAL<float>(lua_State* luastate, int narg)
+template<> float Eluna::CHECKVAL<float>(int narg)
 {
-    return static_cast<float>(luaL_checknumber(luastate, narg));
+    return static_cast<float>(luaL_checknumber(L, narg));
 }
-template<> double Eluna::CHECKVAL<double>(lua_State* luastate, int narg)
+template<> double Eluna::CHECKVAL<double>(int narg)
 {
-    return luaL_checknumber(luastate, narg);
+    return luaL_checknumber(L, narg);
 }
-template<> signed char Eluna::CHECKVAL<signed char>(lua_State* luastate, int narg)
+template<> signed char Eluna::CHECKVAL<signed char>(int narg)
 {
-    return CheckIntegerRange(luastate, narg, SCHAR_MIN, SCHAR_MAX);
+    return CheckIntegerRange(L, narg, SCHAR_MIN, SCHAR_MAX);
 }
-template<> unsigned char Eluna::CHECKVAL<unsigned char>(lua_State* luastate, int narg)
+template<> unsigned char Eluna::CHECKVAL<unsigned char>(int narg)
 {
-    return CheckUnsignedRange(luastate, narg, UCHAR_MAX);
+    return CheckUnsignedRange(L, narg, UCHAR_MAX);
 }
-template<> short Eluna::CHECKVAL<short>(lua_State* luastate, int narg)
+template<> short Eluna::CHECKVAL<short>(int narg)
 {
-    return CheckIntegerRange(luastate, narg, SHRT_MIN, SHRT_MAX);
+    return CheckIntegerRange(L, narg, SHRT_MIN, SHRT_MAX);
 }
-template<> unsigned short Eluna::CHECKVAL<unsigned short>(lua_State* luastate, int narg)
+template<> unsigned short Eluna::CHECKVAL<unsigned short>(int narg)
 {
-    return CheckUnsignedRange(luastate, narg, USHRT_MAX);
+    return CheckUnsignedRange(L, narg, USHRT_MAX);
 }
-template<> int Eluna::CHECKVAL<int>(lua_State* luastate, int narg)
+template<> int Eluna::CHECKVAL<int>(int narg)
 {
-    return CheckIntegerRange(luastate, narg, INT_MIN, INT_MAX);
+    return CheckIntegerRange(L, narg, INT_MIN, INT_MAX);
 }
-template<> unsigned int Eluna::CHECKVAL<unsigned int>(lua_State* luastate, int narg)
+template<> unsigned int Eluna::CHECKVAL<unsigned int>(int narg)
 {
-    return CheckUnsignedRange(luastate, narg, UINT_MAX);
+    return CheckUnsignedRange(L, narg, UINT_MAX);
 }
-template<> const char* Eluna::CHECKVAL<const char*>(lua_State* luastate, int narg)
+template<> const char* Eluna::CHECKVAL<const char*>(int narg)
 {
-    return luaL_checkstring(luastate, narg);
+    return luaL_checkstring(L, narg);
 }
-template<> std::string Eluna::CHECKVAL<std::string>(lua_State* luastate, int narg)
+template<> std::string Eluna::CHECKVAL<std::string>(int narg)
 {
-    return luaL_checkstring(luastate, narg);
+    return luaL_checkstring(L, narg);
 }
-template<> long long Eluna::CHECKVAL<long long>(lua_State* luastate, int narg)
+template<> long long Eluna::CHECKVAL<long long>(int narg)
 {
-    if (lua_isnumber(luastate, narg))
-        return static_cast<long long>(CHECKVAL<double>(luastate, narg));
-    return *(Eluna::CHECKOBJ<long long>(luastate, narg, true));
+    if (lua_isnumber(L, narg))
+        return static_cast<long long>(CHECKVAL<double>(narg));
+    return *(Eluna::CHECKOBJ<long long>(narg, true));
 }
-template<> unsigned long long Eluna::CHECKVAL<unsigned long long>(lua_State* luastate, int narg)
+template<> unsigned long long Eluna::CHECKVAL<unsigned long long>(int narg)
 {
-    if (lua_isnumber(luastate, narg))
-        return static_cast<unsigned long long>(CHECKVAL<uint32>(luastate, narg));
-    return *(Eluna::CHECKOBJ<unsigned long long>(luastate, narg, true));
+    if (lua_isnumber(L, narg))
+        return static_cast<unsigned long long>(CHECKVAL<uint32>(narg));
+    return *(Eluna::CHECKOBJ<unsigned long long>(narg, true));
 }
-template<> long Eluna::CHECKVAL<long>(lua_State* luastate, int narg)
+template<> long Eluna::CHECKVAL<long>(int narg)
 {
-    return static_cast<long>(CHECKVAL<long long>(luastate, narg));
+    return static_cast<long>(CHECKVAL<long long>(narg));
 }
-template<> unsigned long Eluna::CHECKVAL<unsigned long>(lua_State* luastate, int narg)
+template<> unsigned long Eluna::CHECKVAL<unsigned long>(int narg)
 {
-    return static_cast<unsigned long>(CHECKVAL<unsigned long long>(luastate, narg));
+    return static_cast<unsigned long>(CHECKVAL<unsigned long long>(narg));
 }
-template<> ObjectGuid Eluna::CHECKVAL<ObjectGuid>(lua_State* luastate, int narg)
+template<> ObjectGuid Eluna::CHECKVAL<ObjectGuid>(int narg)
 {
-    std::string str = CHECKVAL<std::string>(luastate, narg);
-    uint8 pos = str.find("-");
-    uint64 low = std::stoull(str.substr(0, pos));
-    str.erase(0, pos + 1);
-    uint64 high = std::stoull(str);
-    ObjectGuid guid = ObjectGuid::Create<HighGuid::Null>();
-    guid.SetRawValue(high, low);
-    return guid;
+    ObjectGuid* guid = CHECKOBJ<ObjectGuid>(narg, true);
+    return guid ? *guid : ObjectGuid();
 }
 
-template<> Object* Eluna::CHECKOBJ<Object>(lua_State* luastate, int narg, bool error)
+template<> Object* Eluna::CHECKOBJ<Object>(int narg, bool error)
 {
-    Object* obj = CHECKOBJ<WorldObject>(luastate, narg, false);
+    Object* obj = CHECKOBJ<WorldObject>(narg, false);
     if (!obj)
-        obj = CHECKOBJ<Item>(luastate, narg, false);
+        obj = CHECKOBJ<Item>(narg, false);
     if (!obj)
-        obj = ElunaTemplate<Object>::Check(luastate, narg, error);
+        obj = ElunaTemplate<Object>::Check(this, narg, error);
     return obj;
 }
-template<> WorldObject* Eluna::CHECKOBJ<WorldObject>(lua_State* luastate, int narg, bool error)
+template<> WorldObject* Eluna::CHECKOBJ<WorldObject>(int narg, bool error)
 {
-    WorldObject* obj = CHECKOBJ<Unit>(luastate, narg, false);
+    WorldObject* obj = CHECKOBJ<Unit>(narg, false);
     if (!obj)
-        obj = CHECKOBJ<GameObject>(luastate, narg, false);
+        obj = CHECKOBJ<GameObject>(narg, false);
     if (!obj)
-        obj = CHECKOBJ<Corpse>(luastate, narg, false);
+        obj = CHECKOBJ<Corpse>(narg, false);
     if (!obj)
-        obj = ElunaTemplate<WorldObject>::Check(luastate, narg, error);
+        obj = ElunaTemplate<WorldObject>::Check(this, narg, error);
     return obj;
 }
-template<> Unit* Eluna::CHECKOBJ<Unit>(lua_State* luastate, int narg, bool error)
+template<> Unit* Eluna::CHECKOBJ<Unit>(int narg, bool error)
 {
-    Unit* obj = CHECKOBJ<Player>(luastate, narg, false);
+    Unit* obj = CHECKOBJ<Player>(narg, false);
     if (!obj)
-        obj = CHECKOBJ<Creature>(luastate, narg, false);
+        obj = CHECKOBJ<Creature>(narg, false);
     if (!obj)
-        obj = ElunaTemplate<Unit>::Check(luastate, narg, error);
+        obj = ElunaTemplate<Unit>::Check(this, narg, error);
     return obj;
 }
 
-template<> ElunaObject* Eluna::CHECKOBJ<ElunaObject>(lua_State* luastate, int narg, bool error)
+template<> ElunaObject* Eluna::CHECKOBJ<ElunaObject>(int narg, bool error)
 {
-    return CHECKTYPE(luastate, narg, NULL, error);
+    return CHECKTYPE(narg, NULL, error);
 }
 
-ElunaObject* Eluna::CHECKTYPE(lua_State* luastate, int narg, const char* tname, bool error)
+ElunaObject* Eluna::CHECKTYPE(int narg, const char* tname, bool error)
 {
-    if (lua_islightuserdata(luastate, narg))
+    if (lua_islightuserdata(L, narg))
     {
         if (error)
-            luaL_argerror(luastate, narg, "bad argument : userdata expected, got lightuserdata");
+            luaL_argerror(L, narg, "bad argument : userdata expected, got lightuserdata");
         return NULL;
     }
 
-    ElunaObject** ptrHold = static_cast<ElunaObject**>(lua_touserdata(luastate, narg));
+    ElunaObject* elunaObject = static_cast<ElunaObject*>(lua_touserdata(L, narg));
 
-    if (!ptrHold || (tname && (*ptrHold)->GetTypeName() != tname))
+    if (!elunaObject || (tname && elunaObject->GetTypeName() != tname))
     {
         if (error)
         {
             char buff[256];
-            snprintf(buff, 256, "bad argument : {} expected, got {}", tname ? tname : "ElunaObject", ptrHold ? (*ptrHold)->GetTypeName() : luaL_typename(luastate, narg));
-            luaL_argerror(luastate, narg, buff);
+            snprintf(buff, 256, "bad argument : %s expected, got %s", tname ? tname : "ElunaObject", elunaObject ? elunaObject->GetTypeName() : luaL_typename(L, narg));
+            luaL_argerror(L, narg, buff);
         }
         return NULL;
     }
-    return *ptrHold;
+    return elunaObject;
 }
 
 template<typename K>
-static int cancelBinding(lua_State *L)
+static int cancelBinding(lua_State* L)
 {
-    uint64 bindingID = Eluna::CHECKVAL<uint64>(L, lua_upvalueindex(1));
+    Eluna* E = Eluna::GetEluna(L);
+
+    uint64 bindingID = E->CHECKVAL<uint64>(lua_upvalueindex(1));
 
     BindingMap<K>* bindings = (BindingMap<K>*)lua_touserdata(L, lua_upvalueindex(2));
     ASSERT(bindings != NULL);
@@ -909,18 +712,18 @@ static int cancelBinding(lua_State *L)
 }
 
 template<typename K>
-static void createCancelCallback(lua_State* L, uint64 bindingID, BindingMap<K>* bindings)
+static void createCancelCallback(Eluna* e, uint64 bindingID, BindingMap<K>* bindings)
 {
-    Eluna::Push(L, bindingID);
-    lua_pushlightuserdata(L, bindings);
+    e->Push(bindingID);
+    lua_pushlightuserdata(e->L, bindings);
     // Stack: bindingID, bindings
 
-    lua_pushcclosure(L, &cancelBinding<K>, 2);
+    lua_pushcclosure(e->L, &cancelBinding<K>, 2);
     // Stack: cancel_callback
 }
 
 // Saves the function reference ID given to the register type's store for given entry under the given event
-int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, uint32 instanceId, uint32 event_id, int functionRef, uint32 shots)
+int Eluna::Register(uint8 regtype, uint32 entry, ObjectGuid guid, uint32 instanceId, uint32 event_id, int functionRef, uint32 shots)
 {
     uint64 bindingID;
 
@@ -931,7 +734,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EventKey<Hooks::ServerEvents>((Hooks::ServerEvents)event_id);
                 bindingID = ServerEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, ServerEventBindings);
+                createCancelCallback(this, bindingID, ServerEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -941,7 +744,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EventKey<Hooks::PlayerEvents>((Hooks::PlayerEvents)event_id);
                 bindingID = PlayerEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, PlayerEventBindings);
+                createCancelCallback(this, bindingID, PlayerEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -951,7 +754,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EventKey<Hooks::GuildEvents>((Hooks::GuildEvents)event_id);
                 bindingID = GuildEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, GuildEventBindings);
+                createCancelCallback(this, bindingID, GuildEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -961,7 +764,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EventKey<Hooks::GroupEvents>((Hooks::GroupEvents)event_id);
                 bindingID = GroupEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, GroupEventBindings);
+                createCancelCallback(this, bindingID, GroupEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -971,7 +774,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EventKey<Hooks::VehicleEvents>((Hooks::VehicleEvents)event_id);
                 bindingID = VehicleEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, VehicleEventBindings);
+                createCancelCallback(this, bindingID, VehicleEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -981,7 +784,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EventKey<Hooks::BGEvents>((Hooks::BGEvents)event_id);
                 bindingID = BGEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, BGEventBindings);
+                createCancelCallback(this, bindingID, BGEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -992,13 +795,13 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                 if (entry >= OpcodeMisc::MAX_OPCODE)
                 {
                     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                    luaL_error(L, "Couldn't find a creature with (ID: {})!", entry);
+                    luaL_error(L, "Couldn't find a creature with (ID: %d)!", entry);
                     return 0; // Stack: (empty)
                 }
 
                 auto key = EntryKey<Hooks::PacketEvents>((Hooks::PacketEvents)event_id, entry);
                 bindingID = PacketEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, PacketEventBindings);
+                createCancelCallback(this, bindingID, PacketEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1011,17 +814,17 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                     if (!eObjectMgr->GetCreatureTemplate(entry))
                     {
                         luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                        luaL_error(L, "Couldn't find a creature with (ID: {})!", entry);
+                        luaL_error(L, "Couldn't find a creature with (ID: %d)!", entry);
                         return 0; // Stack: (empty)
                     }
 
                     auto key = EntryKey<Hooks::CreatureEvents>((Hooks::CreatureEvents)event_id, entry);
                     bindingID = CreatureEventBindings->Insert(key, functionRef, shots);
-                    createCancelCallback(L, bindingID, CreatureEventBindings);
+                    createCancelCallback(this, bindingID, CreatureEventBindings);
                 }
                 else
                 {
-                    if (guid == ObjectGuid::Empty)
+                    if (guid.IsEmpty())
                     {
                         luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
                         luaL_error(L, "guid was 0!");
@@ -1030,7 +833,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
 
                     auto key = UniqueObjectKey<Hooks::CreatureEvents>((Hooks::CreatureEvents)event_id, guid, instanceId);
                     bindingID = CreatureUniqueBindings->Insert(key, functionRef, shots);
-                    createCancelCallback(L, bindingID, CreatureUniqueBindings);
+                    createCancelCallback(this, bindingID, CreatureUniqueBindings);
                 }
                 return 1; // Stack: callback
             }
@@ -1042,13 +845,13 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                 if (!eObjectMgr->GetCreatureTemplate(entry))
                 {
                     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                    luaL_error(L, "Couldn't find a creature with (ID: {})!", entry);
+                    luaL_error(L, "Couldn't find a creature with (ID: %d)!", entry);
                     return 0; // Stack: (empty)
                 }
 
                 auto key = EntryKey<Hooks::GossipEvents>((Hooks::GossipEvents)event_id, entry);
                 bindingID = CreatureGossipBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, CreatureGossipBindings);
+                createCancelCallback(this, bindingID, CreatureGossipBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1056,19 +859,16 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
         case Hooks::REGTYPE_GAMEOBJECT:
             if (event_id < Hooks::GAMEOBJECT_EVENT_COUNT)
             {
-                if (entry != 0)
+                if (!eObjectMgr->GetGameObjectTemplate(entry))
                 {
-                    if (!eObjectMgr->GetGameObjectTemplate(entry))
-                    {
-                        luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                        luaL_error(L, "Couldn't find a gameobject with (ID: {})!", entry);
-                        return 0; // Stack: (empty)
-                    }
-
-                    auto key = EntryKey<Hooks::GameObjectEvents>((Hooks::GameObjectEvents)event_id, entry);
-                    bindingID = GameObjectEventBindings->Insert(key, functionRef, shots);
-                    createCancelCallback(L, bindingID, GameObjectEventBindings);
+                    luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
+                    luaL_error(L, "Couldn't find a gameobject with (ID: %d)!", entry);
+                    return 0; // Stack: (empty)
                 }
+
+                auto key = EntryKey<Hooks::GameObjectEvents>((Hooks::GameObjectEvents)event_id, entry);
+                bindingID = GameObjectEventBindings->Insert(key, functionRef, shots);
+                createCancelCallback(this, bindingID, GameObjectEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1079,13 +879,13 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                 if (!eObjectMgr->GetGameObjectTemplate(entry))
                 {
                     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                    luaL_error(L, "Couldn't find a gameobject with (ID: {})!", entry);
+                    luaL_error(L, "Couldn't find a gameobject with (ID: %d)!", entry);
                     return 0; // Stack: (empty)
                 }
 
                 auto key = EntryKey<Hooks::GossipEvents>((Hooks::GossipEvents)event_id, entry);
                 bindingID = GameObjectGossipBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, GameObjectGossipBindings);
+                createCancelCallback(this, bindingID, GameObjectGossipBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1095,7 +895,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EntryKey<Hooks::SpellEvents>((Hooks::SpellEvents)event_id, entry);
                 bindingID = SpellEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, SpellEventBindings);
+                createCancelCallback(this, bindingID, SpellEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1106,13 +906,13 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                 if (!eObjectMgr->GetItemTemplate(entry))
                 {
                     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                    luaL_error(L, "Couldn't find a item with (ID: {})!", entry);
+                    luaL_error(L, "Couldn't find a item with (ID: %d)!", entry);
                     return 0; // Stack: (empty)
                 }
 
                 auto key = EntryKey<Hooks::ItemEvents>((Hooks::ItemEvents)event_id, entry);
                 bindingID = ItemEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, ItemEventBindings);
+                createCancelCallback(this, bindingID, ItemEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1123,13 +923,13 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
                 if (!eObjectMgr->GetItemTemplate(entry))
                 {
                     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
-                    luaL_error(L, "Couldn't find a item with (ID: {})!", entry);
+                    luaL_error(L, "Couldn't find a item with (ID: %d)!", entry);
                     return 0; // Stack: (empty)
                 }
 
                 auto key = EntryKey<Hooks::GossipEvents>((Hooks::GossipEvents)event_id, entry);
                 bindingID = ItemGossipBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, ItemGossipBindings);
+                createCancelCallback(this, bindingID, ItemGossipBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1139,7 +939,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EntryKey<Hooks::GossipEvents>((Hooks::GossipEvents)event_id, entry);
                 bindingID = PlayerGossipBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, PlayerGossipBindings);
+                createCancelCallback(this, bindingID, PlayerGossipBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1148,7 +948,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EntryKey<Hooks::InstanceEvents>((Hooks::InstanceEvents)event_id, entry);
                 bindingID = MapEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, MapEventBindings);
+                createCancelCallback(this, bindingID, MapEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1157,7 +957,7 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
             {
                 auto key = EntryKey<Hooks::InstanceEvents>((Hooks::InstanceEvents)event_id, entry);
                 bindingID = InstanceEventBindings->Insert(key, functionRef, shots);
-                createCancelCallback(L, bindingID, InstanceEventBindings);
+                createCancelCallback(this, bindingID, InstanceEventBindings);
                 return 1; // Stack: callback
             }
             break;
@@ -1165,8 +965,18 @@ int Eluna::Register(lua_State* L, uint8 regtype, uint32 entry, ObjectGuid guid, 
     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
     std::ostringstream oss;
     oss << "regtype " << static_cast<uint32>(regtype) << ", event " << event_id << ", entry " << entry << ", instance " << instanceId;
-    luaL_error(L, "Unknown event type ('{}')", oss.str().c_str());
+    luaL_error(L, "Unknown event type (%s)", oss.str().c_str());
     return 0;
+}
+
+void Eluna::UpdateEluna(uint32 diff)
+{
+    if (reload)
+        if(!GetQueryProcessor().HasPendingCallbacks())
+            _ReloadEluna();
+
+    eventMgr->globalProcessor->Update(diff);
+    GetQueryProcessor().ProcessReadyCallbacks();
 }
 
 /*
@@ -1215,9 +1025,6 @@ int Eluna::CallOneFunction(int number_of_functions, int number_of_arguments, int
 
 CreatureAI* Eluna::GetAI(Creature* creature)
 {
-    if (!IsEnabled())
-        return NULL;
-
     for (int i = 1; i < Hooks::CREATURE_EVENT_COUNT; ++i)
     {
         Hooks::CreatureEvents event_id = (Hooks::CreatureEvents)i;
@@ -1235,9 +1042,6 @@ CreatureAI* Eluna::GetAI(Creature* creature)
 
 InstanceData* Eluna::GetInstanceData(Map* map)
 {
-    if (!IsEnabled())
-        return NULL;
-
     for (int i = 1; i < Hooks::INSTANCE_EVENT_COUNT; ++i)
     {
         Hooks::InstanceEvents event_id = (Hooks::InstanceEvents)i;
@@ -1299,11 +1103,6 @@ void Eluna::CreateInstanceData(Map const* map)
  */
 void Eluna::FreeInstanceId(uint32 instanceId)
 {
-    LOCK_ELUNA;
-
-    if (!IsEnabled())
-        return;
-
     for (int i = 1; i < Hooks::INSTANCE_EVENT_COUNT; ++i)
     {
         auto key = EntryKey<Hooks::InstanceEvents>((Hooks::InstanceEvents)i, instanceId);
@@ -1322,7 +1121,7 @@ void Eluna::FreeInstanceId(uint32 instanceId)
     }
 }
 
-void Eluna::PushInstanceData(lua_State* L, ElunaInstanceAI* ai, bool incrementCounter)
+void Eluna::PushInstanceData(ElunaInstanceAI* ai, bool incrementCounter)
 {
     // Check if the instance data is missing (i.e. someone reloaded Eluna).
     if (!HasInstanceData(ai->instance))

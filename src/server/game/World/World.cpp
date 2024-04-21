@@ -108,6 +108,8 @@
 #include "WorldStateMgr.h"
 #ifdef ELUNA
 #include "LuaEngine.h"
+#include "ElunaLoader.h"
+#include "ElunaConfig.h"
 #endif
 
 #include "RolePlay.h"
@@ -191,6 +193,12 @@ World::World()
 /// World destructor
 World::~World()
 {
+#ifdef ELUNA
+    // Delete world Eluna state
+    delete eluna;
+    eluna = nullptr;
+#endif
+
     ///- Empty the kicked session set
     while (!m_sessions.empty())
     {
@@ -1778,8 +1786,16 @@ void World::SetInitialWorldSettings()
     }
 
 #ifdef ELUNA
-    TC_LOG_INFO("server.loading", "Initializing Eluna Lua Engine...");
-    Eluna::Initialize();
+    ///- Initialize Lua Engine
+    TC_LOG_INFO("server.loading", "Loading Eluna config...");
+    sElunaConfig->Initialize();
+
+    ///- Initialize Lua Engine
+    if (sElunaConfig->IsElunaEnabled())
+    {
+        TC_LOG_INFO("server.loading", "Loading Lua scripts...");
+        sElunaLoader->LoadScripts();
+    }
 #endif
 
     ///- Initialize pool manager
@@ -2386,6 +2402,14 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Loading Creature Text Locales...");
     sCreatureTextMgr->LoadCreatureTextLocales();
 
+#ifdef ELUNA
+    if (sElunaConfig->IsElunaEnabled())
+    {
+        TC_LOG_INFO("server.loading", "Starting Eluna world state...");
+        eluna = new Eluna(nullptr, sElunaConfig->IsElunaCompatibilityMode());
+    }
+#endif
+
     TC_LOG_INFO("server.loading", "Initializing Scripts...");
     sScriptMgr->Initialize();
     sScriptMgr->OnConfigLoad(false);                                // must be done after the ScriptMgr has been properly initialized
@@ -2523,6 +2547,11 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Calculate guild limitation(s) reset time...");
     InitGuildResetTime();
 
+#ifdef ELUNA
+    if (GetEluna())
+        GetEluna()->OnConfigLoad(false); // Must be done after Eluna is initialized and scripts have run.
+#endif
+
     TC_LOG_INFO("server.loading", "Calculate next currency reset time...");
     InitCurrencyResetTime();
 
@@ -2541,13 +2570,6 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading scenario poi data");
     sScenarioMgr->LoadScenarioPOI();
-
-#ifdef ELUNA
-    ///- Run eluna scripts.
-    // in multithread foreach: run scripts
-    sEluna->RunScripts();
-    sEluna->OnConfigLoad(false); // Must be done after Eluna is initialized and scripts have run.
-#endif
 
     TC_LOG_INFO("server.loading", "Loading phase names...");
     sObjectMgr->LoadPhaseNames();

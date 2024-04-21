@@ -55,9 +55,6 @@
 #include "World.h"
 #include "WorldSocket.h"
 #include "WorldSocketMgr.h"
-#ifdef ELUNA
-#include "LuaEngine.h"
-#endif
 #include "Util.h"
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
@@ -348,11 +345,7 @@ extern int main(int argc, char** argv)
         // unload battleground templates before different singletons destroyed
         sBattlegroundMgr->DeleteAllBattlegrounds();
 
-        sMapMgr->UnloadAll();                     // unload all grids (including locked in memory)
-
-#ifdef ELUNA
-        Eluna::Uninitialize();
-#endif
+        sMapMgr->UnloadAll();                     // unload all grids (including locked in memory
 
         sOutdoorPvPMgr->Die();
         sTerrainMgr.UnloadAll();

@@ -1,88 +1,81 @@
-#
-# Copyright (C) 2010 - 2016 Eluna Lua Engine <http://emudevs.com/>
-# This program is free software licensed under GPL version 3
-# Please see the included DOCS/LICENSE.md for more information
-#
-
-if ( USE_COREPCH )
-  include_directories(${CMAKE_CURRENT_BINARY_DIR})
-  include_directories(${CMAKE_SOURCE_DIR})
-endif ()
-
-# Iterates through all the source files and adds them to the solution
-file(GLOB sources_localdir *.cpp *.h)
-
-# Adds all the method headers to its own source group
-file(GLOB method_headers  *Methods.h)
-source_group("Methods" FILES ${method_headers})
-
-set(LuaEngine_STAT_SRCS
-  ${LuaEngine_STAT_SRCS}
-  ${sources_localdir}
-)
-
-include_directories(
-  ${CMAKE_SOURCE_DIR}/dep/zlib
-  ${CMAKE_SOURCE_DIR}/dep/lualib
-  ${CMAKE_BINARY_DIR}
-  ${ACE_INCLUDE_DIR}
-  ${MYSQL_INCLUDE_DIR}
-  ${OPENSSL_INCLUDE_DIR}
-)
-
-add_library(LuaEngine STATIC
-  ${LuaEngine_STAT_SRCS}
-  ${game_STAT_SRCS}
-  ${game_STAT_PCH_SRC}
-)
-
-include_directories(
-  ${CMAKE_SOURCE_DIR}/dep/g3dlite
-  ${CMAKE_SOURCE_DIR}/src/tools
-  ${CMAKE_SOURCE_DIR}/src/Common
-  ${CMAKE_SOURCE_DIR}/src/Common/Threading
-  ${CMAKE_SOURCE_DIR}/src/Common/Logging
-  ${CMAKE_SOURCE_DIR}/src/Common/Utilities
-  ${CMAKE_SOURCE_DIR}/src/shared
-  ${CMAKE_SOURCE_DIR}/src/shared/DataStores
-  ${CMAKE_SOURCE_DIR}/src/server
-  ${CMAKE_SOURCE_DIR}/src/server/game
-  ${CMAKE_SOURCE_DIR}/src/server/game/BattleGrounds
-  ${CMAKE_SOURCE_DIR}/src/server/game/Maps
-  ${CMAKE_SOURCE_DIR}/src/server/game/Handlers
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/AreaTrigger
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Conversation
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Corpse
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Creature
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/DynamicObject
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/GameObject
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Item
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Object
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Object/Updates
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Pet
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Player
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Taxi
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Totem
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Transport
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Unit
-  ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Vehicle
-)
-
-if( WIN32 )
-  if ( MSVC )
-    add_custom_command(TARGET LuaEngine
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/lua_scripts/extensions/
-      COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/extensions ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/lua_scripts/extensions/
-    )
-  elseif ( MINGW )
-    add_custom_command(TARGET LuaEngine
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/lua_scripts/extensions/
-      COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/extensions ${CMAKE_BINARY_DIR}/bin/ua_scripts/extensions/
-    )
-  endif()
+# Define variables for paths
+set(MODULES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules")
+if(UNIX)
+  set(MODULES_OUTPUT_DIR "bin/lua_scripts/modules")
+elseif(WIN32)
+  set(MODULES_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/lua_scripts/modules")
+  set(MODULES_OUTPUT_DIR_CONF "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/lua_scripts/modules")
 endif()
 
-install(DIRECTORY extensions DESTINATION ${BIN_DIR}/lua_scripts/)
+# Add Lua compatibility definition
+if(NOT ${LUA_VERSION} MATCHES "luajit")
+  target_compile_definitions(lualib PUBLIC LUA_COMPAT_MODULE) 
+endif()
+
+# Collect module directories
+file(GLOB_RECURSE modules_list LIST_DIRECTORIES true ${MODULES_DIR}/*)
+foreach(dir ${modules_list})
+  if(IS_DIRECTORY ${dir})
+    get_filename_component(module_name ${dir} NAME)
+    
+    # Gather all module source files
+    file(GLOB sources_module
+      ${dir}/*.c
+      ${dir}/*.cpp
+      ${dir}/*.h
+      ${dir}/*.hpp)
+    
+    # Add module target and properties
+    if(sources_module)
+      add_library(${module_name} MODULE ${sources_module})
+      target_include_directories(${module_name} INTERFACE ${PUBLIC_INCLUDES})
+      target_link_libraries(${module_name} PUBLIC lualib)
+      set_target_properties(${module_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${MODULES_OUTPUT_DIR})
+      
+      if(WIN32)
+        set_target_properties(${module_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MODULES_OUTPUT_DIR})
+        if(MSVC)
+          foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+            string( TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG )
+            set_target_properties(${module_name}
+              PROPERTIES
+              RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${MODULES_OUTPUT_DIR_CONF}
+              LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${MODULES_OUTPUT_DIR_CONF})
+          endforeach()
+        endif()
+      endif()
+      
+      message(STATUS "Added Eluna custom module: ${dir}")
+    endif()
+    
+    # Append to lists
+    list(APPEND list_module_names ${module_name})
+    list(APPEND list_module_sources ${sources_module})
+    list(APPEND list_module_includes ${dir})
+  endif()
+endforeach()
+
+# Safeguard to remove module sources from all other build targets than the modules themselves
+macro(remove_module_sources target)
+  get_target_property(_sources ${target} SOURCES)
+  if(_sources)
+    foreach(item ${list_module_sources})
+      list(REMOVE_ITEM _sources ${item})
+    endforeach()
+    set_property(TARGET ${target} PROPERTY SOURCES ${_sources})
+  endif()
+  
+  get_target_property(_includes ${target} INCLUDE_DIRECTORIES)
+  if(_includes)
+    foreach(dir ${list_module_includes})
+      list(REMOVE_ITEM _includes ${dir})
+    endforeach()
+    set_property(TARGET ${target} PROPERTY INCLUDE_DIRECTORIES ${_includes})
+  endif()
+endmacro()
+
+foreach(target ${all_targets})
+  if (NOT ${target} IN_LIST list_module_names)
+    remove_module_sources(${target})
+  endif()
+endforeach()

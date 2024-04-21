@@ -930,7 +930,8 @@ void GameObject::AddToWorld()
         WorldObject::AddToWorld();
 
 #ifdef ELUNA
-        sEluna->OnAddToWorld(this);
+        if (Eluna* e = GetEluna())
+            e->OnAddToWorld(this);
 #endif
     }
 }
@@ -941,7 +942,8 @@ void GameObject::RemoveFromWorld()
     if (IsInWorld())
     {
 #ifdef ELUNA
-        sEluna->OnRemoveFromWorld(this);
+        if (Eluna* e = GetEluna())
+            e->OnRemoveFromWorld(this);
 #endif
 
         if (m_zoneScript)
@@ -1245,7 +1247,8 @@ GameObject* GameObject::CreateGameObjectFromDB(ObjectGuid::LowType spawnId, Map*
 void GameObject::Update(uint32 diff)
 {
 #ifdef ELUNA
-    sEluna->UpdateAI(this, diff);
+    if (Eluna* e = GetEluna())
+        e->UpdateAI(this, diff);
 #endif
 
     WorldObject::Update(diff);
@@ -2590,8 +2593,9 @@ void GameObject::Use(Unit* user)
         playerUser->PlayerTalkClass->ClearMenus();
 
 #ifdef ELUNA
-        if (sEluna->OnGossipHello(playerUser, this))
-            return;
+        if (Eluna* e = GetEluna())
+            if (e->OnGossipHello(playerUser, this))
+                return;
 #endif
 
         if (AI()->OnGossipHello(playerUser))
@@ -3715,7 +3719,8 @@ void GameObject::SetDestructibleState(GameObjectDestructibleState state, WorldOb
         case GO_DESTRUCTIBLE_DAMAGED:
         {
 #ifdef ELUNA
-            sEluna->OnDamaged(this, attackerOrHealer);
+            if (Eluna* e = GetEluna())
+                e->OnDamaged(this, attackerOrHealer);
 #endif
             if (GetGOInfo()->destructibleBuilding.DamagedEvent && attackerOrHealer)
                 GameEvents::Trigger(GetGOInfo()->destructibleBuilding.DamagedEvent, attackerOrHealer, this);
@@ -3744,7 +3749,8 @@ void GameObject::SetDestructibleState(GameObjectDestructibleState state, WorldOb
         case GO_DESTRUCTIBLE_DESTROYED:
         {
 #ifdef ELUNA
-            sEluna->OnDestroyed(this, attackerOrHealer);
+            if (Eluna* e = GetEluna())
+                e->OnDestroyed(this, attackerOrHealer);
 #endif
 
             if (GetGOInfo()->destructibleBuilding.DestroyedEvent && attackerOrHealer)
@@ -3801,7 +3807,8 @@ void GameObject::SetLootState(LootState state, Unit* unit)
         m_lootStateUnitGUID.Clear();
 
 #ifdef ELUNA
-    sEluna->OnLootStateChanged(this, state, unit);
+    if (Eluna* e = GetEluna())
+        e->OnLootStateChanged(this, state);
 #endif
 
     AI()->OnLootStateChanged(state, unit);
@@ -3890,7 +3897,8 @@ void GameObject::SetGoState(GOState state)
     SetUpdateFieldValue(m_values.ModifyValue(&GameObject::m_gameObjectData).ModifyValue(&UF::GameObjectData::State), state);
 
 #ifdef ELUNA
-    sEluna->OnGameObjectStateChanged(this, state);
+    if (Eluna* e = GetEluna())
+        e->OnGameObjectStateChanged(this, state);
 #endif
 
     if (AI())

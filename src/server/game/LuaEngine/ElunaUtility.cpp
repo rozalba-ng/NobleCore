@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010 - 2020 Eluna Lua Engine <http://emudevs.com/>
+* Copyright (C) 2010 - 2024 Eluna Lua Engine <https://elunaluaengine.github.io/>
 * This program is free software licensed under GPL version 3
 * Please see the included DOCS/LICENSE.md for more information
 */
@@ -71,7 +71,6 @@ bool ElunaUtil::WorldObjectInRangeCheck::operator()(WorldObject* u)
     {
         if (i_dead && (i_dead == 1) != target->IsAlive())
             return false;
-
         if (i_hostile)
         {
             if (!i_obj_unit)

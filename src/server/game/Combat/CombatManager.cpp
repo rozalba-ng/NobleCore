@@ -81,12 +81,14 @@ void CombatReference::EndCombat()
     if (needFirstAI)
     {
         if (Player* player = first->ToPlayer())
-            sEluna->OnPlayerLeaveCombat(player);
+            if (Eluna* e = first->GetEluna())
+                e->OnPlayerLeaveCombat(player);
     }
     if (needSecondAI)
     {
         if (Player* player = second->ToPlayer())
-            sEluna->OnPlayerLeaveCombat(player);
+            if (Eluna* e = second->GetEluna())
+                e->OnPlayerLeaveCombat(player);
     }
 #endif
     if (needFirstAI)
@@ -127,7 +129,8 @@ void CombatReference::SuppressFor(Unit* who)
 		{
 #ifdef ELUNA
         if (Player* player = who->ToPlayer())
-            sEluna->OnPlayerLeaveCombat(player);
+            if (Eluna* e = player->GetEluna())
+                e->OnPlayerLeaveCombat(player);
 #endif
         if (UnitAI* ai = who->GetAI())
             ai->JustExitedCombat();
@@ -326,7 +329,8 @@ void CombatManager::SuppressPvPCombat(UnitFilter* unitFilter /*= nullptr*/)
 		{
 #ifdef ELUNA
         if (Player* player = _owner->ToPlayer())
-            sEluna->OnPlayerLeaveCombat(player);
+            if (Eluna* e = player->GetEluna())
+                e->OnPlayerLeaveCombat(player);
 #endif
         if (UnitAI* ownerAI = _owner->GetAI())
             ownerAI->JustExitedCombat();
@@ -394,7 +398,8 @@ void CombatManager::EndAllPvPCombat(UnitFilter* unitFilter /*= nullptr*/)
 {
 #ifdef ELUNA
     if (Player* player = me->ToPlayer())
-        sEluna->OnPlayerEnterCombat(player, other);
+        if (Eluna* e = player->GetEluna())
+            e->OnPlayerEnterCombat(player, other);
 #endif
     if (UnitAI* ai = me->GetAI())
         ai->JustEnteredCombat(other);

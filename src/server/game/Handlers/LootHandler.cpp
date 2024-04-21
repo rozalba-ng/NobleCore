@@ -202,7 +202,8 @@ void WorldSession::HandleLootMoneyOpcode(WorldPackets::Loot::LootMoney& /*packet
         }
 
 #ifdef ELUNA
-        sEluna->OnLootMoney(player, loot->gold);
+        if (Eluna* e = player->GetEluna())
+            e->OnLootMoney(player, loot->gold);
 #endif
 
         loot->LootMoney();
@@ -478,7 +479,8 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPackets::Loot::MasterLootItem
             target->ApplyItemLootedSpell(sObjectMgr->GetItemTemplate(item.itemid));
 
 #ifdef ELUNA
-        sEluna->OnLootItem(target, newitem, item.count, loot->GetOwnerGUID());
+        if (Eluna* e = target->GetEluna())
+            e->OnLootItem(target, newitem, item.count, loot->GetOwnerGUID());
 #endif
 
         // mark as looted

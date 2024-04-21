@@ -83,6 +83,7 @@ public:
     T const* LookupEntry(uint32 id) const { return (id >= _indexTableSize) ? nullptr : reinterpret_cast<T const*>(_indexTable[id]); }
     T const* AssertEntry(uint32 id) const { return ASSERT_NOTNULL(LookupEntry(id)); }
 
+// Need rework on new standart DB2
 #ifdef ELUNA
     void SetEntry(uint32 id, T* t)
     {
@@ -103,6 +104,8 @@ public:
         _indexTable[id] = reinterpret_cast<char*>(t);
     }
 #endif
+
+
 
     iterator begin() const { return iterator(reinterpret_cast<T const* const*>(_indexTable), _indexTableSize, _minId); }
     iterator end() const { return iterator(reinterpret_cast<T const* const*>(_indexTable), _indexTableSize, _indexTableSize); }

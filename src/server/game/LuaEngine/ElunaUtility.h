@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010 - 2020 Eluna Lua Engine <http://emudevs.com/>
+* Copyright (C) 2010 - 2024 Eluna Lua Engine <https://elunaluaengine.github.io/>
 * This program is free software licensed under GPL version 3
 * Please see the included DOCS/LICENSE.md for more information
 */
@@ -17,13 +17,11 @@
 #include "QueryResult.h"
 #include "Log.h"
 
-typedef QueryResult ElunaQuery;
-#define ELUNA_LOG_INFO(message__, ...)     TC_LOG_INFO("eluna", message__, ## __VA_ARGS__);
-#define ELUNA_LOG_ERROR(message__, ...)    TC_LOG_ERROR("eluna", message__, ## __VA_ARGS__);
-#define ELUNA_LOG_DEBUG(message__, ...)    TC_LOG_DEBUG("eluna", message__, ## __VA_ARGS__);
-#define GET_GUID                GetGUID
+#define USING_BOOST
+#define ELUNA_WINDOWS
 
-#define HIGHGUID_PLAYER         HighGuid::Player
+typedef QueryResult ElunaQuery;
+#define GET_GUID                GetGUID
 #define HIGHGUID_PLAYER         HighGuid::Player
 #define HIGHGUID_UNIT           HighGuid::Creature
 #define HIGHGUID_ITEM           HighGuid::Item
@@ -33,7 +31,23 @@ typedef QueryResult ElunaQuery;
 #define HIGHGUID_VEHICLE        HighGuid::Vehicle
 #define HIGHGUID_DYNAMICOBJECT  HighGuid::DynamicObject
 #define HIGHGUID_CORPSE         HighGuid::Corpse
+#define HIGHGUID_MO_TRANSPORT   HighGuid::Transport
 #define HIGHGUID_GROUP          HighGuid::Party
+
+#define ELUNA_LOG_INFO(message__, ...)     TC_LOG_INFO("eluna", message__, ##__VA_ARGS__);
+#define ELUNA_LOG_ERROR(message__, ...)    TC_LOG_ERROR("eluna", message__, ## __VA_ARGS__);
+#define ELUNA_LOG_DEBUG(message__, ...)    TC_LOG_DEBUG("eluna", message__, ##__VA_ARGS__);
+
+#define MAKE_NEW_GUID(l, e, h)  ObjectGuid(h, e, l)
+
+#define GUID_ENPART(guid)       ObjectGuid(guid).GetEntry()
+
+#define GUID_LOPART(guid)       ObjectGuid(guid).GetCounter()
+
+#define GUID_HIPART(guid)       ObjectGuid(guid).GetHigh()
+
+
+typedef std::vector<uint8> BytecodeBuffer;
 
 class Unit;
 class WorldObject;
@@ -83,25 +97,6 @@ namespace ElunaUtil
         uint16 const i_typeMask;
         uint32 const i_dead; // 0 both, 1 alive, 2 dead
         bool const i_nearest;
-    };
-
-    /*
-     * Usage:
-     * Inherit this class, then when needing lock, use
-     * Guard guard(GetLock());
-     *
-     * The lock is automatically released at end of scope
-     */
-    class Lockable
-    {
-    public:
-        typedef std::mutex LockType;
-        typedef std::lock_guard<LockType> Guard;
-
-        LockType& GetLock() { return _lock; }
-
-    private:
-        LockType _lock;
     };
 
     /*
