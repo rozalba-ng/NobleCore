@@ -949,6 +949,19 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         " FROM item_disenchant_loot WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_ITEM_DISENCHANT_LOOT, "SELECT MAX(ID) + 1 FROM item_disenchant_loot", CONNECTION_SYNCH);
 
+    // ItemDisplayInfo.db2
+    PrepareStatement(HOTFIX_SEL_ITEM_DISPLAY_INFO, "SELECT ID, GeosetGroupOverride, ItemVisual, ParticleColorID, ItemRangedDisplayInfoID, OverrideSwooshSoundKitID, "
+       "SheatheTransformMatrixID, StateSpellVisualKitID, SheathedSpellVisualKitID, UnsheathedSpellVisualKitID, Flags, ModelResourcesID1, ModelResourcesID2, "
+       "ModelMaterialResourcesID1, ModelMaterialResourcesID2, ModelType1, ModelType2, GeosetGroup1, GeosetGroup2, GeosetGroup3, GeosetGroup4, GeosetGroup5, "
+       "GeosetGroup6, AttachmentGeosetGroup1, AttachmentGeosetGroup2, AttachmentGeosetGroup3, AttachmentGeosetGroup4, AttachmentGeosetGroup5, AttachmentGeosetGroup6, "
+       "HelmetGeosetVis1, HelmetGeosetVis2 FROM item_display_info WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_ITEM_DISPLAY_INFO, "SELECT MAX(ID) + 1 FROM item_display_info", CONNECTION_SYNCH);
+
+    // ItemDisplayInfoMaterialRes.db2
+    PrepareStatement(HOTFIX_SEL_ITEM_DISPLAY_INFO_MATERIAL_RES, "SELECT ID, ComponentSection, MaterialResourcesID, ItemDisplayInfoID"
+         " FROM item_display_info_material_res WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_ITEM_DISPLAY_INFO_MATERIAL_RES, "SELECT MAX(ID) + 1 FROM item_display_info_material_res", CONNECTION_SYNCH);
+
     // ItemEffect.db2
     PrepareStatement(HOTFIX_SEL_ITEM_EFFECT, "SELECT ID, LegacySlotIndex, TriggerType, Charges, CoolDownMSec, CategoryCoolDownMSec, SpellCategoryID, "
         "SpellID, ChrSpecializationID FROM item_effect WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
