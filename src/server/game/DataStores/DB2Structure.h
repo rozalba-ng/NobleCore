@@ -2321,6 +2321,35 @@ struct ItemDisenchantLootEntry
     uint32 Class;
 };
 
+struct ItemDisplayInfoEntry
+{
+    uint32 ID;
+    int32 GeosetGroupOverride;
+    int32 ItemVisual;
+    int32 ParticleColorID;
+    uint32 ItemRangedDisplayInfoID;
+    uint32 OverrideSwooshSoundKitID;
+    int32 SheatheTransformMatrixID;
+    int32 StateSpellVisualKitID;
+    int32 SheathedSpellVisualKitID;
+    uint32 UnsheathedSpellVisualKitID;
+    int32 Flags;
+    std::array<uint32, 2> ModelResourcesID;
+    std::array<int32, 2> ModelMaterialResourcesID;
+    std::array<int32, 2> ModelType;
+    std::array<int32, 6> GeosetGroup;
+    std::array<int32, 6> AttachmentGeosetGroup;
+    std::array<int32, 2> HelmetGeosetVis;
+};
+
+struct ItemDisplayInfoMaterialResEntry
+{
+    uint32 ID;
+    uint8 ComponentSection;
+    int32 MaterialResourcesID;
+    uint32 ItemDisplayInfoID;
+};
+
 struct ItemEffectEntry
 {
     uint32 ID;

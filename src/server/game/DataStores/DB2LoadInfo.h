@@ -2959,6 +2959,59 @@ struct ItemDisenchantLootLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 8, &ItemDisenchantLootMeta::Instance, HOTFIX_SEL_ITEM_DISENCHANT_LOOT };
 };
 
+struct ItemDisplayInfoLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[31] =
+    {
+        { false, FT_INT, "ID" },
+        { true, FT_INT, "GeosetGroupOverride" },
+        { true, FT_INT, "ItemVisual" },
+        { true, FT_INT, "ParticleColorID" },
+        { false, FT_INT, "ItemRangedDisplayInfoID" },
+        { false, FT_INT, "OverrideSwooshSoundKitID" },
+        { true, FT_INT, "SheatheTransformMatrixID" },
+        { true, FT_INT, "StateSpellVisualKitID" },
+        { true, FT_INT, "SheathedSpellVisualKitID" },
+        { false, FT_INT, "UnsheathedSpellVisualKitID" },
+        { true, FT_INT, "Flags" },
+        { false, FT_INT, "ModelResourcesID1" },
+        { false, FT_INT, "ModelResourcesID2" },
+        { true, FT_INT, "ModelMaterialResourcesID1" },
+        { true, FT_INT, "ModelMaterialResourcesID2" },
+        { true, FT_INT, "ModelType1" },
+        { true, FT_INT, "ModelType2" },
+        { true, FT_INT, "GeosetGroup1" },
+        { true, FT_INT, "GeosetGroup2" },
+        { true, FT_INT, "GeosetGroup3" },
+        { true, FT_INT, "GeosetGroup4" },
+        { true, FT_INT, "GeosetGroup5" },
+        { true, FT_INT, "GeosetGroup6" },
+        { true, FT_INT, "AttachmentGeosetGroup1" },
+        { true, FT_INT, "AttachmentGeosetGroup2" },
+        { true, FT_INT, "AttachmentGeosetGroup3" },
+        { true, FT_INT, "AttachmentGeosetGroup4" },
+        { true, FT_INT, "AttachmentGeosetGroup5" },
+        { true, FT_INT, "AttachmentGeosetGroup6" },
+        { true, FT_INT, "HelmetGeosetVis1" },
+        { true, FT_INT, "HelmetGeosetVis2" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 31, &ItemDisplayInfoMeta::Instance, HOTFIX_SEL_ITEM_DISPLAY_INFO };
+};
+
+struct ItemDisplayInfoMaterialResLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[4] =
+    {
+        { false, FT_INT, "ID" },
+        { true, FT_BYTE, "ComponentSection" },
+        { true, FT_INT, "MaterialResourcesID" },
+        { false, FT_INT, "ItemDisplayInfoID" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 4, &ItemDisplayInfoMaterialResMeta::Instance, HOTFIX_SEL_ITEM_DISPLAY_INFO_MATERIAL_RES };
+};
+
 struct ItemEffectLoadInfo
 {
     static constexpr DB2FieldMeta Fields[9] =
