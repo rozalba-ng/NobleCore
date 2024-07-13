@@ -2363,6 +2363,15 @@ struct ItemDisplayInfoMaterialResEntry
     uint32 ItemDisplayInfoID;
 };
 
+struct ItemDisplayInfoModelMatResEntry
+{
+    uint32 ID;
+    int32 MaterialResourcesID;
+    int32 TextureType;
+    int32 ModelIndex;
+    uint32 ItemDisplayInfoID;
+};
+
 struct ItemEffectEntry
 {
     uint32 ID;
