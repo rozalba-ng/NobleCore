@@ -956,6 +956,11 @@ void HotfixDatabaseConnection::DoPrepareStatements()
          " FROM item_display_info_material_res WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_ITEM_DISPLAY_INFO_MATERIAL_RES, "SELECT MAX(ID) + 1 FROM item_display_info_material_res", CONNECTION_SYNCH);
 
+    // ItemDisplayInfoModelMatRes.db2
+    PrepareStatement(HOTFIX_SEL_ITEM_DISPLAY_INFO_MODEL_MAT_RES, "SELECT ID, MaterialResourcesID, TextureType, ModelIndex, ItemDisplayInfoID"
+         " FROM item_display_info_model_mat_res WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_ITEM_DISPLAY_INFO_MODEL_MAT_RES, "SELECT MAX(ID) + 1 FROM item_display_info_model_mat_res", CONNECTION_SYNCH);
+
     // ItemEffect.db2
     PrepareStatement(HOTFIX_SEL_ITEM_EFFECT, "SELECT ID, LegacySlotIndex, TriggerType, Charges, CoolDownMSec, CategoryCoolDownMSec, SpellCategoryID, "
         "SpellID, ChrSpecializationID FROM item_effect WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);

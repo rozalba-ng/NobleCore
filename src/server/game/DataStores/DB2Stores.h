@@ -162,6 +162,7 @@ TC_GAME_API extern DB2Storage<ItemDamageTwoHandCasterEntry>         sItemDamageT
 TC_GAME_API extern DB2Storage<ItemDisenchantLootEntry>              sItemDisenchantLootStore;
 TC_GAME_API extern DB2Storage<ItemDisplayInfoEntry>                 sItemDisplayInfoStore;
 TC_GAME_API extern DB2Storage<ItemDisplayInfoMaterialResEntry>      sItemDisplayInfoMaterialResStore;
+TC_GAME_API extern DB2Storage<ItemDisplayInfoModelMatResEntry>      sItemDisplayInfoModelMatResStore;
 TC_GAME_API extern DB2Storage<ItemEffectEntry>                      sItemEffectStore;
 TC_GAME_API extern DB2Storage<ItemNameDescriptionEntry>             sItemNameDescriptionStore;
 TC_GAME_API extern DB2Storage<ItemEntry>                            sItemStore;

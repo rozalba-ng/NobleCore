@@ -3012,6 +3012,20 @@ struct ItemDisplayInfoMaterialResLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 4, &ItemDisplayInfoMaterialResMeta::Instance, HOTFIX_SEL_ITEM_DISPLAY_INFO_MATERIAL_RES };
 };
 
+struct ItemDisplayInfoModelMatResLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[5] =
+        {
+            { false, FT_INT, "ID" },
+            { true, FT_INT, "MaterialResourcesID" },
+            { true, FT_INT, "TextureType" },
+            { true, FT_INT, "ModelIndex" },
+            { false, FT_INT, "ItemDisplayInfoID" },
+        };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 5, &ItemDisplayInfoModelMatResMeta::Instance, HOTFIX_SEL_ITEM_DISPLAY_INFO_MODEL_MAT_RES };
+};
+
 struct ItemEffectLoadInfo
 {
     static constexpr DB2FieldMeta Fields[9] =
