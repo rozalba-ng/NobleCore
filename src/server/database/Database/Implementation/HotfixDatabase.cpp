@@ -385,6 +385,11 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         "ChrCustGeoComponentLinkID FROM chr_customization_element WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_CHR_CUSTOMIZATION_ELEMENT, "SELECT MAX(ID) + 1 FROM chr_customization_element", CONNECTION_SYNCH);
 
+    // ChrCustomizationGeoset.db2
+    PrepareStatement(HOTFIX_SEL_CHR_CUSTOMIZATION_GEOSET, "SELECT ID, GeosetType, GeosetID, Modifier"
+                                                                 " FROM chr_customization_geoset WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_CHR_CUSTOMIZATION_GEOSET, "SELECT MAX(ID) + 1 FROM chr_customization_geoset", CONNECTION_SYNCH);
+
     // ChrCustomizationMaterial.db2
     PrepareStatement(HOTFIX_SEL_CHR_CUSTOMIZATION_MATERIAL, "SELECT ID, ChrModelTextureTargetID, MaterialResourcesID FROM chr_customization_material"
         " WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);

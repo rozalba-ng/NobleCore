@@ -1048,6 +1048,19 @@ struct ChrCustomizationElementLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 14, &ChrCustomizationElementMeta::Instance, HOTFIX_SEL_CHR_CUSTOMIZATION_ELEMENT };
 };
 
+struct ChrCustomizationGeosetLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[4] =
+        {
+            { false, FT_INT, "ID" },
+            { true, FT_INT, "GeosetType" },
+            { true, FT_INT, "GeosetID" },
+            { true, FT_INT, "Modifier" },
+        };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 4, &ChrCustomizationGeosetMeta::Instance, HOTFIX_SEL_CHR_CUSTOMIZATION_GEOSET };
+};
+
 struct ChrCustomizationMaterialLoadInfo
 {
     static constexpr DB2FieldMeta Fields[3] =

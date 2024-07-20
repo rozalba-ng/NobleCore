@@ -99,6 +99,7 @@ DB2Storage<ChrClassesXPowerTypesEntry>          sChrClassesXPowerTypesStore("Chr
 DB2Storage<ChrCustomizationChoiceEntry>         sChrCustomizationChoiceStore("ChrCustomizationChoice.db2", &ChrCustomizationChoiceLoadInfo::Instance);
 DB2Storage<ChrCustomizationDisplayInfoEntry>    sChrCustomizationDisplayInfoStore("ChrCustomizationDisplayInfo.db2", &ChrCustomizationDisplayInfoLoadInfo::Instance);
 DB2Storage<ChrCustomizationElementEntry>        sChrCustomizationElementStore("ChrCustomizationElement.db2", &ChrCustomizationElementLoadInfo::Instance);
+DB2Storage<ChrCustomizationGeosetEntry>         sChrCustomizationGeosetStore("ChrCustomizationGeoset.db2", &ChrCustomizationGeosetLoadInfo::Instance);
 DB2Storage<ChrCustomizationMaterialEntry>       sChrCustomizationMaterialStore("ChrCustomizationMaterial.db2", &ChrCustomizationMaterialLoadInfo::Instance);
 DB2Storage<ChrCustomizationOptionEntry>         sChrCustomizationOptionStore("ChrCustomizationOption.db2", &ChrCustomizationOptionLoadInfo::Instance);
 DB2Storage<ChrCustomizationReqEntry>            sChrCustomizationReqStore("ChrCustomizationReq.db2", &ChrCustomizationReqLoadInfo::Instance);
@@ -764,6 +765,7 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sChrCustomizationChoiceStore);
     LOAD_DB2(sChrCustomizationDisplayInfoStore);
     LOAD_DB2(sChrCustomizationElementStore);
+    LOAD_DB2(sChrCustomizationGeosetStore);
     LOAD_DB2(sChrCustomizationMaterialStore);
     LOAD_DB2(sChrCustomizationOptionStore);
     LOAD_DB2(sChrCustomizationReqStore);
