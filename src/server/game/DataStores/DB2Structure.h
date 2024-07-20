@@ -768,6 +768,14 @@ struct ChrCustomizationMaterialEntry
     int32 MaterialResourcesID;
 };
 
+struct ChrCustomizationGeosetEntry
+{
+    uint32 ID;
+    int32 GeosetType;
+    int32 GeosetID;
+    int32 Modifier;
+};
+
 struct ChrCustomizationOptionEntry
 {
     LocalizedString Name;

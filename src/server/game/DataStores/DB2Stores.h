@@ -82,6 +82,7 @@ TC_GAME_API extern DB2Storage<ChatChannelsEntry>                    sChatChannel
 TC_GAME_API extern DB2Storage<ChrClassesEntry>                      sChrClassesStore;
 TC_GAME_API extern DB2Storage<ChrCustomizationReqEntry>             sChrCustomizationReqStore;
 TC_GAME_API extern DB2Storage<ChrCustomizationOptionEntry>          sChrCustomizationOptionStore;
+TC_GAME_API extern DB2Storage<ChrCustomizationGeosetEntry>          sChrCustomizationGeosetStore;
 TC_GAME_API extern DB2Storage<ChrCustomizationMaterialEntry>        sChrCustomizationMaterialStore;
 TC_GAME_API extern DB2Storage<ChrCustomizationChoiceEntry>          sChrCustomizationChoiceStore;
 TC_GAME_API extern DB2Storage<ChrRacesEntry>                        sChrRacesStore;
