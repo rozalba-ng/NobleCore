@@ -3663,7 +3663,7 @@ struct SoundKitEntryEntry
     int32       FileDataID;
     uint8       Frequency;
     float       Volume;
-    uint32      PlayerConditionID;
+    int32      PlayerConditionID;
 };
 
 struct SoundKitAdvancedEntry
