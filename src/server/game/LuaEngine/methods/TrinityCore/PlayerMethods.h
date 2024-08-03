@@ -1962,7 +1962,7 @@ namespace LuaPlayer
     {
         WorldObject* obj = E->CHECKOBJ<WorldObject>(2);
 
-        player->GetSession()->SendShowBank(obj->GET_GUID());
+        player->GetSession()->SendShowBank(obj->GET_GUID(), PlayerInteractionType::Banker);
         return 0;
     }
 

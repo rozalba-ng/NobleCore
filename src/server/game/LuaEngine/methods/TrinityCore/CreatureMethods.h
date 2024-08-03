@@ -837,7 +837,7 @@ namespace LuaCreature
      */
     int GetNPCFlags(Eluna* E, Creature* creature)
     {
-        E->Push(creature->m_unitData->NpcFlags[0]);
+        E->Push(creature->GetNpcFlags());
         return 1;
     }
 
