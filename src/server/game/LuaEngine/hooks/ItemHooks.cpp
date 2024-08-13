@@ -63,7 +63,7 @@ bool Eluna::OnUse(Player* pPlayer, Item* pItem, SpellCastTargets const& targets)
 
     // Send equip error that shows no message
     // This is a hack fix to stop spell casting visual bug when a spell is not cast on use
-    pPlayer->SendEquipError(InventoryResult(EQUIP_ERR_OK | EQUIP_ERR_CANT_BE_DISENCHANTED));
+    pPlayer->SendEquipError(InventoryResult(EQUIP_ERR_OK | EQUIP_ERR_CANT_BE_DISENCHANTED), pItem, nullptr);
     return false;
 }
 

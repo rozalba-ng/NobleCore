@@ -229,6 +229,59 @@ class spell_dr_whirling_surge : public SpellScript
     }
 };
 
+//// 436854 - Switch Flight Style
+//class spell_switch_flight : public SpellScript
+//{
+//
+//    void HandleDummy(SpellEffIndex /*effIndex*/)
+//    {
+//        if (!GetCaster()->HasAura(404468) && !GetCaster()->HasAura(404464))
+//        {
+//            GetCaster()->CastSpell(GetCaster(), 404468, TRIGGERED_FULL_MASK);
+//        }
+//        else if (!GetCaster()->HasAura(404468) && GetCaster()->HasAura(404464))
+//        {
+//            GetCaster()->RemoveAura(404464);
+//            GetCaster()->CastSpell(GetCaster(), 404468, TRIGGERED_FULL_MASK);
+//        }
+//        else
+//        {
+//            if (GetCaster()->HasAura(404468))
+//            {
+//                GetCaster()->RemoveAura(404468);
+//                GetCaster()->CastSpell(GetCaster(), 404464, TRIGGERED_FULL_MASK);
+//            }
+//        }
+//    }
+//
+//    void Register() override
+//    {
+//        OnEffectHit += SpellEffectFn(spell_switch_flight::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+//    }
+//};
+//
+//class spell_flight_style_skyriding_aura : public AuraScript
+//{
+//
+//    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+//    {
+//        GetTarget()->CastSpell(GetTarget(), 406095, TRIGGERED_FULL_MASK);
+//    }
+//
+//    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+//    {
+//        GetTarget()->RemoveAura(406095);
+//    }
+//
+//    void Register() override
+//    {
+//        OnEffectApply += AuraEffectApplyFn(spell_flight_style_skyriding_aura::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+//        AfterEffectRemove += AuraEffectRemoveFn(spell_flight_style_skyriding_aura::AfterRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+//    }
+//};
+
+
+
 void AddSC_dragonriding_spell_scripts()
 {
     RegisterSpellScript(spell_dragonriding);
@@ -236,4 +289,6 @@ void AddSC_dragonriding_spell_scripts()
     RegisterSpellScript(spell_dr_skyward_ascent);
     RegisterSpellScript(spell_dr_surge_forward);
     RegisterSpellScript(spell_dr_whirling_surge);
+    //RegisterSpellScript(spell_switch_flight);
+    //RegisterSpellScript(spell_flight_style_skyriding_aura);
 }

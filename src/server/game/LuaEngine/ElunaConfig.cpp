@@ -25,7 +25,7 @@ void ElunaConfig::Initialize()
 {
     // Load bools
     SetConfig(CONFIG_ELUNA_ENABLED, "Eluna.Enabled", true);
-    SetConfig(CONFIG_ELUNA_COMPATIBILITY_MODE, "Eluna.CompatibilityMode", true);
+    SetConfig(CONFIG_ELUNA_COMPATIBILITY_MODE, "Eluna.CompatibilityMode", false);
     SetConfig(CONFIG_ELUNA_TRACEBACK, "Eluna.TraceBack", false);
 
     // Load strings
