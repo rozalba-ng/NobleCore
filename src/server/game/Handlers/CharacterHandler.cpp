@@ -1578,11 +1578,6 @@ void WorldSession::HandleSetFactionInactiveOpcode(WorldPackets::Character::SetFa
     _player->GetReputationMgr().SetInactive(packet.Index, packet.State);
 }
 
-void WorldSession::HandleRequestForcedReactionsOpcode(WorldPackets::Reputation::RequestForcedReactions& /*requestForcedReactions*/)
-{
-    _player->GetReputationMgr().SendForceReactions();
-}
-
 void WorldSession::HandleCheckCharacterNameAvailability(WorldPackets::Character::CheckCharacterNameAvailability& checkCharacterNameAvailability)
 {
     // prevent character rename to invalid name
