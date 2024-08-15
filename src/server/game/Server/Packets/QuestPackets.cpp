@@ -541,6 +541,7 @@ WorldPacket const* QuestGiverRequestItems::Write()
     _worldPacket << int32(CompEmoteType);
     _worldPacket << int32(SuggestPartyMembers);
     _worldPacket << int32(MoneyToGet);
+    _worldPacket << int32(StatusFlags);
     _worldPacket << int32(QuestInfoID);
 
     for (QuestObjectiveCollect const& obj : Collect)
