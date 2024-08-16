@@ -1204,7 +1204,7 @@ void HotfixDatabaseConnection::DoPrepareStatements()
 
     // MapDifficulty.db2
     PrepareStatement(HOTFIX_SEL_MAP_DIFFICULTY, "SELECT ID, Message, DifficultyID, LockID, ResetInterval, MaxPlayers, ItemContext, "
-        "ItemContextPickerID, Flags, ContentTuningID, MapID FROM map_difficulty WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+        "ItemContextPickerID, Flags, ContentTuningID, WorldStateExpressionID, MapID FROM map_difficulty WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_MAP_DIFFICULTY, "SELECT MAX(ID) + 1 FROM map_difficulty", CONNECTION_SYNCH);
     PREPARE_LOCALE_STMT(HOTFIX_SEL_MAP_DIFFICULTY, "SELECT ID, Message_lang FROM map_difficulty_locale WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
 
@@ -1423,7 +1423,7 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_QUEST_PACKAGE_ITEM, "SELECT MAX(ID) + 1 FROM quest_package_item", CONNECTION_SYNCH);
 
     // QuestSort.db2
-    PrepareStatement(HOTFIX_SEL_QUEST_SORT, "SELECT ID, SortName, UiOrderIndex FROM quest_sort WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PrepareStatement(HOTFIX_SEL_QUEST_SORT, "SELECT ID, SortName, UiOrderIndex, Flags FROM quest_sort WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_QUEST_SORT, "SELECT MAX(ID) + 1 FROM quest_sort", CONNECTION_SYNCH);
     PREPARE_LOCALE_STMT(HOTFIX_SEL_QUEST_SORT, "SELECT ID, SortName_lang FROM quest_sort_locale WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
 
@@ -1859,7 +1859,7 @@ void HotfixDatabaseConnection::DoPrepareStatements()
 
     // TraitCond.db2
     PrepareStatement(HOTFIX_SEL_TRAIT_COND, "SELECT ID, CondType, TraitTreeID, GrantedRanks, QuestID, AchievementID, SpecSetID, TraitNodeGroupID, "
-        "TraitNodeID, TraitCurrencyID, SpentAmountRequired, Flags, RequiredLevel, FreeSharedStringID, SpendMoreSharedStringID, "
+        "TraitNodeID, TraitNodeEntryID, TraitCurrencyID, SpentAmountRequired, Flags, RequiredLevel, FreeSharedStringID, SpendMoreSharedStringID, "
         "TraitCondAccountElementID FROM trait_cond WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_TRAIT_COND, "SELECT MAX(ID) + 1 FROM trait_cond", CONNECTION_SYNCH);
 
@@ -2016,7 +2016,7 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     // UiMap.db2
     PrepareStatement(HOTFIX_SEL_UI_MAP, "SELECT Name, ID, ParentUiMapID, Flags, `System`, Type, BountySetID, BountyDisplayLocation, "
         "VisibilityPlayerConditionID2, VisibilityPlayerConditionID, HelpTextPosition, BkgAtlasID, AlternateUiMapGroup, ContentTuningID, "
-        "AdventureMapTextureKitID FROM ui_map WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+        "AdventureMapTextureKitID, MapArtZoneTextPosition FROM ui_map WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_UI_MAP, "SELECT MAX(ID) + 1 FROM ui_map", CONNECTION_SYNCH);
     PREPARE_LOCALE_STMT(HOTFIX_SEL_UI_MAP, "SELECT ID, Name_lang FROM ui_map_locale WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
 

@@ -239,7 +239,6 @@ class spell_switch_flight : public SpellScript
     void HandleDummy(SpellEffIndex /*effIndex*/)
     {
         Unit* caster = GetCaster();
-        Player* player = GetCaster()->ToPlayer();
         if (!caster)
             return;
 
