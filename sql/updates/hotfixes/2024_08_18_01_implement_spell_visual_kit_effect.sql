@@ -61,6 +61,7 @@ CREATE TABLE `spell_visual_kit_model_attach`  (
   `LowDefModelAttachID` int NOT NULL DEFAULT 0,
   `StartDelay` float NOT NULL DEFAULT 0,
   `Unknown901` float NOT NULL DEFAULT 0,
+  `Unknown1100` int NOT NULL DEFAULT 0,
   `ParentSpellVisualKitID` int NOT NULL DEFAULT 0,
   `VerifiedBuild` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`ID`, `VerifiedBuild`) USING BTREE
