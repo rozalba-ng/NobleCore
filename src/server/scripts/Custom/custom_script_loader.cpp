@@ -28,6 +28,7 @@ void AddSC_CustomDisplayHandler();
 void AddSC_CustomDisplayCommands();
 void AddSC_CustomEffectHandler();
 void AddSC_CustomEffectCommands();
+void AddSC_CystomPlayerHandler();
 void AddSC_toy_spell_scripts();
 
 // The name of this function should match:
@@ -44,4 +45,5 @@ void AddCustomScripts()
     AddSC_CustomDisplayCommands();
     AddSC_CustomEffectHandler();
     AddSC_CustomEffectCommands();
+    AddSC_CystomPlayerHandler();
 }
