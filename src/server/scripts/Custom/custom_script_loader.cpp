@@ -23,6 +23,8 @@ void AddSC_free_share_scripts();
 void AddSC_dragonriding_spell_scripts();
 void AddSC_CustomEffectHandler();
 void AddSC_CustomEffectCommands();
+void AddSC_CustomDisplayHandler();
+void AddSC_CustomDisplayCommands();
 
 // The name of this function should match:
 // void Add${NameOfDirectory}Scripts()
@@ -33,6 +35,9 @@ void AddCustomScripts()
 
     AddSC_free_share_scripts();
     AddSC_dragonriding_spell_scripts();
+
     AddSC_CustomEffectHandler();
     AddSC_CustomEffectCommands();
+    AddSC_CustomDisplayHandler();
+    AddSC_CustomDisplayCommands();
 }
