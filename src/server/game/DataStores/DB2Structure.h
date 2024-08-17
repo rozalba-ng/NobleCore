@@ -4266,6 +4266,49 @@ struct SpellVisualMissileEntry
     uint32 SpellVisualMissileSetID;
 };
 
+#pragma region Noblegarden
+
+struct SpellVisualKitEffectEntry
+{
+    uint32 ID;
+    int32 EffectType;
+    int32 Effect;
+    uint32 ParentSpellVisualKitID;
+};
+
+struct SpellVisualKitModelAttachEntry
+{
+    uint32 ID;
+    float Offset1;
+    float Offset2;
+    float Offset3;
+    float OffsetVariation1;
+    float OffsetVariation2;
+    float OffsetVariation3;
+    int32 SpellVisualEffectNameID;
+    uint32 AttachmentID;
+    uint32 PositionerID;
+    float Yaw;
+    float Pitch;
+    float Roll;
+    float YawVariation;
+    float PitchVariation;
+    float RollVariation;
+    float Scale;
+    float ScaleVariation;
+    uint32 StartAnimID;
+    uint32 AnimID;
+    uint32 EndAnimID;
+    uint32 AnimKitID;
+    uint32 Flags;
+    uint32 LowDefModelAttachID;
+    float StartDelay;
+    float Unknown901;
+    uint32 ParentSpellVisualKitID;
+};
+
+#pragma endregion
+
 struct SpellXSpellVisualEntry
 {
     uint32 ID;
