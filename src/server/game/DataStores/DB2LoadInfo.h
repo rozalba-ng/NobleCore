@@ -6222,6 +6222,59 @@ struct SpellVisualKitLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 7, &SpellVisualKitMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT };
 };
 
+#pragma region Noblegarden
+
+struct SpellVisualKitEffectLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[4] =
+    {
+        { false, FT_INT, "ID" },
+        { true, FT_INT, "EffectType" },
+        { true, FT_INT, "Effect" },
+        { false, FT_INT, "ParentSpellVisualKitID" },
+    };
+    static constexpr DB2LoadInfo Instance{ Fields, 4, &SpellVisualKitEffectMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT_EFFECT };
+};
+
+struct SpellVisualKitModelAttachLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[27] =
+    {
+        { false, FT_INT, "ID" },
+        { false, FT_FLOAT, "Offset1" },
+        { false, FT_FLOAT, "Offset2" },
+        { false, FT_FLOAT, "Offset3" },
+        { false, FT_FLOAT, "OffsetVariation1" },
+        { false, FT_FLOAT, "OffsetVariation2" },
+        { false, FT_FLOAT, "OffsetVariation3" },
+        { true, FT_INT, "SpellVisualEffectNameID" },
+        { true, FT_INT, "AttachmentID" },
+        { true, FT_INT, "PositionerID" },
+        { false, FT_FLOAT, "Yaw" },
+        { false, FT_FLOAT, "Pitch" },
+        { false, FT_FLOAT, "Roll" },
+        { false, FT_FLOAT, "YawVariation" },
+        { false, FT_FLOAT, "PitchVariation" },
+        { false, FT_FLOAT, "RollVariation" },
+        { false, FT_FLOAT, "Scale" },
+        { false, FT_FLOAT, "ScaleVariation" },
+        { true, FT_INT, "StartAnimID" },
+        { true, FT_INT, "AnimID" },
+        { true, FT_INT, "EndAnimID" },
+        { true, FT_INT, "AnimKitID" },
+        { true, FT_INT, "Flags" },
+        { true, FT_INT, "LowDefModelAttachID" },
+        { false, FT_FLOAT, "StartDelay" },
+        { false, FT_FLOAT, "Unknown901" },
+        { false, FT_INT, "ParentSpellVisualKitID" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 27, &SpellVisualKitModelAttachMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH };
+};
+
+#pragma endregion
+
+
 struct SpellVisualMissileLoadInfo
 {
     static constexpr DB2FieldMeta Fields[23] =
