@@ -59,7 +59,8 @@ namespace Noblegarden
             Init();
         }
 
-        static EffectsHandler& GetInstance() {
+        static EffectsHandler& GetInstance()
+        {
             static EffectsHandler instance;
             return instance;
         }
