@@ -28,6 +28,7 @@ void AddSC_CustomDisplayHandler();
 void AddSC_CustomDisplayCommands();
 void AddSC_CustomEffectHandler();
 void AddSC_CustomEffectCommands();
+void AddSC_CystomPlayerHandler();
 
 // The name of this function should match:
 // void Add${NameOfDirectory}Scripts()
@@ -42,4 +43,5 @@ void AddCustomScripts()
     AddSC_CustomDisplayCommands();
     AddSC_CustomEffectHandler();
     AddSC_CustomEffectCommands();
+    AddSC_CystomPlayerHandler();
 }
