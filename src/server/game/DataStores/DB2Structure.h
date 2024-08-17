@@ -4488,14 +4488,15 @@ struct SpellVisualKitModelAttachEntry
     float RollVariation;
     float Scale;
     float ScaleVariation;
-    uint32 StartAnimID;
-    uint32 AnimID;
-    uint32 EndAnimID;
-    uint32 AnimKitID;
-    uint32 Flags;
+    uint16 StartAnimID;
+    uint16 AnimID;
+    uint16 EndAnimID;
+    float AnimKitID;
+    float Flags;
     uint32 LowDefModelAttachID;
     float StartDelay;
     float Unknown901;
+    uint16 Unknown1100;
     uint32 ParentSpellVisualKitID;
 };
 

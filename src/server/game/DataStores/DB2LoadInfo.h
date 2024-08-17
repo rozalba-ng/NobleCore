@@ -6238,7 +6238,7 @@ struct SpellVisualKitEffectLoadInfo
 
 struct SpellVisualKitModelAttachLoadInfo
 {
-    static constexpr DB2FieldMeta Fields[27] =
+    static constexpr DB2FieldMeta Fields[28] =
     {
         { false, FT_INT, "ID" },
         { false, FT_FLOAT, "Offset1" },
@@ -6258,18 +6258,19 @@ struct SpellVisualKitModelAttachLoadInfo
         { false, FT_FLOAT, "RollVariation" },
         { false, FT_FLOAT, "Scale" },
         { false, FT_FLOAT, "ScaleVariation" },
-        { true, FT_INT, "StartAnimID" },
-        { true, FT_INT, "AnimID" },
-        { true, FT_INT, "EndAnimID" },
+        { true, FT_SHORT, "StartAnimID" },
+        { true, FT_SHORT, "AnimID" },
+        { true, FT_SHORT, "EndAnimID" },
         { true, FT_INT, "AnimKitID" },
         { true, FT_INT, "Flags" },
         { true, FT_INT, "LowDefModelAttachID" },
         { false, FT_FLOAT, "StartDelay" },
         { false, FT_FLOAT, "Unknown901" },
+        { false, FT_SHORT, "Unknown1100" },
         { false, FT_INT, "ParentSpellVisualKitID" },
     };
 
-    static constexpr DB2LoadInfo Instance{ Fields, 27, &SpellVisualKitModelAttachMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH };
+    static constexpr DB2LoadInfo Instance{ Fields, 28, &SpellVisualKitModelAttachMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH };
 };
 
 #pragma endregion
