@@ -104,7 +104,7 @@ enum Expansions
     MAX_ACCOUNT_EXPANSIONS
 };
 
-#define CURRENT_EXPANSION EXPANSION_DRAGONFLIGHT
+#define CURRENT_EXPANSION EXPANSION_THE_WAR_WITHIN
 
 constexpr uint32 GetMaxLevelForExpansion(uint32 expansion)
 {
@@ -133,7 +133,7 @@ constexpr uint32 GetMaxLevelForExpansion(uint32 expansion)
         case EXPANSION_THE_WAR_WITHIN:
             return 80;
         case EXPANSION_CLASS_AND_RACE_BLOCKER:
-            return 90;
+            return 80;
         default:
             break;
     }
