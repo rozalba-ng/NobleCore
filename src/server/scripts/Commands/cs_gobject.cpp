@@ -510,7 +510,7 @@ public:
             spawnData = sObjectMgr->GetGameObjectData(spawnId);
             if (!spawnData)
             {
-                handler->PSendSysMessage(LANG_COMMAND_OBJNOTFOUND, spawnId);
+                handler->PSendSysMessage(LANG_COMMAND_OBJNOTFOUND, std::to_string(spawnId).c_str());
                 handler->SetSentErrorMessage(true);
                 return false;
             }
@@ -635,27 +635,45 @@ public:
         return true;
     }
 	
-	static bool HandleGameVisibilityCommand(ChatHandler* handler, char const* args)
+    static bool HandleGameVisibilityCommand(ChatHandler* handler, char const* args)
     {
-        // number or [name] Shift-click form |color|Hgameobject:go_id|h[name]|h|r
-
-        std::string trinityArgs(args);
-
-        std::string id = handler->extractKeyFromLink((char*)args, "Hgameobject");
-
-        if (!std::all_of(id.begin(), id.end(), ::isdigit))
+        if (!*args)
             return false;
 
-        ObjectGuid::LowType guidLow = std::stoull(id);
+        char* guidStr = strtok((char*)args, " ");
+        char* distanceStr = strtok(nullptr, " ");
+
+        if (!guidStr || !distanceStr)
+            return false;
+
+        std::string id(guidStr);
+        if (id.empty() || !std::all_of(id.begin(), id.end(), ::isdigit))
+        {
+            handler->PSendSysMessage("Invalid GUID.");
+            return false;
+        }
+
+        ObjectGuid::LowType guidLow = ObjectGuid::LowType(std::stoul(id));
         if (!guidLow)
+        {
+            handler->PSendSysMessage("Invalid GUID.");
             return false;
+        }
 
         float distance;
-
-        try {
-            distance = std::atof((char*)args);
+        try
+        {
+            distance = std::stof(distanceStr);
         }
-        catch (...) {
+        catch (const std::exception&)
+        {
+            handler->PSendSysMessage("Invalid distance value.");
+            return false;
+        }
+
+        if (distance >= 5000.0f || distance <= 0.0f)
+        {
+            handler->PSendSysMessage("Distance must be between 0 and 5000.");
             return false;
         }
 
@@ -667,38 +685,40 @@ public:
             return false;
         }
 
-        if (distance >= 5000)
-            return false;
-
-        if (distance > SIZE_OF_GRIDS) {
+        if (distance > SIZE_OF_GRIDS)
+        {
             object->GetMap()->AddInfiniteGameObject(object->GetGUID());
-            //handler->PSendSysMessage("Visibles : %d \n", object->GetMap()->GetInfiniteGameObjects().size());
         }
-        else {
-            std::set<ObjectGuid> infinites = object->GetMap()->GetInfiniteGameObjects();
-            if (std::find(infinites.begin(), infinites.end(), object->GetGUID()) != infinites.end())
+        else
+        {
+            auto infinites = object->GetMap()->GetInfiniteGameObjects();
+            if (infinites.find(object->GetGUID()) != infinites.end())
+            {
                 object->GetMap()->RemoveInfiniteGameObject(object->GetGUID());
-
-            //handler->PSendSysMessage("Visibles : %d \n", object->GetMap()->GetInfiniteGameObjects().size());
+            }
         }
-
-        const_cast<GameObjectData*>(object->GetGameObjectData())->visibility = distance;
 
         Map* map = object->GetMap();
+        const_cast<GameObjectData*>(object->GetGameObjectData())->visibility = distance;
         object->SetVisibilityDistanceOverride(distance);
         object->Relocate(object->GetPositionX(), object->GetPositionY(), object->GetPositionZ(), object->GetOrientation());
         object->SaveToDB(map->GetId(), { map->GetDifficultyID() });
         object->Delete();
 
-        object = GameObject::CreateGameObjectFromDB(guidLow, map);
-
+        object = GameObject::CreateGameObjectFromDB(guidLow, object->GetMap());
         if (!object)
+        {
+            handler->PSendSysMessage("Failed to reload the game object.");
             return false;
+        }
 
-        for (Map::PlayerList::const_iterator itr = map->GetPlayers().begin(); itr != map->GetPlayers().end(); ++itr)
-            itr->GetSource()->UpdateVisibilityOf(object);
+        for (auto& itr : object->GetMap()->GetPlayers())
+        {
+            itr.GetSource()->UpdateVisibilityOf(object);
+        }
 
-        handler->PSendSysMessage("Visibility set for object %s to %f\n", object->GetGUID().ToString().c_str(), distance);
+        handler->PSendSysMessage("Visibility set for object %s to %f", object->GetGUID().ToString(), distance);
+        return true;
     }
 
     static bool HandleGameObjectSetScaleCommand(ChatHandler* handler, GameObjectSpawnId guidLow, float scale)
@@ -724,10 +744,14 @@ public:
             const_cast<GameObjectData*>(object->GetGameObjectData())->size = scale;
         }
 
-		Map* map = object->GetMap();
+        Map* map = object->GetMap();
         object->SetObjectScale(scale);
         object->SaveToDB();
 
+        // Generate a completely new spawn with new guid
+        // 3.3.5a client caches recently deleted objects and brings them back to life
+        // when CreateObject block for this guid is received again
+        // however it entirely skips parsing that block and only uses already known location
         object->Delete();
 
         object = GameObject::CreateGameObjectFromDB(guidLow, map);

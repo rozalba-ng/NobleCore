@@ -57,7 +57,7 @@
 #include "QueryPackets.h"
 #include "QuestDef.h"
 #include "Random.h"
-#include "Realm.h"
+#include "RealmList.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptReloadMgr.h"
@@ -2611,8 +2611,6 @@ void ObjectMgr::LoadGameObjects()
         data.phaseUseFlags  = fields[17].GetUInt8();
         data.phaseId        = fields[18].GetUInt32();
         data.phaseGroup     = fields[19].GetUInt32();
-        data.size           = fields[23].GetFloat();
-        data.visibility     = fields[24].GetFloat();
 
         if (data.phaseUseFlags & ~PHASE_USE_FLAGS_ALL)
         {
@@ -2721,6 +2719,9 @@ void ObjectMgr::LoadGameObjects()
 
             WorldDatabase.Execute(stmt);
         }
+
+        data.size = fields[23].GetFloat();
+        data.visibility = fields[24].GetFloat();
 
         if (gameEvent == 0)                      // if not this is to be managed by GameEvent System
             AddGameobjectToGrid(&data);
@@ -8747,8 +8748,9 @@ bool ObjectMgr::IsReservedName(std::string_view name) const
 
 static EnumFlag<CfgCategoriesCharsets> GetRealmLanguageType(bool create)
 {
-    if (Cfg_CategoriesEntry const* category = sCfgCategoriesStore.LookupEntry(realm.Timezone))
-        return create ? category->GetCreateCharsetMask() : category->GetExistingCharsetMask();
+    if (std::shared_ptr<Realm const> currentRealm = sRealmList->GetCurrentRealm())
+        if (Cfg_CategoriesEntry const* category = sCfgCategoriesStore.LookupEntry(currentRealm->Timezone))
+            return create ? category->GetCreateCharsetMask() : category->GetExistingCharsetMask();
 
     return create ? CfgCategoriesCharsets::English : CfgCategoriesCharsets::Any;        // basic-Latin at create, any at login
 }
