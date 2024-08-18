@@ -79,7 +79,7 @@ namespace LuaGlobalFunctions
      */
     int GetCoreExpansion(Eluna* /*E*/)
     {
-        return 9;
+        return 10;
     }
 
     /**
