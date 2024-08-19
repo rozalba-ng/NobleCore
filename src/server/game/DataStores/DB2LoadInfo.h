@@ -6215,7 +6215,7 @@ struct SpellVisualKitLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 7, &SpellVisualKitMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT };
 };
 
-#pragma region Noblegarden
+// Noblegarden: Custom effects
 
 struct SpellVisualKitEffectLoadInfo
 {
@@ -6266,7 +6266,7 @@ struct SpellVisualKitModelAttachLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 28, &SpellVisualKitModelAttachMeta::Instance, HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH };
 };
 
-#pragma endregion
+// Noblegarden: Custom effects END
 
 
 struct SpellVisualMissileLoadInfo
