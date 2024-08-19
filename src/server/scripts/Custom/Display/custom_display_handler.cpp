@@ -65,6 +65,7 @@ namespace Noblegarden
                     if (auto modifiedAppearance1 = sDB2Manager.GetItemModifiedAppearance(id, m_valid_appearance_mod_list[bonus].first))
                     {
                         ApplyModifiedAppearance(modifiedAppearance1->ID, modifiedAppearance1->ItemAppearanceID, item, player, handler, itemSlot, isSecondary, bonus);
+                        return;
                     }
                     else
                     {
@@ -82,6 +83,7 @@ namespace Noblegarden
                     if (auto modifiedAppearance2 = sDB2Manager.GetItemModifiedAppearance(id, m_valid_appearance_mod_list[bonus].second))
                     {
                         ApplyModifiedAppearance(modifiedAppearance2->ID, modifiedAppearance2->ItemAppearanceID, item, player, handler, itemSlot, isSecondary, bonus);
+                        return;
                     }
                     else
                     {
