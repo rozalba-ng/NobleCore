@@ -12,49 +12,18 @@ namespace Noblegarden
             if (id == 0)
             {
                 ResetItem(item);
-                auto& bonuses = item->GetBonusListIDs();
-                std::vector<int32> targetBonuses;
-
-                for (int i = 0; i < bonuses.size(); i++)
-                {
-                    targetBonuses.push_back(bonuses[i]);
-                }
-
+     
                 if (isSecondary)
                 {
                     item->SetModifier(ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_ALL_SPECS, 0);
-
-                    if (targetBonuses.size() == 2)
-                    {
-                        targetBonuses[1] = 0;
-                    }
-                    else if (targetBonuses.size() == 1)
-                    {
-                        targetBonuses.push_back(0);
-                    }
-                    else if (targetBonuses.size() == 0)
-                    {
-                        targetBonuses.push_back(0);
-                        targetBonuses.push_back(0);
-                    }
                 }
                 else
                 {
                     item->SetModifier(ITEM_MODIFIER_TRANSMOG_APPEARANCE_ALL_SPECS, 0);
-
-                    if (targetBonuses.size() > 0)
-                    {
-                        targetBonuses[0] = 0;
-                    }
-                    else
-                    {
-                        targetBonuses.push_back(0);
-                    }
                 }
 
                 player->SetVisibleItemSlot(itemSlot, item);
                 item->ClearBonuses();
-                item->SetBonuses(targetBonuses);
                 item->SetState(ITEM_CHANGED, player);
             }
             else
@@ -64,7 +33,7 @@ namespace Noblegarden
                     // Try find regular mod
                     if (auto modifiedAppearance1 = sDB2Manager.GetItemModifiedAppearance(id, m_valid_appearance_mod_list[bonus].first))
                     {
-                        ApplyModifiedAppearance(modifiedAppearance1->ID, modifiedAppearance1->ItemAppearanceID, item, player, handler, itemSlot, isSecondary, bonus);
+                        ApplyModifiedAppearance(modifiedAppearance1->ID, modifiedAppearance1->ItemAppearanceID, item, player, handler, itemSlot, isSecondary);
                         return;
                     }
                     else
@@ -73,7 +42,7 @@ namespace Noblegarden
                         {
                             if (modifiedAppearance1 = sDB2Manager.GetItemModifiedAppearance(id, mod.first))
                             {
-                                if (ApplyModifiedAppearance(modifiedAppearance1->ID, modifiedAppearance1->ItemAppearanceID, item, player, handler, itemSlot, isSecondary, bonus))
+                                if (ApplyModifiedAppearance(modifiedAppearance1->ID, modifiedAppearance1->ItemAppearanceID, item, player, handler, itemSlot, isSecondary))
                                     return;
                             }
                         }
@@ -82,7 +51,7 @@ namespace Noblegarden
                     // Try find legendary mod
                     if (auto modifiedAppearance2 = sDB2Manager.GetItemModifiedAppearance(id, m_valid_appearance_mod_list[bonus].second))
                     {
-                        ApplyModifiedAppearance(modifiedAppearance2->ID, modifiedAppearance2->ItemAppearanceID, item, player, handler, itemSlot, isSecondary, bonus);
+                        ApplyModifiedAppearance(modifiedAppearance2->ID, modifiedAppearance2->ItemAppearanceID, item, player, handler, itemSlot, isSecondary);
                         return;
                     }
                     else
@@ -91,7 +60,7 @@ namespace Noblegarden
                         {
                             if (modifiedAppearance2 = sDB2Manager.GetItemModifiedAppearance(id, mod.second))
                             {
-                                if (ApplyModifiedAppearance(modifiedAppearance2->ID, modifiedAppearance2->ItemAppearanceID, item, player, handler, itemSlot, isSecondary, bonus))
+                                if (ApplyModifiedAppearance(modifiedAppearance2->ID, modifiedAppearance2->ItemAppearanceID, item, player, handler, itemSlot, isSecondary))
                                     return;
                             }
                         }
@@ -126,7 +95,7 @@ namespace Noblegarden
     }
 
 
-    bool DisplayHandler::ApplyModifiedAppearance(int modApID, int apID, Item* item, Player* player, ChatHandler* handler, EquipmentSlots itemSlot, bool isSecondary, int bonus)
+    bool DisplayHandler::ApplyModifiedAppearance(int modApID, int apID, Item* item, Player* player, ChatHandler* handler, EquipmentSlots itemSlot, bool isSecondary)
     {
         if (apID == 0)
         {
@@ -156,54 +125,16 @@ namespace Noblegarden
             {
                 ResetItem(item);
 
-                auto& bonuses = item->GetBonusListIDs();
-                std::vector<int32> targetBonuses;
-
-                for (int i = 0; i < bonuses.size(); i++)
-                {
-                    targetBonuses.push_back(bonuses[i]);
-                }
-
-
                 if (isSecondary)
                 {
                     item->SetModifier(ITEM_MODIFIER_TRANSMOG_APPEARANCE_ALL_SPECS, item->GetModifier(ITEM_MODIFIER_TRANSMOG_APPEARANCE_ALL_SPECS));
                     item->SetModifier(ITEM_MODIFIER_TRANSMOG_SECONDARY_APPEARANCE_ALL_SPECS, modApID);
-
-                    if (targetBonuses.size() == 2)
-                    {
-                        targetBonuses[1] = bonus;
-                    }
-                    else if (targetBonuses.size() == 1)
-                    {
-                        targetBonuses.push_back(bonus);
-                    }
-                    else if (targetBonuses.size() == 0)
-                    {
-                        targetBonuses.push_back(0);
-                        targetBonuses.push_back(bonus);
-                    }
-
-                    item->ClearBonuses();
-                    item->SetBonuses(targetBonuses);
                 }
                 else
                 {
                     item->SetModifier(ITEM_MODIFIER_TRANSMOG_APPEARANCE_ALL_SPECS, modApID);
-
-                    if (targetBonuses.size() > 0)
-                    {
-                        targetBonuses[0] = bonus;
-                    }
-                    else
-                    {
-                        targetBonuses.push_back(bonus);
-                    }
-
                 }
 
-                item->ClearBonuses();
-                item->SetBonuses(targetBonuses);
                 item->SetState(ITEM_CHANGED, player);
 
                 player->SetVisibleItemSlot(itemSlot, item);
