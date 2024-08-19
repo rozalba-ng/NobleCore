@@ -3368,10 +3368,10 @@ class TC_GAME_API Player final : public Unit, public GridObject<Player>
         bool ProcessItemCast(SpellCastRequest& castRequest, SpellCastTargets const& targets);
         bool CanExecutePendingSpellCastRequest();
 
-#pragma region Noblegarden
+        // Noblegarden: Player meet unit
      public:
         inline static std::function<void(Player*, Unit*)> OnMeetUnit;
-#pragma endregion
+        // Noblegarden: Player meet unit END
 };
 
 TC_GAME_API void AddItemsSetItem(Player* player, Item const* item);

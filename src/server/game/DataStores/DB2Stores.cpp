@@ -354,12 +354,12 @@ DB2Storage<SpellVisualEffectNameEntry>          sSpellVisualEffectNameStore("Spe
 DB2Storage<SpellVisualMissileEntry>             sSpellVisualMissileStore("SpellVisualMissile.db2", &SpellVisualMissileLoadInfo::Instance);
 DB2Storage<SpellVisualKitEntry>                 sSpellVisualKitStore("SpellVisualKit.db2", &SpellVisualKitLoadInfo::Instance);
 
-#pragma region Noblegarden
+// Noblegarden: Custom effects
 
 DB2Storage<SpellVisualKitEffectEntry>           sSpellVisualKitEffectStore("SpellVisualKitEffect.db2", &SpellVisualKitEffectLoadInfo::Instance);
 DB2Storage<SpellVisualKitModelAttachEntry>      sSpellVisualKitModelAttachStore("SpellVisualKitModelAttach.db2", &SpellVisualKitModelAttachLoadInfo::Instance);
 
-#pragma endregion
+// Noblegarden: Custom effects END
 
 DB2Storage<SpellXSpellVisualEntry>              sSpellXSpellVisualStore("SpellXSpellVisual.db2", &SpellXSpellVisualLoadInfo::Instance);
 DB2Storage<SummonPropertiesEntry>               sSummonPropertiesStore("SummonProperties.db2", &SummonPropertiesLoadInfo::Instance);
@@ -994,12 +994,12 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sSpellVisualMissileStore);
     LOAD_DB2(sSpellVisualKitStore);
 
-#pragma region Noblegarden
+    // Noblegarden: Custom effects
 
     LOAD_DB2(sSpellVisualKitEffectStore);
     LOAD_DB2(sSpellVisualKitModelAttachStore);
 
-#pragma endregion
+    // Noblegarden: Custom effects END
 
     LOAD_DB2(sSpellXSpellVisualStore);
     LOAD_DB2(sSummonPropertiesStore);
