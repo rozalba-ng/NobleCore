@@ -4420,7 +4420,7 @@ struct SpellVisualMissileEntry
     uint32 SpellVisualMissileSetID;
 };
 
-#pragma region Noblegarden
+// Noblegarden: Custom effects
 
 struct SpellVisualKitEffectEntry
 {
@@ -4462,7 +4462,7 @@ struct SpellVisualKitModelAttachEntry
     uint32 ParentSpellVisualKitID;
 };
 
-#pragma endregion
+// Noblegarden: Custom effects END
 
 struct SpellXSpellVisualEntry
 {
