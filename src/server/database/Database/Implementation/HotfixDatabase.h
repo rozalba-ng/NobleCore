@@ -1086,7 +1086,7 @@ enum HotfixDatabaseStatements : uint32
     HOTFIX_SEL_SPELL_VISUAL_KIT,
     HOTFIX_SEL_SPELL_VISUAL_KIT_MAX_ID,
 
-#pragma region Noblegarden
+    // Noblegarden: Custom effects
 
     HOTFIX_SEL_SPELL_VISUAL_KIT_EFFECT,
     HOTFIX_SEL_SPELL_VISUAL_KIT_EFFECT_MAX_ID,
@@ -1094,7 +1094,7 @@ enum HotfixDatabaseStatements : uint32
     HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH,
     HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH_MAX_ID,
 
-#pragma endregion
+    // Noblegarden: Custom effects END
 
     HOTFIX_SEL_SPELL_VISUAL_MISSILE,
     HOTFIX_SEL_SPELL_VISUAL_MISSILE_MAX_ID,
