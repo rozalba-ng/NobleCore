@@ -53,7 +53,7 @@ namespace Noblegarden
 
     private:
         void ResetItem(Item* item);
-        bool ApplyModifiedAppearance(int modApID, int apID, Item* item, Player* player, ChatHandler* handler, EquipmentSlots itemSlot, bool isSecondary, int bonus);
+        bool ApplyModifiedAppearance(int modApID, int apID, Item* item, Player* player, ChatHandler* handler, EquipmentSlots itemSlot, bool isSecondary);
         DisplayType GetDisplayType(Item* item);
 
     // Datatables
@@ -208,7 +208,7 @@ namespace Noblegarden
             std::make_pair(213, 0),
             std::make_pair(214, 0),
             std::make_pair(215, 0),
-            std::make_pair(215, 0),
+            std::make_pair(216, 0),
         };
     };
     #endif
