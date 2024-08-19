@@ -277,7 +277,7 @@ public:
 
     static value_type GetValue(UF::UnitData const* /*unitData*/, Unit const* unit, Player const* receiver)
     {
-#pragma region Noblegarden
+        // Noblegarden: Player meet unit
         auto observer = const_cast<Player*>(receiver);
         auto observable = const_cast<Unit*>(unit);
 
@@ -285,7 +285,7 @@ public:
         {
             Player::OnMeetUnit(observer, observable);
         }
-#pragma endregion
+        // Noblegarden: Player meet unit END
 
         // Check per caster aura states to not enable using a spell in client if specified aura is not by target
         return unit->BuildAuraStateUpdateForTarget(receiver);
