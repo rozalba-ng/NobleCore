@@ -46,7 +46,9 @@ class spell_dragonriding : public AuraScript
 
     void OnApply(const AuraEffect* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        if (Unit* caster = GetCaster())
+        Unit* caster = GetCaster();
+
+        if (caster->HasAura(404464) && !caster->HasAura(423624))
         {
             caster->AddAura(423624, caster);
         }
@@ -229,6 +231,41 @@ class spell_dr_whirling_surge : public SpellScript
     }
 };
 
+// 436854 - Switch Flight Style
+class spell_switch_flight : public SpellScript
+{
+    PrepareSpellScript(spell_switch_flight);
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        if (!caster->HasAura(404468) && !caster->HasAura(404464))
+        {
+            caster->CastSpell(caster, 404468, TRIGGERED_FULL_MASK);
+        }
+        else if (!caster->HasAura(404468))
+        {
+            caster->RemoveAura(404464);
+            caster->CastSpell(caster, 404468, TRIGGERED_FULL_MASK);
+        }
+        else if (!caster->HasAura(404464))
+        {
+            caster->RemoveAura(404468);
+            caster->CastSpell(caster, 404464, TRIGGERED_FULL_MASK);
+        }
+
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_switch_flight::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+
 void AddSC_dragonriding_spell_scripts()
 {
     RegisterSpellScript(spell_dragonriding);
@@ -236,4 +273,5 @@ void AddSC_dragonriding_spell_scripts()
     RegisterSpellScript(spell_dr_skyward_ascent);
     RegisterSpellScript(spell_dr_surge_forward);
     RegisterSpellScript(spell_dr_whirling_surge);
+    RegisterSpellScript(spell_switch_flight);
 }

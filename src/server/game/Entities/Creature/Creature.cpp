@@ -797,7 +797,7 @@ void Creature::Update(uint32 diff)
     {
         // has outfit, displayid is invisible and displayid update already sent to clients
         // set outfit display
-        SetDisplayId(m_outfit->GetDisplayId(), m_unitData->DisplayScale);
+        SetDisplayId(m_outfit->GetDisplayId());
     }
 
     if (IsAIEnabled() && m_triggerJustAppeared && m_deathState != DEAD)
@@ -1475,8 +1475,8 @@ Loot* Creature::GetLootForPlayer(Player const* player) const
     if (m_personalLoot.empty())
         return m_loot.get();
 
-    if (std::unique_ptr<Loot> const* loot = Trinity::Containers::MapGetValuePtr(m_personalLoot, player->GetGUID()))
-        return loot->get();
+    if (Loot* loot = Trinity::Containers::MapGetValuePtr(m_personalLoot, player->GetGUID()))
+        return loot;
 
     return nullptr;
 }

@@ -12623,6 +12623,11 @@ bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool tel
             GetMap()->PlayerRelocation(ToPlayer(), x, y, z, orientation);
         else
             GetMap()->CreatureRelocation(ToCreature(), x, y, z, orientation);
+
+        AuraEffectList& controlZoneAuras = GetAuraEffectsByType(SPELL_AURA_ACT_AS_CONTROL_ZONE);
+        for (AuraEffect const* auraEffect : controlZoneAuras)
+            if (GameObject* controlZone = GetGameObject(auraEffect->GetSpellInfo()->Id))
+                GetMap()->GameObjectRelocation(controlZone, x, y, z, orientation);
     }
     else if (turn)
         UpdateOrientation(orientation);
@@ -14161,8 +14166,8 @@ bool Unit::SetCanAdvFly(bool enable)
 
     static OpcodeServer const advFlyOpcodeTable[2] =
     {
-        { SMSG_MOVE_UNSET_CAN_ADV_FLY },
-        { SMSG_MOVE_SET_CAN_ADV_FLY   }
+        SMSG_MOVE_UNSET_CAN_ADV_FLY,
+        SMSG_MOVE_SET_CAN_ADV_FLY
     };
 
     if (Player* playerMover = Unit::ToPlayer(GetUnitBeingMoved()))
