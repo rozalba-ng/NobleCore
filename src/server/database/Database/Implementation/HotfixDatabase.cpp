@@ -1793,6 +1793,18 @@ void HotfixDatabaseConnection::DoPrepareStatements()
         " FROM spell_visual_kit WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_SPELL_VISUAL_KIT, "SELECT MAX(ID) + 1 FROM spell_visual_kit", CONNECTION_SYNCH);
 
+    // Noblegarden: Custom effects
+
+    // SpellVisualKitEffect.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_KIT_EFFECT, "SELECT ID, EffectType, Effect, ParentSpellVisualKitID FROM spell_visual_kit_effect WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_SPELL_VISUAL_KIT_EFFECT, "SELECT MAX(ID) + 1 FROM spell_visual_kit_effect", CONNECTION_SYNCH);
+
+    // SpellVisualKitModelAttach.db2
+    PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH, "SELECT ID, Offset1, Offset2, Offset3, OffsetVariation1, OffsetVariation2, OffsetVariation3, SpellVisualEffectNameID, AttachmentID, PositionerID, Yaw, Pitch, Roll, YawVariation, PitchVariation, RollVariation, Scale, ScaleVariation, StartAnimID, AnimID, EndAnimID, AnimKitID, Flags, LowDefModelAttachID, StartDelay, Unknown901, Unknown1100, ParentSpellVisualKitID FROM spell_visual_kit_model_attach WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_SPELL_VISUAL_KIT_MODEL_ATTACH, "SELECT MAX(ID) + 1 FROM spell_visual_kit_model_attach", CONNECTION_SYNCH);
+
+    // Noblegarden: Custom effects END
+
     // SpellVisualMissile.db2
     PrepareStatement(HOTFIX_SEL_SPELL_VISUAL_MISSILE, "SELECT CastOffset1, CastOffset2, CastOffset3, ImpactOffset1, ImpactOffset2, ImpactOffset3, ID, "
         "SpellVisualEffectNameID, SoundEntriesID, Attachment, DestinationAttachment, CastPositionerID, ImpactPositionerID, FollowGroundHeight, "
