@@ -18,7 +18,7 @@
 // This is where scripts' loading functions should be declared:
 
 //void AddSC_custom_commandscript();
-void AddSC_custom_commandscrip();
+//void AddSC_custom_commandscrip();
 void AddSC_dragonriding_spell_scripts();
 //ROLEPLAY FUNC
 void AddSC_free_share_scripts();
@@ -33,7 +33,7 @@ void AddSC_toy_spell_scripts();
 void AddCustomScripts()
 {
     //AddSC_custom_commandscript();
-    AddSC_custom_commandscrip();
+    //AddSC_custom_commandscrip();
     AddSC_dragonriding_spell_scripts();
     AddSC_toy_spell_scripts();
     //ROLEPLAY FUNC
