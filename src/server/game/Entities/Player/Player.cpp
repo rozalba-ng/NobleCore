@@ -704,8 +704,8 @@ int32 Player::getMaxTimer(MirrorTimerType timer) const
     {
         if (sConfigMgr->GetBoolDefault("fatigue.enabled", true)) // If "fatigue.enabled" is enabled
         {
-            case FATIGUE_TIMER:
-                return MINUTE * IN_MILLISECONDS;
+        case FATIGUE_TIMER:
+            return MINUTE * IN_MILLISECONDS;
         }
         case BREATH_TIMER:
         {
@@ -3080,7 +3080,8 @@ bool Player::AddSpell(uint32 spellId, bool active, bool learning, bool dependent
 
     if (traitDefinitionId)
         if (TraitDefinitionEntry const* traitDefinition = sTraitDefinitionStore.LookupEntry(*traitDefinitionId))
-            AddOverrideSpell(traitDefinition->OverridesSpellID, spellId);
+            if (traitDefinition->OverridesSpellID)
+                AddOverrideSpell(traitDefinition->OverridesSpellID, spellId);
 
     // update free primary prof.points (if any, can be none in case GM .learn prof. learning)
     if (uint32 freeProfs = GetFreePrimaryProfessionPoints())
@@ -3433,6 +3434,18 @@ void Player::RemoveSpell(uint32 spell_id, bool disabled /*= false*/, bool learn_
 
     for (SpellLearnSpellMap::const_iterator itr2 = spell_bounds.first; itr2 != spell_bounds.second; ++itr2)
     {
+        bool hasOtherSpellTeachingThis = std::ranges::any_of(sSpellMgr->GetSpellLearnedBySpellMapBounds(itr2->second.Spell), [&](SpellLearnSpellNode const* learnNode)
+        {
+            if (learnNode->SourceSpell == spell_id)
+                return false;
+            if (!learnNode->Active)
+                return false;
+            return HasSpell(learnNode->SourceSpell);
+        }, &SpellLearnedBySpellMap::value_type::second);
+
+        if (hasOtherSpellTeachingThis)
+            continue;
+
         RemoveSpell(itr2->second.Spell, disabled);
         if (itr2->second.OverridesSpell)
             RemoveOverrideSpell(itr2->second.OverridesSpell, itr2->second.Spell);
@@ -5748,6 +5761,7 @@ bool Player::UpdateSkillPro(uint16 skillId, int32 chance, uint32 step)
             break;
         }
     }
+
 #ifdef ELUNA
     if (Eluna* e = GetEluna())
         e->OnSkillChange(this, skillId, new_value);
@@ -12263,6 +12277,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
                 // equipment visual show
                 SetVisibleItemSlot(slot, nullptr);
+
 #ifdef ELUNA
                 if (Eluna* e = GetEluna())
                     e->OnItemUnEquip(this, pItem, slot);
@@ -14322,12 +14337,10 @@ void Player::OnGossipSelect(WorldObject* source, int32 gossipOptionId, uint32 me
             PlayerTalkClass->SendCloseGossip();
             SendRuneforgeLegendaryCraftingOpenNpc(source->GetGUID(), false);
             handled = false;
-            break;
         case GossipOptionNpc::RuneforgeLegendaryUpgrade:
             PlayerTalkClass->SendCloseGossip();
             SendRuneforgeLegendaryCraftingOpenNpc(source->GetGUID(), true);
             handled = false;
-            break;
         case GossipOptionNpc::ProfessionsCraftingOrder: // NYI
             break;
         case GossipOptionNpc::ProfessionsCustomerOrder: // NYI
@@ -16291,6 +16304,7 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object const* questgiver) const
             if (Eluna* e = GetEluna())
                 e->GetDialogStatus(this, questgiver->ToGameObject());
 #endif
+
             if (GameObjectAI* ai = questgiver->ToGameObject()->AI())
                 if (Optional<QuestGiverStatus> questStatus = ai->GetDialogStatus(this))
                     return *questStatus;
@@ -16304,6 +16318,7 @@ QuestGiverStatus Player::GetQuestDialogStatus(Object const* questgiver) const
             if (Eluna* e = GetEluna())
                 e->GetDialogStatus(this, questgiver->ToCreature());
 #endif
+
             Creature const* questGiverCreature = questgiver->ToCreature();
             if (!questGiverCreature->IsInteractionAllowedWhileHostile() && questGiverCreature->IsHostileTo(this))
                 return QuestGiverStatus::None;
@@ -17085,6 +17100,44 @@ QuestObjective const* Player::GetQuestObjectiveForItem(uint32 itemId, bool onlyI
                 return objective;
 
     return nullptr;
+}
+
+bool Player::HasQuestForCurrency(uint32 currencyId) const
+{
+    auto isCompletableObjective = [this](QuestObjectiveStatusData const& objectiveStatus)
+    {
+        Quest const* qInfo = sObjectMgr->GetQuestTemplate(objectiveStatus.QuestStatusItr->first);
+        QuestObjective const* objective = sObjectMgr->GetQuestObjective(objectiveStatus.ObjectiveId);
+        if (!qInfo || !objective || !IsQuestObjectiveCompletable(objectiveStatus.QuestStatusItr->second.Slot, qInfo, *objective))
+            return false;
+
+        // hide quest if player is in raid-group and quest is no raid quest
+        if (GetGroup() && GetGroup()->isRaidGroup() && !qInfo->IsAllowedInRaid(GetMap()->GetDifficultyID()))
+            if (!InBattleground()) //there are two ways.. we can make every bg-quest a raidquest, or add this code here.. i don't know if this can be exploited by other quests, but i think all other quests depend on a specific area.. but keep this in mind, if something strange happens later
+                return false;
+
+        if (!IsQuestObjectiveComplete(objectiveStatus.QuestStatusItr->second.Slot, qInfo, *objective))
+            return true;
+
+        return false;
+    };
+
+    auto hasObjectiveTypeForCurrency = [&](QuestObjectiveType type)
+    {
+        return std::ranges::any_of(Trinity::Containers::MapEqualRange(m_questObjectiveStatus, { type, currencyId }),
+            isCompletableObjective, &QuestObjectiveStatusMap::value_type::second);
+    };
+
+    if (hasObjectiveTypeForCurrency(QUEST_OBJECTIVE_CURRENCY))
+        return true;
+
+    if (hasObjectiveTypeForCurrency(QUEST_OBJECTIVE_HAVE_CURRENCY))
+        return true;
+
+    if (hasObjectiveTypeForCurrency(QUEST_OBJECTIVE_OBTAIN_CURRENCY))
+        return true;
+
+    return false;
 }
 
 int32 Player::GetQuestObjectiveData(QuestObjective const& objective) const
@@ -20289,7 +20342,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
 
         stmt->setUInt8(index++, m_activePlayerData->MultiActionBars);
         if (std::shared_ptr<Realm const> currentRealm = sRealmList->GetCurrentRealm())
-            stmt->setUInt32(index++, sRealmList->GetMinorMajorBugfixVersionForBuild(currentRealm->Build));
+            stmt->setUInt32(index++, ClientBuild::GetMinorMajorBugfixVersionForBuild(currentRealm->Build));
         else
             stmt->setUInt32(index++, 0);
     }
@@ -20455,7 +20508,7 @@ void Player::SaveToDB(LoginDatabaseTransaction loginTransaction, CharacterDataba
         stmt->setUInt8(index++, m_activePlayerData->RestInfo[REST_TYPE_HONOR].StateID);
         stmt->setFloat(index++, finiteAlways(_restMgr->GetRestBonus(REST_TYPE_HONOR)));
         if (std::shared_ptr<Realm const> currentRealm = sRealmList->GetCurrentRealm())
-            stmt->setUInt32(index++, sRealmList->GetMinorMajorBugfixVersionForBuild(currentRealm->Build));
+            stmt->setUInt32(index++, ClientBuild::GetMinorMajorBugfixVersionForBuild(currentRealm->Build));
         else
             stmt->setUInt32(index++, 0);
 
@@ -20570,9 +20623,9 @@ void SavePlayerCustomizations(CharacterDatabaseTransaction trans, ObjectGuid::Lo
 uint32 Player::GetCustomizationChoice(uint32 chrCustomizationOptionId) const
 {
     int32 choiceIndex = m_playerData->Customizations.FindIndexIf([chrCustomizationOptionId](UF::ChrCustomizationChoice choice)
-        {
-            return choice.ChrCustomizationOptionID == chrCustomizationOptionId;
-        });
+    {
+        return choice.ChrCustomizationOptionID == chrCustomizationOptionId;
+    });
 
     if (choiceIndex >= 0)
         return m_playerData->Customizations[choiceIndex].ChrCustomizationChoiceID;
@@ -26869,58 +26922,70 @@ void Player::StoreLootItem(ObjectGuid lootWorldObjectGuid, uint8 lootSlot, Loot*
         return;
     }
 
-    ItemPosCountVec dest;
-    InventoryResult msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count);
-    if (msg == EQUIP_ERR_OK)
+    switch (item->type)
     {
-        Item* newitem = StoreNewItem(dest, item->itemid, true, item->randomBonusListId, item->GetAllowedLooters(), item->context);
-
-        if (ffaItem)
+        case LootItemType::Item:
         {
-            //freeforall case, notify only one player of the removal
-            ffaItem->is_looted = true;
-            SendNotifyLootItemRemoved(loot->GetGUID(), loot->GetOwnerGUID(), lootSlot);
-        }
-        else    //not freeforall, notify everyone
-            loot->NotifyItemRemoved(lootSlot, GetMap());
+            ItemPosCountVec dest;
+            InventoryResult msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count);
+            if (msg != EQUIP_ERR_OK)
+            {
+                SendEquipError(msg, nullptr, nullptr, item->itemid);
+                return;
+            }
 
-        //if only one person is supposed to loot the item, then set it to looted
-        if (!item->freeforall)
-            item->is_looted = true;
+            Item* newitem = StoreNewItem(dest, item->itemid, true, item->randomBonusListId, item->GetAllowedLooters(), item->context);
 
-        --loot->unlootedCount;
+            if (newitem && (newitem->GetQuality() > ITEM_QUALITY_EPIC || (newitem->GetQuality() == ITEM_QUALITY_EPIC && newitem->GetItemLevel(this) >= MinNewsItemLevel)))
+                if (Guild* guild = GetGuild())
+                    guild->AddGuildNews(GUILD_NEWS_ITEM_LOOTED, GetGUID(), 0, item->itemid);
 
-        if (newitem && (newitem->GetQuality() > ITEM_QUALITY_EPIC || (newitem->GetQuality() == ITEM_QUALITY_EPIC && newitem->GetItemLevel(this) >= MinNewsItemLevel)))
-            if (Guild* guild = GetGuild())
-                guild->AddGuildNews(GUILD_NEWS_ITEM_LOOTED, GetGUID(), 0, item->itemid);
-
-        // if aeLooting then we must delay sending out item so that it appears properly stacked in chat
-        if (!aeResult || !newitem)
-        {
-            SendNewItem(newitem, uint32(item->count), false, false, true, loot->GetDungeonEncounterId());
-            UpdateCriteria(CriteriaType::LootItem, item->itemid, item->count);
-            UpdateCriteria(CriteriaType::GetLootByType, item->itemid, item->count, GetLootTypeForClient(loot->loot_type));
-            UpdateCriteria(CriteriaType::LootAnyItem, item->itemid, item->count);
-        }
-        else
-            aeResult->Add(newitem, item->count, GetLootTypeForClient(loot->loot_type), loot->GetDungeonEncounterId());
-
-        // LootItem is being removed (looted) from the container, delete it from the DB.
-        if (loot->loot_type == LOOT_ITEM)
-            sLootItemStorage->RemoveStoredLootItemForContainer(lootWorldObjectGuid.GetCounter(), item->itemid, item->count, item->LootListId);
+            // if aeLooting then we must delay sending out item so that it appears properly stacked in chat
+            if (!aeResult || !newitem)
+            {
+                SendNewItem(newitem, uint32(item->count), false, false, true, loot->GetDungeonEncounterId());
+                UpdateCriteria(CriteriaType::LootItem, item->itemid, item->count);
+                UpdateCriteria(CriteriaType::GetLootByType, item->itemid, item->count, GetLootTypeForClient(loot->loot_type));
+                UpdateCriteria(CriteriaType::LootAnyItem, item->itemid, item->count);
+            }
+            else
+                aeResult->Add(newitem, item->count, GetLootTypeForClient(loot->loot_type), loot->GetDungeonEncounterId());
 
 #ifdef ELUNA
-        if (Eluna* e = GetEluna())
-            e->OnLootItem(this, newitem, item->count, this->GetLootGUID());
+            if (Eluna* e = GetEluna())
+                e->OnLootItem(this, newitem, item->count, this->GetLootGUID());
 #endif
 
-        if (newitem)
-            ApplyItemLootedSpell(newitem, true);
-        else
-            ApplyItemLootedSpell(sObjectMgr->GetItemTemplate(item->itemid));
+            if (newitem)
+                ApplyItemLootedSpell(newitem, true);
+            else
+                ApplyItemLootedSpell(sObjectMgr->GetItemTemplate(item->itemid));
+
+            break;
+        }
+        case LootItemType::Currency:
+            ModifyCurrency(item->itemid, item->count, CurrencyGainSource::Loot);
+            break;
     }
-    else
-        SendEquipError(msg, nullptr, nullptr, item->itemid);
+
+    if (ffaItem)
+    {
+        //freeforall case, notify only one player of the removal
+        ffaItem->is_looted = true;
+        SendNotifyLootItemRemoved(loot->GetGUID(), loot->GetOwnerGUID(), lootSlot);
+    }
+    else    //not freeforall, notify everyone
+        loot->NotifyItemRemoved(lootSlot, GetMap());
+
+    //if only one person is supposed to loot the item, then set it to looted
+    if (!item->freeforall)
+        item->is_looted = true;
+
+    --loot->unlootedCount;
+
+    // LootItem is being removed (looted) from the container, delete it from the DB.
+    if (loot->loot_type == LOOT_ITEM)
+        sLootItemStorage->RemoveStoredLootItemForContainer(lootWorldObjectGuid.GetCounter(), item->type, item->itemid, item->count, item->LootListId);
 }
 
 void Player::_LoadSkills(PreparedQueryResult result)
@@ -28878,8 +28943,7 @@ void Player::ApplyTraitEntryChanges(int32 editedConfigId, WorldPackets::Traits::
     if (consumeCurrencies)
     {
         std::map<int32, int32> currencies;
-        for (WorldPackets::Traits::TraitEntry const& costEntry : costEntries)
-            TraitMgr::FillSpentCurrenciesMap(costEntry, currencies);
+        TraitMgr::FillSpentCurrenciesMap(costEntries, currencies);
 
         for (auto [traitCurrencyId, amount] : currencies)
         {

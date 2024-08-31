@@ -410,6 +410,30 @@ void Creature::SetOutfit(std::shared_ptr<CreatureOutfit> const& outfit)
     }
 }
 
+void Creature::SendMirrorSound(Player* target, uint8 type)
+{
+    std::shared_ptr<CreatureOutfit> const& outfit = GetOutfit();
+    if (!outfit)
+        return;
+    if (!outfit->npcsoundsid)
+        return;
+    if (auto const* npcsounds = sNPCSoundsStore.LookupEntry(outfit->npcsoundsid))
+    {
+        switch (type)
+        {
+        case 0:
+            PlayDistanceSound(npcsounds->hello, target);
+            break;
+        case 1:
+            PlayDistanceSound(npcsounds->goodbye, target);
+            break;
+        case 2:
+            PlayDistanceSound(npcsounds->pissed, target);
+            break;
+        }
+    }
+}
+
 bool Creature::IsReturningHome() const
 {
     if (GetMotionMaster()->GetCurrentMovementGeneratorType() == HOME_MOTION_TYPE)

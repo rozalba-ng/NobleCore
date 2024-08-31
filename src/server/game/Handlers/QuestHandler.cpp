@@ -60,6 +60,11 @@ void WorldSession::HandleQuestgiverHelloOpcode(WorldPackets::Quest::QuestGiverHe
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_HELLO {}", packet.QuestGiverGUID.ToString());
 
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (packet.QuestGiverGUID.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(packet.QuestGiverGUID))
+            creature->SendMirrorSound(_player, 0);
+#endif
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(packet.QuestGiverGUID, UNIT_NPC_FLAG_QUESTGIVER, UNIT_NPC_FLAG_2_NONE);
     if (!creature)
     {
@@ -835,4 +840,39 @@ void WorldSession::HandlePlayerChoiceResponse(WorldPackets::Quest::ChoiceRespons
         for (PlayerChoiceResponseRewardEntry const& faction : playerChoiceResponse->Reward->Faction)
             _player->GetReputationMgr().ModifyReputation(sFactionStore.AssertEntry(faction.Id), faction.Quantity);
     }
+}
+
+void WorldSession::HandleUiMapQuestLinesRequest(WorldPackets::Quest::UiMapQuestLinesRequest& uiMapQuestLinesRequest)
+{
+    UiMapEntry const* uiMap = sUiMapStore.LookupEntry(uiMapQuestLinesRequest.UiMapID);
+    if (!uiMap)
+        return;
+
+    WorldPackets::Quest::UiMapQuestLinesResponse response;
+    response.UiMapID = uiMap->ID;
+
+    if (std::vector<uint32> const* questLines = sObjectMgr->GetUiMapQuestLinesList(uiMap->ID))
+    {
+        for (uint32 questLineId : *questLines)
+        {
+            std::vector<QuestLineXQuestEntry const*> const* questLineQuests = sDB2Manager.GetQuestsForQuestLine(questLineId);
+            if (!questLineQuests)
+                continue;
+
+            for (QuestLineXQuestEntry const* questLineQuest : *questLineQuests)
+                if (Quest const* quest = sObjectMgr->GetQuestTemplate(questLineQuest->QuestID))
+                    if (_player->CanTakeQuest(quest, false))
+                        response.QuestLineXQuestIDs.push_back(questLineQuest->ID);
+        }
+    }
+
+    if (std::vector<uint32> const* quests = sObjectMgr->GetUiMapQuestsList(uiMap->ID))
+    {
+        for (uint32 questId : *quests)
+            if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
+                if (_player->CanTakeQuest(quest, false))
+                    response.QuestIDs.push_back(questId);
+    }
+
+    SendPacket(response.Write());
 }

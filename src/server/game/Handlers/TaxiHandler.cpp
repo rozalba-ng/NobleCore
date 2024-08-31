@@ -70,6 +70,11 @@ void WorldSession::SendTaxiStatus(ObjectGuid guid)
 
 void WorldSession::HandleTaxiQueryAvailableNodesOpcode(WorldPackets::Taxi::TaxiQueryAvailableNodes& taxiQueryAvailableNodes)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (taxiQueryAvailableNodes.Unit.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(taxiQueryAvailableNodes.Unit))
+            creature->SendMirrorSound(_player, 0);
+#endif
     // cheating checks
     Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(taxiQueryAvailableNodes.Unit, UNIT_NPC_FLAG_FLIGHTMASTER, UNIT_NPC_FLAG_2_NONE);
     if (!unit)

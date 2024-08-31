@@ -592,6 +592,12 @@ void WorldSession::HandleListInventoryOpcode(WorldPackets::NPC::Hello& packet)
     if (!GetPlayer()->IsAlive())
         return;
 
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (packet.Unit.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(packet.Unit))
+            creature->SendMirrorSound(_player, 0);
+#endif
+
     SendListInventory(packet.Unit);
 }
 

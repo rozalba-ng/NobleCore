@@ -63,6 +63,11 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPackets::Bank::AutoBankItem& pa
 
 void WorldSession::HandleBankerActivateOpcode(WorldPackets::Bank::BankerActivate const& bankerActivate)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (bankerActivate.Banker.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(bankerActivate.Banker))
+            creature->SendMirrorSound(_player, 0);
+#endif
     if (bankerActivate.InteractionType != PlayerInteractionType::Banker)
         return;
 

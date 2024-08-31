@@ -1892,7 +1892,7 @@ namespace LuaGlobalFunctions
     {
         uint32 entry = E->CHECKVAL<uint32>(1);
         uint32 item = E->CHECKVAL<uint32>(2);
-        int maxcount = E->CHECKVAL<int>(3);
+        uint32 maxcount = E->CHECKVAL<uint32>(3);
         uint32 incrtime = E->CHECKVAL<uint32>(4);
         uint32 extendedcost = E->CHECKVAL<uint32>(5);
 
@@ -1901,6 +1901,7 @@ namespace LuaGlobalFunctions
         vItem.maxcount = maxcount;
         vItem.incrtime = incrtime;
         vItem.ExtendedCost = extendedcost;
+        vItem.Type = ITEM_VENDOR_TYPE_ITEM;
 
         if (!eObjectMgr->IsVendorItemValid(entry, vItem))
             return 0;

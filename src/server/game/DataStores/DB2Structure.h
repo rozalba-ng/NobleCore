@@ -3093,6 +3093,15 @@ struct NPCModelItemSlotDisplayInfoEntry
     uint32 ExtendedDisplayID;
 };
 
+struct NPCSoundsEntry
+{
+    uint32 ID;
+    uint32 hello;
+    uint32 goodbye;
+    uint32 pissed;
+    uint32 ack;
+};
+
 struct CreatureDisplayInfoStore
 {
     bool HasRecord(uint32 id) const;
@@ -4425,6 +4434,7 @@ struct TraitCondEntry
     int32 TraitCondAccountElementID;
 
     TraitConditionType GetCondType() const { return static_cast<TraitConditionType>(CondType); }
+    EnumFlag<TraitCondFlags> GetFlags() const { return static_cast<TraitCondFlags>(Flags); }
 };
 
 struct TraitCostEntry
@@ -5031,6 +5041,27 @@ struct LightParamsEntry
     float Field_11_0_0_54210_013;
     float Field_11_0_0_54210_014;
     float Field_11_0_0_54210_015;
+};
+
+struct SoundAmbienceEntry
+{
+    uint32 ID;
+    int32 Flags;
+    uint32 FlavorSoundFilterID;
+    uint32 AmbienceID[2];
+    uint32 AmbienceStartID[2];
+    uint32 AmbienceStopID[2];
+    uint32 SoundKitID[2];
+
+};
+
+struct ZoneMusicEntry
+{
+    uint32 ID;
+    char const* SetName;
+    uint32 SilenceIntervalMin[2];
+    uint32 SilenceIntervalMax[2];
+    uint32 Sounds[2];
 };
 
 #pragma pack(pop)

@@ -3535,7 +3535,7 @@ void ObjectMgr::LoadVehicleAccessories()
 
     if (!result)
     {
-        TC_LOG_INFO("server.loading", ">> Loaded 0 Vehicle Accessories in {} ms", GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Loaded 0 vehicle accessories. DB table `vehicle_accessory` is empty.");
         return;
     }
 
@@ -9182,7 +9182,7 @@ void ObjectMgr::LoadCreatureOutfits()
         ASSERT(GetCreatureModelInfo(femaleModel->DisplayID), "Dress NPCs requires an entry in creature_model_info for modelid %u (%u Female)", femaleModel->DisplayID, e->Name[DEFAULT_LOCALE]);
     }
 
-    QueryResult result = WorldDatabase.Query("SELECT entry, race, class, gender, spellvisualkitid, customizations, "
+    QueryResult result = WorldDatabase.Query("SELECT entry, npcsoundsid, race, class, gender, spellvisualkitid, customizations, "
         "head, head_appearance, shoulders, shoulders_appearance, body, body_appearance, chest, chest_appearance, waist, waist_appearance, "
         "legs, legs_appearance, feet, feet_appearance, wrists, wrists_appearance, hands, hands_appearance, tabard, tabard_appearance, back, back_appearance, "
         "guildid FROM creature_template_outfits");
@@ -9211,6 +9211,12 @@ void ObjectMgr::LoadCreatureOutfits()
         std::shared_ptr<CreatureOutfit> co(new CreatureOutfit());
 
         co->id = entry;
+        co->npcsoundsid = fields[i++].GetUInt32();
+        if (co->npcsoundsid && !sNPCSoundsStore.HasRecord(co->npcsoundsid))
+        {
+            TC_LOG_ERROR("server.loading", ">> Outfit entry {} in `creature_template_outfits` has incorrect npcsoundsid ({}). Using 0.", entry, co->npcsoundsid);
+            co->npcsoundsid = 0;
+        }
         co->race = fields[i++].GetUInt8();
         const ChrRacesEntry* rEntry = sChrRacesStore.LookupEntry(co->race);
         if (!rEntry)
@@ -11338,8 +11344,6 @@ void ObjectMgr::LoadSceneTemplates()
         return;
     }
 
-    uint32 count = 0;
-
     do
     {
         Field* fields = templates->Fetch();
@@ -11354,7 +11358,7 @@ void ObjectMgr::LoadSceneTemplates()
 
     } while (templates->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded {} scene templates in {} ms.", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded {} scene templates in {} ms.", _sceneTemplateStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadPlayerChoices()
@@ -11820,6 +11824,106 @@ void ObjectMgr::LoadPlayerChoicesLocale()
 
         TC_LOG_INFO("server.loading", ">> Loaded {} Player Choice Response locale strings in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     }
+}
+
+void ObjectMgr::LoadUiMapQuestLines()
+{
+    uint32 oldMSTime = getMSTime();
+
+    // need for reload case
+    _uiMapQuestLinesStore.clear();
+
+    //                                               0        1
+    QueryResult result = WorldDatabase.Query("SELECT UiMapId, QuestLineId FROM ui_map_quest_line");
+
+    if (!result)
+    {
+        TC_LOG_INFO("server.loading", ">> Loaded 0 questlines for UIMaps. DB table `ui_map_quest_line` is empty!");
+        return;
+    }
+
+    uint32 count = 0;
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 uiMapId = fields[0].GetUInt32();
+        uint32 questLineId = fields[1].GetUInt32();
+
+        if (!sUiMapStore.HasRecord(uiMapId))
+        {
+            TC_LOG_ERROR("sql.sql", "Table `ui_map_quest_line` references non-existing UIMap {}, skipped", uiMapId);
+            continue;
+        }
+
+        if (!sDB2Manager.GetQuestsForQuestLine(questLineId))
+        {
+            TC_LOG_ERROR("sql.sql", "Table `ui_map_quest_line` references empty or non-existing questline {}, skipped", questLineId);
+            continue;
+        }
+
+        _uiMapQuestLinesStore[uiMapId].push_back(questLineId);
+        ++count;
+
+    } while (result->NextRow());
+
+    TC_LOG_INFO("server.loading", ">> Loaded {} UiMap questlines definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+std::vector<uint32> const* ObjectMgr::GetUiMapQuestLinesList(uint32 uiMapId) const
+{
+    return Trinity::Containers::MapGetValuePtr(_uiMapQuestLinesStore, uiMapId);
+}
+
+void ObjectMgr::LoadUiMapQuests()
+{
+    uint32 oldMSTime = getMSTime();
+
+    // need for reload case
+    _uiMapQuestsStore.clear();
+
+    //                                               0        1
+    QueryResult result = WorldDatabase.Query("SELECT UiMapId, QuestId FROM ui_map_quest");
+
+    if (!result)
+    {
+        TC_LOG_INFO("server.loading", ">> Loaded 0 quests for UIMaps. DB table `ui_map_quest` is empty!");
+        return;
+    }
+
+    uint32 count = 0;
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 uiMapId = fields[0].GetUInt32();
+        uint32 questId = fields[1].GetUInt32();
+
+        if (!sUiMapStore.HasRecord(uiMapId))
+        {
+            TC_LOG_ERROR("sql.sql", "Table `ui_map_quest` references non-existing UIMap {}, skipped", uiMapId);
+            continue;
+        }
+
+        if (!GetQuestTemplate(questId))
+        {
+            TC_LOG_ERROR("sql.sql", "Table `ui_map_quest` references non-existing quest {}, skipped", questId);
+            continue;
+        }
+
+        _uiMapQuestsStore[uiMapId].push_back(questId);
+        ++count;
+
+    } while (result->NextRow());
+
+    TC_LOG_INFO("server.loading", ">> Loaded {} UiMap quests definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+std::vector<uint32> const* ObjectMgr::GetUiMapQuestsList(uint32 uiMapId) const
+{
+    return Trinity::Containers::MapGetValuePtr(_uiMapQuestsStore, uiMapId);
 }
 
 void ObjectMgr::LoadJumpChargeParams()

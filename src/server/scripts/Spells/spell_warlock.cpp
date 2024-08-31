@@ -62,7 +62,14 @@
 
 enum WarlockSpells
 {
+    SPELL_WARLOCK_CONFLAGRATE_DEBUFF                = 265931,
+    SPELL_WARLOCK_BACKDRAFT                         = 196406,
+    SPELL_WARLOCK_BACKDRAFT_PROC                    = 117828,
+    SPELL_WARLOCK_CONFLAGRATE_ENERGIZE              = 245330,
+    SPELL_WARLOCK_ABSOLUTE_CORRUPTION               = 196103,
+    SPELL_WARLOCK_CORRUPTION_DAMAGE                 = 146739,
     SPELL_WARLOCK_CREATE_HEALTHSTONE                = 23517,
+    SPELL_WARLOCK_DEATHS_EMBRACE                    = 453189,
     SPELL_WARLOCK_DEMONIC_CIRCLE_ALLOW_CAST         = 62388,
     SPELL_WARLOCK_DEMONIC_CIRCLE_SUMMON             = 48018,
     SPELL_WARLOCK_DEMONIC_CIRCLE_TELEPORT           = 48020,
@@ -77,18 +84,24 @@ enum WarlockSpells
     SPELL_WARLOCK_IMPROVED_HEALTH_FUNNEL_BUFF_R2    = 60956,
     SPELL_WARLOCK_IMPROVED_HEALTH_FUNNEL_R1         = 18703,
     SPELL_WARLOCK_IMPROVED_HEALTH_FUNNEL_R2         = 18704,
+    SPELL_WARLOCK_PERPETUAL_UNSTABILITY_TALENT      = 459376,
+    SPELL_WARLOCK_PERPETUAL_UNSTABILITY_DAMAGE      = 459461,
+    SPELL_WARLOCK_PYROGENICS_TALENT                 = 387095,
+    SPELL_WARLOCK_PYROGENICS_DEBUFF                 = 387096,
     SPELL_WARLOCK_RAIN_OF_FIRE                      = 5740,
     SPELL_WARLOCK_RAIN_OF_FIRE_DAMAGE               = 42223,
+    SPELL_WARLOCK_ROARING_BLAZE                     = 205184,
     SPELL_WARLOCK_SEED_OF_CORRUPTION_DAMAGE         = 27285,
     SPELL_WARLOCK_SEED_OF_CORRUPTION_GENERIC        = 32865,
     SPELL_WARLOCK_SHADOW_BOLT_ENERGIZE              = 194192,
+    SPELL_WARLOCK_SIPHON_LIFE_HEAL                  = 453000,
     SPELL_WARLOCK_SOULSHATTER_EFFECT                = 32835,
     SPELL_WARLOCK_SOUL_SWAP_CD_MARKER               = 94229,
     SPELL_WARLOCK_SOUL_SWAP_OVERRIDE                = 86211,
     SPELL_WARLOCK_SOUL_SWAP_MOD_COST                = 92794,
     SPELL_WARLOCK_SOUL_SWAP_DOT_MARKER              = 92795,
-    SPELL_WARLOCK_UNSTABLE_AFFLICTION               = 30108,
-    SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL        = 31117,
+    SPELL_WARLOCK_UNSTABLE_AFFLICTION_DAMAGE        = 196364,
+    SPELL_WARLOCK_UNSTABLE_AFFLICTION_ENERGIZE      = 31117,
     SPELL_WARLOCK_SHADOWFLAME                       = 37378,
     SPELL_WARLOCK_FLAMESHADOW                       = 37379,
     SPELL_WARLOCK_SUMMON_SUCCUBUS                   = 712,
@@ -97,12 +110,14 @@ enum WarlockSpells
     SPELL_WARLOCK_STRENGTHEN_PACT_INCUBUS           = 366325,
     SPELL_WARLOCK_SUCCUBUS_PACT                     = 365360,
     SPELL_WARLOCK_INCUBUS_PACT                      = 365355,
+    SPELL_WARLOCK_VOLATILE_AGONY_TALENT             = 453034,
+    SPELL_WARLOCK_VOLATILE_AGONY_DAMAGE             = 453035,
+    SPELL_WARLOCK_CURSE_OF_EXHAUSTION               = 334275,
+    SPELL_WARLOCK_VILE_TAINT_DAMAGE                 = 386931,
 
     SPELL_WARLOCK_FEAR                              = 5782,
     SPELL_WARLOCK_FEAR_BUFF                         = 118699,
     SPELL_WARLOCK_FEAR_EFFECT                       = 118699,
-    SPELL_WARLOCK_ABSOLUTE_CORRUPTION               = 196103,
-    SPELL_WARLOCK_CORRUPTION_DAMAGE                 = 146739,
     SPELL_WARLOCK_PHANTOMATIC_SINGULARITY_DAMAGE    = 205246,
     SPELL_WARLOCK_HAUNT                             = 48181,
     SPELL_WARLOCK_DOOM                              = 603,
@@ -133,9 +148,6 @@ enum WarlockSpells
     SPELL_WARLOCK_IMPENDING_DOOM                    = 196270,
     SPELL_WARLOCK_DOOM_DOUBLED                      = 218572,
     SPELL_WARLOCK_IMMOLATE                          = 348,
-    SPELL_WARLOCK_BACKDRAFT_AURA                    = 196406,
-    SPELL_WARLOCK_BACKDRAFT                         = 117828,
-    SPELL_WARLOCK_ROARING_BLAZE                     = 205184,
     SPELL_WARLOCK_IMMOLATE_DOT                      = 157736,
     SPELL_WARLOCK_GLYPH_OF_CONFLAGRATE              = 56235,
     SPELL_WARLOCK_CONFLAGRATE                       = 17962,
@@ -170,6 +182,27 @@ enum FreakzWarlockNPCs
 {
     NPC_WARLOCK_DEMONIC_GATEWAY_PURPLE = 59271,
     NPC_WARLOCK_DEMONIC_GATEWAY_GREEN = 59262,
+};
+
+// Called by 17962 - Conflagrate
+class spell_warl_backdraft : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_BACKDRAFT, SPELL_WARLOCK_BACKDRAFT_PROC });
+    }
+
+    void HandleAfterCast()
+    {
+        Unit* caster = GetCaster();
+        if (caster->HasAura(SPELL_WARLOCK_BACKDRAFT))
+            caster->CastSpell(caster, SPELL_WARLOCK_BACKDRAFT_PROC, true);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_warl_backdraft::HandleAfterCast);
+    }
 };
 
 // 710 - Banish
@@ -243,6 +276,25 @@ class spell_warl_burning_rush_aura : public AuraScript
     }
 };
 
+// 152108 - Cataclysm
+class spell_warl_cataclysm : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_IMMOLATE_PERIODIC });
+    }
+
+    void HandleHit(SpellEffIndex /*effIndex*/)
+    {
+        GetCaster()->CastSpell(GetHitUnit(), SPELL_WARLOCK_IMMOLATE_PERIODIC, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_warl_cataclysm::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+};
+
 // 116858 - Chaos Bolt
 class spell_warl_chaos_bolt : public SpellScript
 {
@@ -294,6 +346,52 @@ class spell_warl_chaotic_energies : public AuraScript
     }
 };
 
+// 17962 - Conflagrate
+class spell_warl_conflagrate : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_CONFLAGRATE_ENERGIZE });
+    }
+
+    void HandleAfterCast()
+    {
+        GetCaster()->CastSpell(GetCaster(), SPELL_WARLOCK_CONFLAGRATE_ENERGIZE, true);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_warl_conflagrate::HandleAfterCast);
+    }
+};
+
+// Called by 146739 - Corruption
+class spell_warl_absolute_corruption : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_ABSOLUTE_CORRUPTION });
+    }
+
+    void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetCaster()->HasAura(SPELL_WARLOCK_ABSOLUTE_CORRUPTION))
+        {
+            Milliseconds duration = 0ms;
+            duration = Seconds(sSpellMgr->GetSpellInfo(SPELL_WARLOCK_ABSOLUTE_CORRUPTION, GetCastDifficulty())->GetEffect(EFFECT_0).CalcValue());
+
+            Unit* target = GetTarget();
+            GetAura()->SetMaxDuration(target->GetTypeId() == TYPEID_PLAYER ? duration.count() : -1);
+            GetAura()->SetDuration(target->GetTypeId() == TYPEID_PLAYER ? duration.count() : -1);
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_warl_absolute_corruption::HandleApply, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
+    }
+};
+
 // 6201 - Create Healthstone
 class spell_warl_create_healthstone : public SpellScript
 {
@@ -341,6 +439,61 @@ class spell_warl_dark_pact : public AuraScript
     void Register() override
     {
         DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_warl_dark_pact::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
+    }
+};
+
+// Called by 324540 - Malefic Rapture
+class spell_warl_deaths_embrace : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_DEATHS_EMBRACE });
+    }
+
+    void HandleDamageCalculation(Unit const* victim, int32 const& /*damage*/, int32 const& /*flatMod*/, float& pctMod) const
+    {
+        if (AuraEffect const* deathsEmbraceDamagePct = GetCaster()->GetAuraEffect(SPELL_WARLOCK_DEATHS_EMBRACE, EFFECT_3))
+        {
+            if (victim->HealthBelowPct(deathsEmbraceDamagePct->GetAmount()))
+            {
+                AuraEffect const* deathsEmbraceDamageBonus = GetCaster()->GetAuraEffect(SPELL_WARLOCK_DEATHS_EMBRACE, EFFECT_2);
+                AddPct(pctMod, deathsEmbraceDamageBonus->GetAmount());
+            }
+        }
+    }
+
+    void Register() override
+    {
+        CalcDamage += SpellCalcDamageFn(spell_warl_deaths_embrace::HandleDamageCalculation);
+    }
+};
+
+// Called by 980 - Agony, 146739 - Corruption and 316099 - Unstable Affliction
+class spell_warl_deaths_embrace_aura : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_DEATHS_EMBRACE });
+    }
+
+    void CalculateDamage(AuraEffect const* /*aurEff*/, Unit* victim, int32& /*damage*/, int32& /*flatMod*/, float& pctMod) const
+    {
+        if (Unit* caster = GetCaster())
+        {
+            if (AuraEffect const* deathsEmbraceDamagePct = caster->GetAuraEffect(SPELL_WARLOCK_DEATHS_EMBRACE, EFFECT_3))
+            {
+                if (victim->HealthBelowPct(deathsEmbraceDamagePct->GetAmount()))
+                {
+                    AuraEffect const* deathsEmbraceDamageBonus = caster->GetAuraEffect(SPELL_WARLOCK_DEATHS_EMBRACE, EFFECT_2);
+                    AddPct(pctMod, deathsEmbraceDamageBonus->GetAmount());
+                }
+            }
+        }
+    }
+
+    void Register() override
+    {
+        DoEffectCalcDamageAndHealing += AuraEffectCalcDamageFn(spell_warl_deaths_embrace_aura::CalculateDamage, EFFECT_ALL, SPELL_AURA_PERIODIC_DAMAGE);
     }
 };
 
@@ -471,25 +624,32 @@ class spell_warl_drain_soul : public AuraScript
             caster->CastSpell(caster, SPELL_WARLOCK_DRAIN_SOUL_ENERGIZE, true);
     }
 
+    void CalculateDamage(AuraEffect const* /*aurEff*/, Unit* victim, int32& /*damage*/, int32& /*flatMod*/, float& pctMod) const
+    {
+        if (victim->HealthBelowPct(GetEffectInfo(EFFECT_2).CalcValue(GetCaster())))
+            AddPct(pctMod, GetEffectInfo(EFFECT_1).CalcValue(GetCaster()));
+    }
+
     void Register() override
     {
         AfterEffectRemove += AuraEffectApplyFn(spell_warl_drain_soul::HandleRemove, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
+        DoEffectCalcDamageAndHealing += AuraEffectCalcDamageFn(spell_warl_drain_soul::CalculateDamage, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE);
     }
 };
 
 // 48181 - Haunt
-class spell_warl_haunt : public SpellScript
+class spell_warl_haunt : public AuraScript
 {
-    void HandleAfterHit()
+    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        if (Aura* aura = GetHitAura())
-            if (AuraEffect* aurEff = aura->GetEffect(EFFECT_1))
-                aurEff->SetAmount(CalculatePct(GetHitDamage(), aurEff->GetAmount()));
+        if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_DEATH)
+            if (Unit* caster = GetCaster())
+                caster->GetSpellHistory()->ResetCooldown(GetId(), true);
     }
 
     void Register() override
     {
-        AfterHit += SpellHitFn(spell_warl_haunt::HandleAfterHit);
+        OnEffectRemove += AuraEffectApplyFn(spell_warl_haunt::HandleRemove, EFFECT_1, SPELL_AURA_MOD_SCHOOL_MASK_DAMAGE_FROM_CASTER, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -576,6 +736,36 @@ class spell_warl_immolate : public SpellScript
     }
 };
 
+// Called by 316099 - Unstable Affliction
+class spell_warl_perpetual_unstability : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_PERPETUAL_UNSTABILITY_TALENT, SPELL_WARLOCK_PERPETUAL_UNSTABILITY_DAMAGE });
+    }
+
+    void HandleAfterEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetTarget();
+
+        if (AuraEffect const* perpetualUnstability = caster->GetAuraEffect(SPELL_WARLOCK_PERPETUAL_UNSTABILITY_TALENT, EFFECT_0))
+        {
+            if (Aura* unstableAfflictionAura = target->GetAura(GetId(), caster->GetGUID()))
+            {
+                Milliseconds duration = Seconds(perpetualUnstability->GetAmount());
+                if (unstableAfflictionAura->GetDuration() <= duration.count())
+                    caster->CastSpell(target, SPELL_WARLOCK_PERPETUAL_UNSTABILITY_DAMAGE, true);
+            }
+        }
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_warl_perpetual_unstability::HandleAfterEffectApply, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAPPLY);
+    }
+};
+
 // 366330 - Random Sayaad
 class spell_warl_random_sayaad : public SpellScript
 {
@@ -609,6 +799,27 @@ class spell_warl_random_sayaad : public SpellScript
     void Register() override
     {
         OnEffectHit += SpellEffectFn(spell_warl_random_sayaad::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// Called by 17962 - Conflagrate
+class spell_warl_roaring_blaze : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_ROARING_BLAZE, SPELL_WARLOCK_CONFLAGRATE_DEBUFF });
+    }
+
+    void HandleDummy(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        if (caster->HasAura(SPELL_WARLOCK_ROARING_BLAZE))
+            caster->CastSpell(GetHitUnit(), SPELL_WARLOCK_CONFLAGRATE_DEBUFF, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_warl_roaring_blaze::HandleDummy, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
     }
 };
 
@@ -668,18 +879,22 @@ class spell_warl_seduction : public SpellScript
     }
 };
 
-// 27285 - Seed of Corruption
+// 27285 - Seed of Corruption (damage)
 class spell_warl_seed_of_corruption : public SpellScript
 {
-    void FilterTargets(std::list<WorldObject*>& targets)
+    bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        if (GetExplTargetUnit())
-            targets.remove(GetExplTargetUnit());
+        return ValidateSpellInfo({ SPELL_WARLOCK_SEED_OF_CORRUPTION_DAMAGE });
+    }
+
+    void HandleHit(SpellEffIndex /*effIndex*/)
+    {
+        GetCaster()->CastSpell(GetHitUnit(), SPELL_WARLOCK_CORRUPTION_DAMAGE, true);
     }
 
     void Register() override
     {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warl_seed_of_corruption::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+        OnEffectHitTarget += SpellEffectFn(spell_warl_seed_of_corruption::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
     }
 };
 
@@ -724,10 +939,19 @@ class spell_warl_seed_of_corruption_dummy : public AuraScript
         caster->CastSpell(eventInfo.GetActionTarget(), SPELL_WARLOCK_SEED_OF_CORRUPTION_DAMAGE, aurEff);
     }
 
+    void OnRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetTargetApplication()->GetRemoveMode() != AURA_REMOVE_BY_EXPIRE)
+            return;
+
+        GetCaster()->CastSpell(GetTarget(), SPELL_WARLOCK_SEED_OF_CORRUPTION_DAMAGE, aurEff);
+    }
+
     void Register() override
     {
         DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_warl_seed_of_corruption_dummy::CalculateBuffer, EFFECT_2, SPELL_AURA_DUMMY);
         OnEffectProc += AuraEffectProcFn(spell_warl_seed_of_corruption_dummy::HandleProc, EFFECT_2, SPELL_AURA_DUMMY);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_warl_seed_of_corruption_dummy::OnRemove, EFFECT_2, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -790,6 +1014,37 @@ class spell_warl_shadow_bolt : public SpellScript
     void Register() override
     {
         AfterCast += SpellCastFn(spell_warl_shadow_bolt::HandleAfterCast);
+    }
+};
+
+// 452999 - Siphon Life
+class spell_warl_siphon_life : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_SIPHON_LIFE_HEAL });
+    }
+
+    void HandleProc(AuraEffect* aurEff, ProcEventInfo& eventInfo)
+    {
+        DamageInfo* damageInfo = eventInfo.GetDamageInfo();
+        if (!damageInfo || !damageInfo->GetDamage())
+            return;
+
+        int32 amount = CalculatePct(damageInfo->GetDamage(), aurEff->GetAmount());
+
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        CastSpellExtraArgs args(aurEff);
+        args.AddSpellMod(SPELLVALUE_BASE_POINT0, amount);
+        caster->CastSpell(caster, SPELL_WARLOCK_SIPHON_LIFE_HEAL, args);
+    }
+
+    void Register() override
+    {
+        OnEffectProc += AuraEffectProcFn(spell_warl_siphon_life::HandleProc, EFFECT_1, SPELL_AURA_DUMMY);
     }
 };
 
@@ -1055,43 +1310,43 @@ class spell_warl_t4_2p_bonus : public AuraScript
     }
 };
 
-// 30108, 34438, 34439, 35183 - Unstable Affliction
+// 316099 - Unstable Affliction
 class spell_warl_unstable_affliction : public AuraScript
 {
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL });
+        return ValidateSpellInfo({ SPELL_WARLOCK_UNSTABLE_AFFLICTION_DAMAGE, SPELL_WARLOCK_UNSTABLE_AFFLICTION_ENERGIZE });
     }
 
     void HandleDispel(DispelInfo* dispelInfo)
     {
         if (Unit* caster = GetCaster())
         {
-            if (AuraEffect const* aurEff = GetEffect(EFFECT_1))
-            {
-                if (Unit* target = dispelInfo->GetDispeller()->ToUnit())
-                {
-                    int32 bp = aurEff->GetAmount();
-                    bp = target->SpellDamageBonusTaken(caster, aurEff->GetSpellInfo(), bp, DOT);
-                    bp *= 9;
-
-                    // backfire damage and silence
-                    CastSpellExtraArgs args(aurEff);
-                    args.AddSpellBP0(bp);
-                    caster->CastSpell(target, SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL, args);
-                }
-            }
+            float sp = caster->SpellBaseDamageBonusDone(GetSpellInfo()->GetSchoolMask()) * 0.30613f;
+            int32 damage = sp * GetEffectInfo(EFFECT_0).CalcValue() / 100;
+            CastSpellExtraArgs args;
+            args.AddSpellBP0(damage);
+            caster->CastSpell(dispelInfo->GetDispeller(), SPELL_WARLOCK_UNSTABLE_AFFLICTION_DAMAGE, args);
         }
+    }
+
+    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetTargetApplication()->GetRemoveMode() != AURA_REMOVE_BY_DEATH)
+            return;
+
+        GetCaster()->CastSpell(GetCaster(), SPELL_WARLOCK_UNSTABLE_AFFLICTION_ENERGIZE, true);
     }
 
     void Register() override
     {
         AfterDispel += AuraDispelFn(spell_warl_unstable_affliction::HandleDispel);
+        OnEffectRemove += AuraEffectRemoveFn(spell_warl_unstable_affliction::HandleRemove, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
 // 5740 - Rain of Fire
-/// Updated 7.1.5
+/// Updated 11.0.2
 class spell_warl_rain_of_fire : public AuraScript
 {
     void HandleDummyTick(AuraEffect const* /*aurEff*/)
@@ -1108,12 +1363,17 @@ class spell_warl_rain_of_fire : public AuraScript
         for (ObjectGuid insideTargetGuid : targetsInRainOfFire)
             if (Unit* insideTarget = ObjectAccessor::GetUnit(*GetTarget(), insideTargetGuid))
                 if (!GetTarget()->IsFriendlyTo(insideTarget))
+                {
+                    if (GetTarget()->HasAura(SPELL_WARLOCK_PYROGENICS_TALENT))
+                        GetTarget()->CastSpell(insideTarget, SPELL_WARLOCK_PYROGENICS_DEBUFF, true);
+
                     GetTarget()->CastSpell(insideTarget, SPELL_WARLOCK_RAIN_OF_FIRE_DAMAGE, true);
+                }
     }
 
     void Register() override
     {
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_warl_rain_of_fire::HandleDummyTick, EFFECT_3, SPELL_AURA_PERIODIC_DUMMY);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_warl_rain_of_fire::HandleDummyTick, EFFECT_2, SPELL_AURA_PERIODIC_DUMMY);
     }
 };
 
@@ -1255,20 +1515,31 @@ class spell_warl_corruption_effect : public AuraScript
 };
 
 // 234153 - Drain Life
-class spell_warlock_drain_life : public AuraScript
+class spell_warl_drain_life : public AuraScript
 {
-    PrepareAuraScript(spell_warlock_drain_life);
-
-    void PeriodicTick(AuraEffect const* /*aurEff*/)
+    bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        Unit* caster = GetCaster();
-        if (!caster)
-            return;
+        return ValidateSpellInfo({ SPELL_WARLOCK_DEATHS_EMBRACE });
+    }
+
+    void CalculateHeal(AuraEffect const* /*aurEff*/, Unit* /*victim*/, int32& /*damage*/, int32& /*flatMod*/, float& pctMod) const
+    {
+        if (Unit* caster = GetCaster())
+        {
+            if (AuraEffect const* deathsEmbraceHealthPct = caster->GetAuraEffect(SPELL_WARLOCK_DEATHS_EMBRACE, EFFECT_1))
+            {
+                if (caster->HealthBelowPct(deathsEmbraceHealthPct->GetAmount()))
+                {
+                    AuraEffect const* deathsEmbraceHealBonus = caster->GetAuraEffect(SPELL_WARLOCK_DEATHS_EMBRACE, EFFECT_0);
+                    AddPct(pctMod, deathsEmbraceHealBonus->GetAmount());
+                }
+            }
+        }
     }
 
     void Register() override
     {
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_warlock_drain_life::PeriodicTick, EFFECT_0, SPELL_AURA_PERIODIC_LEECH);
+        DoEffectCalcDamageAndHealing += AuraEffectCalcDamageFn(spell_warl_drain_life::CalculateHeal, EFFECT_0, SPELL_AURA_PERIODIC_LEECH);
     }
 };
 
@@ -2028,75 +2299,6 @@ public:
     }
 };
 
-// 17962 - Conflagrate
-class spell_warl_conflagrate : public SpellScript
-{
-    PrepareSpellScript(spell_warl_conflagrate);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_WARLOCK_IMMOLATE });
-    }
-
-    void HandleHit(SpellEffIndex /*effindex*/)
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-        if (!caster || !target)
-            return;
-
-        if (caster->HasAura(SPELL_WARLOCK_BACKDRAFT_AURA))
-            caster->CastSpell(caster, SPELL_WARLOCK_BACKDRAFT, true);
-
-        caster->ModifyPower(POWER_SOUL_SHARDS, 7.5f);
-
-        if (caster->HasAura(SPELL_WARLOCK_ROARING_BLAZE))
-        {
-            if (Aura* aur = target->GetAura(SPELL_WARLOCK_IMMOLATE_DOT, caster->GetGUID()))
-            {
-                if (AuraEffect* aurEff = aur->GetEffect(EFFECT_0))
-                {
-                    int32 damage = aurEff->GetAmount();
-                    aurEff->SetAmount(AddPct(damage, 25));
-                    aur->SetNeedClientUpdateForTargets();
-                }
-            }
-        }
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_warl_conflagrate::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
-    }
-};
-
-class spell_warl_conflagrate_aura : public SpellScript
-{
-    PrepareSpellScript(spell_warl_conflagrate_aura);
-
-    void HandleOnHit()
-    {
-        if (Player* _player = GetCaster()->ToPlayer())
-        {
-            if (Unit* target = GetHitUnit())
-            {
-                if (!target->HasAura(SPELL_WARLOCK_IMMOLATE) && !_player->HasAura(SPELL_WARLOCK_GLYPH_OF_CONFLAGRATE))
-                    if (target->GetAura(SPELL_WARLOCK_CONFLAGRATE))
-                        target->RemoveAura(SPELL_WARLOCK_CONFLAGRATE);
-
-                if (!target->HasAura(SPELL_WARLOCK_IMMOLATE_FIRE_AND_BRIMSTONE))
-                    if (target->GetAura(SPELL_WARLOCK_CONFLAGRATE_FIRE_AND_BRIMSTONE))
-                        target->RemoveAura(SPELL_WARLOCK_CONFLAGRATE_FIRE_AND_BRIMSTONE);
-            }
-        }
-    }
-
-    void Register() override
-    {
-        OnHit += SpellHitFn(spell_warl_conflagrate_aura::HandleOnHit);
-    }
-};
-
 // 6353 - Soul Fire
 class spell_warlock_soul_fire : public SpellScriptLoader
 {
@@ -2165,40 +2367,6 @@ public:
     AuraScript* GetAuraScript() const override
     {
         return new spell_warl_channel_demonfire_AuraScript();
-    }
-};
-
-// Cataclysm - 152108
-class spell_warl_cataclysm : public SpellScriptLoader
-{
-public:
-    spell_warl_cataclysm() : SpellScriptLoader("spell_warl_cataclysm") {}
-
-    class spell_warl_cataclysm_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_warl_cataclysm_SpellScript);
-
-        void HandleHit(SpellEffIndex /*effIndex*/)
-        {
-            Unit* caster = GetCaster();
-            Unit* target = GetHitUnit();
-            if (!caster || !target)
-                return;
-            if (!caster->ToPlayer())
-                return;
-
-            caster->CastSpell(target, SPELL_WARLOCK_IMMOLATE_DOT, true);
-        }
-
-        void Register() override
-        {
-            OnEffectHitTarget += SpellEffectFn(spell_warl_cataclysm_SpellScript::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
-        }
-    };
-
-    SpellScript* GetSpellScript() const override
-    {
-        return new spell_warl_cataclysm_SpellScript();
     }
 };
 
@@ -2517,14 +2685,73 @@ public:
     }
 };
 
+// Called by 980 - Agony
+class spell_warl_volatile_agony : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_VOLATILE_AGONY_TALENT, SPELL_WARLOCK_VOLATILE_AGONY_DAMAGE });
+    }
+
+    void HandleAfterEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetTarget();
+
+        if (AuraEffect const* volatileAgony = caster->GetAuraEffect(SPELL_WARLOCK_VOLATILE_AGONY_TALENT, EFFECT_0))
+        {
+            if (Aura* agonyAura = target->GetAura(GetId(), caster->GetGUID()))
+            {
+                Milliseconds duration = Seconds(volatileAgony->GetAmount());
+                if (agonyAura->GetDuration() <= duration.count())
+                    caster->CastSpell(target, SPELL_WARLOCK_VOLATILE_AGONY_DAMAGE, true);
+            }
+        }
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_warl_volatile_agony::HandleAfterEffectApply, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAPPLY);
+    }
+};
+
+// 278350 - Vile Taint
+class spell_warl_vile_taint : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_AGONY, SPELL_WARLOCK_CURSE_OF_EXHAUSTION, SPELL_WARLOCK_VILE_TAINT_DAMAGE });
+    }
+
+    void HandleScriptEffect(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+
+        caster->CastSpell(target, SPELL_WARLOCK_AGONY, true);
+        caster->CastSpell(target, SPELL_WARLOCK_CURSE_OF_EXHAUSTION, true);
+        caster->CastSpell(target, SPELL_WARLOCK_VILE_TAINT_DAMAGE, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_warl_vile_taint::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 void AddSC_warlock_spell_scripts()
 {
+    RegisterSpellScript(spell_warl_backdraft);
     RegisterSpellScript(spell_warl_banish);
     RegisterSpellAndAuraScriptPair(spell_warl_burning_rush, spell_warl_burning_rush_aura);
+    RegisterSpellScript(spell_warl_cataclysm);
     RegisterSpellScript(spell_warl_chaos_bolt);
     RegisterSpellScript(spell_warl_chaotic_energies);
+    RegisterSpellScript(spell_warl_conflagrate);
+    RegisterSpellScript(spell_warl_absolute_corruption);
     RegisterSpellScript(spell_warl_create_healthstone);
     RegisterSpellScript(spell_warl_dark_pact);
+    RegisterSpellAndAuraScriptPair(spell_warl_deaths_embrace, spell_warl_deaths_embrace_aura);
     RegisterSpellScript(spell_warl_demonic_circle_summon);
     RegisterSpellScript(spell_warl_demonic_circle_teleport);
     RegisterSpellScript(spell_warl_devour_magic);
@@ -2534,13 +2761,16 @@ void AddSC_warlock_spell_scripts()
     RegisterSpellScript(spell_warl_health_funnel);
     RegisterSpellScript(spell_warl_healthstone_heal);
     RegisterSpellScript(spell_warl_immolate);
+    RegisterSpellScript(spell_warl_perpetual_unstability);
     RegisterSpellScript(spell_warl_random_sayaad);
+    RegisterSpellScript(spell_warl_roaring_blaze);
     RegisterSpellScript(spell_warl_sayaad_precast_disorientation);
     RegisterSpellScript(spell_warl_seduction);
     RegisterSpellScript(spell_warl_seed_of_corruption);
     RegisterSpellScript(spell_warl_seed_of_corruption_dummy);
     RegisterSpellScript(spell_warl_seed_of_corruption_generic);
     RegisterSpellScript(spell_warl_shadow_bolt);
+    RegisterSpellScript(spell_warl_siphon_life);
     RegisterSpellScript(spell_warl_soul_swap);
     RegisterSpellScript(spell_warl_soul_swap_dot_marker);
     RegisterSpellScript(spell_warl_soul_swap_exhale);
@@ -2553,12 +2783,14 @@ void AddSC_warlock_spell_scripts()
     RegisterSpellScriptWithArgs(spell_warl_t4_2p_bonus<SPELL_WARLOCK_SHADOWFLAME>, "spell_warl_t4_2p_bonus_fire");
     RegisterSpellScript(spell_warl_unstable_affliction);
     RegisterSpellScript(spell_warl_rain_of_fire);
+    RegisterSpellScript(spell_warl_volatile_agony);
+    RegisterSpellScript(spell_warl_vile_taint);
 
     //Fix
     new spell_warl_fear();
     new spell_warl_fear_buff();
     RegisterSpellScript(spell_warl_corruption_effect);
-    RegisterSpellScript(spell_warlock_drain_life);
+    RegisterSpellScript(spell_warl_drain_life);
     RegisterSpellScript(aura_warl_phantomatic_singularity);
     RegisterSpellScript(aura_warl_haunt);
     RegisterSpellScript(spell_warlock_summon_darkglare);
@@ -2576,11 +2808,8 @@ void AddSC_warlock_spell_scripts()
     RegisterSpellScript(spell_warl_demonbolt);
     new spell_warl_implosion();
     new spell_warlock_doom();
-    RegisterSpellScript(spell_warl_conflagrate);
-    RegisterSpellScript(spell_warl_conflagrate_aura);
     new spell_warlock_soul_fire();
     new spell_warl_channel_demonfire();
-    new spell_warl_cataclysm();
     new spell_warl_soul_conduit();
     RegisterSpellScript(spell_warr_shadowbolt_affliction);
     new spell_warlock_fel_firebolt_wild_imp();

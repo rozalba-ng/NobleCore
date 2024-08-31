@@ -4149,6 +4149,20 @@ struct NPCModelItemSlotDisplayInfoLoadInfo
     static constexpr DB2LoadInfo Instance{ Fields, 4, &NPCModelItemSlotDisplayInfoMeta::Instance, HOTFIX_SEL_NPC_MODEL_ITEM_SLOT_DISPLAY_INFO };
 };
 
+struct NPCSoundsLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[5] =
+    {
+        { false, FT_INT, "ID" },
+        { false, FT_INT, "hello" },
+        { false, FT_INT, "goodbye" },
+        { false, FT_INT, "pissed" },
+        { false, FT_INT, "ack" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 5, &NPCSoundsMeta::Instance, HOTFIX_SEL_NPC_SOUNDS };
+};
+
 struct NumTalentsAtLevelLoadInfo
 {
     static constexpr DB2FieldMeta Fields[4] =
@@ -7013,6 +7027,43 @@ struct WorldStateExpressionLoadInfo
     };
 
     static constexpr DB2LoadInfo Instance{ Fields, 2, &WorldStateExpressionMeta::Instance, HOTFIX_SEL_WORLD_STATE_EXPRESSION };
+};
+
+struct SoundAmbienceLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[11] =
+    {
+        { false, FT_INT, "ID" },
+        { true, FT_INT, "Flags" },
+        { false, FT_INT, "FlavorSoundFilterID" },
+        { false, FT_INT, "AmbienceID1" },
+        { false, FT_INT, "AmbienceID2" },
+        { false, FT_INT, "AmbienceStartID1" },
+        { false, FT_INT, "AmbienceStartID2" },
+        { false, FT_INT, "AmbienceStopID1" },
+        { false, FT_INT, "AmbienceStopID2" },
+        { false, FT_INT, "SoundKitID1" },
+        { false, FT_INT, "SoundKitID2" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 11, &SoundAmbienceMeta::Instance, HOTFIX_SEL_SOUND_AMBIENCE };
+};
+
+struct ZoneMusicLoadInfo
+{
+    static constexpr DB2FieldMeta Fields[8] =
+    {
+        { false, FT_INT, "ID" },
+        { false, FT_STRING_NOT_LOCALIZED, "SetName" },
+        { false, FT_INT, "SilenceIntervalMin1" },
+        { false, FT_INT, "SilenceIntervalMin2" },
+        { false, FT_INT, "SilenceIntervalMax1" },
+        { false, FT_INT, "SilenceIntervalMax2" },
+        { false, FT_INT, "Sounds1" },
+        { false, FT_INT, "Sounds2" },
+    };
+
+    static constexpr DB2LoadInfo Instance{ Fields, 8, &ZoneMusicMeta::Instance, HOTFIX_SEL_ZONE_MUSIC };
 };
 
 #endif // DB2LoadInfo_h__

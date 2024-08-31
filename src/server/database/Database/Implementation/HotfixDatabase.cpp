@@ -1282,6 +1282,9 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     PrepareStatement(HOTFIX_SEL_NPC_MODEL_ITEM_SLOT_DISPLAY_INFO, "SELECT ID, DisplayID, Slot, ExtendedDisplayID FROM npc_model_item_slot_display_info WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_NPC_MODEL_ITEM_SLOT_DISPLAY_INFO, "SELECT MAX(ID) + 1 FROM npc_model_item_slot_display_info", CONNECTION_SYNCH);
 
+    // NPCSounds.db2
+    PrepareStatement(HOTFIX_SEL_NPC_SOUNDS, "SELECT ID, hello, goodbye, pissed, ack FROM npc_sounds WHERE (`VerifiedBuild` > 0) = ? ORDER BY ID DESC", CONNECTION_SYNCH);
+
     // NumTalentsAtLevel.db2
     PrepareStatement(HOTFIX_SEL_NUM_TALENTS_AT_LEVEL, "SELECT ID, NumTalents, NumTalentsDeathKnight, NumTalentsDemonHunter FROM num_talents_at_level"
         " WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
@@ -2109,6 +2112,18 @@ void HotfixDatabaseConnection::DoPrepareStatements()
     // WorldStateExpression.db2
     PrepareStatement(HOTFIX_SEL_WORLD_STATE_EXPRESSION, "SELECT ID, Expression FROM world_state_expression WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
     PREPARE_MAX_ID_STMT(HOTFIX_SEL_WORLD_STATE_EXPRESSION, "SELECT MAX(ID) + 1 FROM world_state_expression", CONNECTION_SYNCH);
+
+    // SoundAmbience.db2
+    PrepareStatement(HOTFIX_SEL_SOUND_AMBIENCE, "SELECT ID, Flags, FlavorSoundFilterID, AmbienceID1, AmbienceID2, AmbienceStartID1, AmbienceStartID2, "
+        "AmbienceStopID1, AmbienceStopID2, SoundKitID1, SoundKitID2 FROM sound_ambience WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_SOUND_AMBIENCE, "SELECT MAX(ID) + 1 FROM sound_ambience", CONNECTION_SYNCH);
+
+    // ZoneMusic.db2
+    PrepareStatement(HOTFIX_SEL_ZONE_MUSIC, "SELECT ID, SetName, SilenceIntervalMin1, SilenceIntervalMin2, SilenceIntervalMax1, SilenceIntervalMax2, "
+        "Sounds1, Sounds2 FROM zone_music WHERE (`VerifiedBuild` > 0) = ?", CONNECTION_SYNCH);
+    PREPARE_MAX_ID_STMT(HOTFIX_SEL_ZONE_MUSIC, "SELECT MAX(ID) + 1 FROM zone_music", CONNECTION_SYNCH);
+    PREPARE_LOCALE_STMT(HOTFIX_SEL_ZONE_MUSIC, "SELECT ID, SetName_lang FROM zone_music_locale"
+        " WHERE (`VerifiedBuild` > 0) = ? AND locale = ?", CONNECTION_SYNCH);
 }
 
 HotfixDatabaseConnection::HotfixDatabaseConnection(MySQLConnectionInfo& connInfo, ConnectionFlags connectionFlags) : MySQLConnection(connInfo, connectionFlags)

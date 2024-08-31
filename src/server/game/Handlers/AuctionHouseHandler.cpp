@@ -35,6 +35,11 @@
 
 void WorldSession::HandleAuctionBrowseQuery(WorldPackets::AuctionHouse::AuctionBrowseQuery& browseQuery)
 {
+#ifndef DISABLE_DRESSNPCS_CORESOUNDS
+    if (browseQuery.Auctioneer.IsAnyTypeCreature())
+        if (Creature* creature = _player->GetMap()->GetCreature(browseQuery.Auctioneer))
+            creature->SendMirrorSound(_player, 0);
+#endif
     AuctionThrottleResult throttle = sAuctionMgr->CheckThrottle(_player, browseQuery.TaintedBy.has_value());
     if (throttle.Throttled)
         return;
