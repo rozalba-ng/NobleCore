@@ -256,11 +256,12 @@ CREATE TABLE `sound_kit_advanced`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `sound_kit_entry`;
 CREATE TABLE `sound_kit_entry`  (
-  `ID` int UNSIGNED NOT NULL DEFAULT 0,
+  `ID` int NOT NULL DEFAULT 0,
   `SoundKitID` int UNSIGNED NOT NULL DEFAULT 0,
   `FileDataID` int NOT NULL DEFAULT 0,
   `Frequency` tinyint UNSIGNED NOT NULL DEFAULT 0,
-  `Volume` float UNSIGNED NOT NULL DEFAULT 0,
+  `Volume` float NOT NULL DEFAULT 0,
+  `PlayerConditionID` int UNSIGNED NOT NULL DEFAULT 0,
   `VerifiedBuild` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`ID`, `VerifiedBuild`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
