@@ -20,12 +20,15 @@
 //void AddSC_custom_commandscript();
 //void AddSC_custom_commandscrip();
 void AddSC_dragonriding_spell_scripts();
+void AddSC_CustomEffectHandler();
+void AddSC_CustomEffectCommands();
 //ROLEPLAY FUNC
 void AddSC_free_share_scripts();
 void AddSC_CustomDisplayHandler();
 void AddSC_CustomDisplayCommands();
 void AddSC_CustomEffectHandler();
 void AddSC_CustomEffectCommands();
+void AddSC_CystomPlayerHandler();
 
 // The name of this function should match:
 // void Add${NameOfDirectory}Scripts()
@@ -40,4 +43,5 @@ void AddCustomScripts()
     AddSC_CustomDisplayCommands();
     AddSC_CustomEffectHandler();
     AddSC_CustomEffectCommands();
+    AddSC_CystomPlayerHandler();
 }
