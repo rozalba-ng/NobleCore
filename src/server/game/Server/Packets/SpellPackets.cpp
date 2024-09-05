@@ -169,7 +169,7 @@ ByteBuffer& operator>>(ByteBuffer& buffer, SpellTargetData& targetData)
     buffer >> OptionalInit(targetData.MapID);
     buffer >> SizedString::BitsSize<7>(targetData.Name);
 
-    buffer >> targetData.Unit;
+    buffer >> targetData.UnitGUID;
     buffer >> targetData.Item;
 
     if (targetData.SrcLocation)
@@ -304,7 +304,7 @@ ByteBuffer& operator<<(ByteBuffer& data, SpellTargetData const& spellTargetData)
     data << SizedString::BitsSize<7>(spellTargetData.Name);
     data.FlushBits();
 
-    data << spellTargetData.Unit;
+    data << spellTargetData.UnitGUID;
     data << spellTargetData.Item;
 
     if (spellTargetData.SrcLocation)
@@ -783,7 +783,7 @@ WorldPacket const* PlaySpellVisual::Write()
 
 WorldPacket const* PlaySpellVisualKit::Write()
 {
-    _worldPacket << Unit;
+    _worldPacket << UnitGUID;
     _worldPacket << int32(KitRecID);
     _worldPacket << int32(KitType);
     _worldPacket << uint32(Duration);

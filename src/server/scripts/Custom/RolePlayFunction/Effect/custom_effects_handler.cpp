@@ -228,7 +228,7 @@ namespace Noblegarden
             if (m_unit_info->UnitPtr)
             {
                 WorldPackets::Spells::PlaySpellVisualKit packet;
-                packet.Unit = m_unit_info->UnitPtr->GetGUID();
+                packet.UnitGUID = m_unit_info->UnitPtr->GetGUID();
                 packet.KitRecID = data.second->ID;
                 packet.KitType = data.second->Mode;
                 packet.Duration = 0.0f;

@@ -107,7 +107,7 @@ SpellCastTargets::SpellCastTargets() : m_targetMask(0), m_objectTarget(nullptr),
 
 SpellCastTargets::SpellCastTargets(Unit* caster, WorldPackets::Spells::SpellCastRequest const& spellCastRequest) :
     m_targetMask(spellCastRequest.Target.Flags), m_objectTarget(nullptr), m_itemTarget(nullptr),
-    m_objectTargetGUID(spellCastRequest.Target.Unit), m_itemTargetGUID(spellCastRequest.Target.Item),
+    m_objectTargetGUID(spellCastRequest.Target.UnitGUID), m_itemTargetGUID(spellCastRequest.Target.Item),
     m_itemTargetEntry(0), m_pitch(0.0f), m_speed(0.0f), m_strTarget(spellCastRequest.Target.Name)
 {
     if (spellCastRequest.Target.SrcLocation)
@@ -154,7 +154,7 @@ void SpellCastTargets::Write(WorldPackets::Spells::SpellTargetData& data)
     data.Flags = m_targetMask;
 
     if (m_targetMask & (TARGET_FLAG_UNIT | TARGET_FLAG_CORPSE_ALLY | TARGET_FLAG_GAMEOBJECT | TARGET_FLAG_CORPSE_ENEMY | TARGET_FLAG_UNIT_MINIPET))
-        data.Unit = m_objectTargetGUID;
+        data.UnitGUID = m_objectTargetGUID;
 
     if (m_targetMask & (TARGET_FLAG_ITEM | TARGET_FLAG_TRADE_ITEM) && m_itemTarget)
         data.Item = m_itemTarget->GetGUID();
