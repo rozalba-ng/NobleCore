@@ -187,7 +187,7 @@ namespace Noblegarden
                 m_player_stores.emplace(key, new EffectStore);
 
             result->Key         = key;
-            result->Unit        = unit;
+            result->UnitPtr        = unit;
             result->Store       = m_player_stores.at(key);
             result->IsPlayer    = true;
         }
@@ -201,7 +201,7 @@ namespace Noblegarden
                 m_creature_stores.emplace(key, new EffectStore);
             
             result->Key         = key;
-            result->Unit        = unit;
+            result->UnitPtr        = unit;
             result->Store       = m_creature_stores.at(key);
             result->IsCreature  = true;
         }
@@ -225,10 +225,10 @@ namespace Noblegarden
     {
         for (auto& data : m_unit_info->Store->Effects)
         {
-            if (m_unit_info->Unit)
+            if (m_unit_info->UnitPtr)
             {
                 WorldPackets::Spells::PlaySpellVisualKit packet;
-                packet.Unit = m_unit_info->Unit->GetGUID();
+                packet.UnitGUID = m_unit_info->UnitPtr->GetGUID();
                 packet.KitRecID = data.second->ID;
                 packet.KitType = data.second->Mode;
                 packet.Duration = 0.0f;
