@@ -208,7 +208,7 @@ namespace WorldPackets
         struct SpellTargetData
         {
             uint32 Flags = 0;
-            ObjectGuid Unit;
+            ObjectGuid UnitGUID;
             ObjectGuid Item;
             Optional<TargetLocation> SrcLocation;
             Optional<TargetLocation> DstLocation;
@@ -760,7 +760,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            ObjectGuid Unit;
+            ObjectGuid UnitGUID;
             int32 KitRecID = 0;
             int32 KitType = 0;
             uint32 Duration = 0;
@@ -1007,7 +1007,7 @@ namespace WorldPackets
         class ResyncRunes final : public ServerPacket
         {
         public:
-            ResyncRunes(size_t size) : ServerPacket(SMSG_RESYNC_RUNES, 1 + 1 + 4 + size) { }
+            ResyncRunes(std::size_t size) : ServerPacket(SMSG_RESYNC_RUNES, 1 + 1 + 4 + size) { }
 
             WorldPacket const* Write() override;
 

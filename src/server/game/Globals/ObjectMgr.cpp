@@ -9195,9 +9195,9 @@ void ObjectMgr::LoadCreatureOutfits()
     {
         auto* maleModel = sDB2Manager.GetChrModel(e->ID, GENDER_MALE);
         auto* femaleModel = sDB2Manager.GetChrModel(e->ID, GENDER_FEMALE);
-        ASSERT(maleModel && femaleModel, "Dress NPCs cannot find male or female model from DBC with race %u", e->Name[DEFAULT_LOCALE]);
-        ASSERT(GetCreatureModelInfo(maleModel->DisplayID), "Dress NPCs requires an entry in creature_model_info for modelid %u (%u Male)", maleModel->DisplayID, e->Name[DEFAULT_LOCALE]);
-        ASSERT(GetCreatureModelInfo(femaleModel->DisplayID), "Dress NPCs requires an entry in creature_model_info for modelid %u (%u Female)", femaleModel->DisplayID, e->Name[DEFAULT_LOCALE]);
+        ASSERT(maleModel && femaleModel, "Dress NPCs cannot find male or female model from DBC with race %s", e->Name[DEFAULT_LOCALE]);
+        ASSERT(GetCreatureModelInfo(maleModel->DisplayID), "Dress NPCs requires an entry in creature_model_info for modelid %u (%s Male)", maleModel->DisplayID, e->Name[DEFAULT_LOCALE]);
+        ASSERT(GetCreatureModelInfo(femaleModel->DisplayID), "Dress NPCs requires an entry in creature_model_info for modelid %u (%s Female)", femaleModel->DisplayID, e->Name[DEFAULT_LOCALE]);
     }
 
     QueryResult result = WorldDatabase.Query("SELECT entry, npcsoundsid, race, class, gender, spellvisualkitid, customizations, "
