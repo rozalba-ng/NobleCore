@@ -141,8 +141,8 @@ void ElunaLoader::ReadFiles(lua_State* L, std::string path)
             if (dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_HIDDEN))
                 continue;
 #else
-            struct stat st;
-            if (stat(fullpath.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR)
+            std::string name = dir_iter->path().filename().generic_string().c_str();
+            if (name[0] == '.')
                 continue;
 #endif
 
