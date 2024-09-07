@@ -1328,6 +1328,13 @@ public:
         sModelFileDataStore.LoadFromDB();
         sChrCustomizationMaterialStore.LoadFromDB();
 
+        sChrCustomizationGeosetStore.LoadFromDB();
+        sItemDisplayInfoModelMatResStore.LoadFromDB();
+        sItemDisplayInfoStore.LoadFromDB();
+        sItemDisplayInfoMaterialResStore.LoadFromDB();
+        //sChrCustomizationReqChoiceStore.LoadFromDB();
+        //sChrCustomizationElementStore.LoadFromDB();
+
         // For items.
         sObjectMgr->LoadItemTemplates();
         sObjectMgr->LoadItemTemplateAddon();
@@ -1341,7 +1348,7 @@ public:
         for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
             itr->second->GetSession()->SendAvailableHotfixes();
 
-        handler->SendGlobalGMSysMessage("101 DB2 reloaded.");
+        handler->SendGlobalGMSysMessage("105 DB2 reloaded.");
         handler->SendGlobalGMSysMessage("Hotfixes data reloaded.");
 
         return true;
