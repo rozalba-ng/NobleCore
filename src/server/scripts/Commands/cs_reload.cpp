@@ -1324,6 +1324,16 @@ public:
         sTaxiNodesStore.LoadFromDB();
         sTaxiPathStore.LoadFromDB();
 
+        sChrCustomizationGeosetStore.LoadFromDB();
+        sItemDisplayInfoModelMatResStore.LoadFromDB();
+        sItemDisplayInfoStore.LoadFromDB();
+        sItemDisplayInfoMaterialResStore.LoadFromDB();
+        sTextureFileDataStore.LoadFromDB();
+        sModelFileDataStore.LoadFromDB();
+        //sChrCustomizationReqChoiceStore.LoadFromDB();
+        //sChrCustomizationElementStore.LoadFromDB();
+        sChrCustomizationMaterialStore.LoadFromDB();
+
         // For items.
         sObjectMgr->LoadItemTemplates();
         sObjectMgr->LoadItemTemplateAddon();
@@ -1337,7 +1347,7 @@ public:
         for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
             itr->second->GetSession()->SendAvailableHotfixes();
 
-        handler->SendGlobalGMSysMessage("98 DB2 reloaded.");
+        handler->SendGlobalGMSysMessage("107 DB2 reloaded.");
         handler->SendGlobalGMSysMessage("Hotfixes data reloaded.");
 
         return true;
