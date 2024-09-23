@@ -651,7 +651,6 @@ namespace LuaWorldObject
     int GetAngle(Eluna* E, WorldObject* obj)
     {
         WorldObject* target = E->CHECKOBJ<WorldObject>(2, false);
-#ifndef CATA
         if (target)
             E->Push(obj->GetAbsoluteAngle(target));
         else
@@ -660,16 +659,6 @@ namespace LuaWorldObject
             float y = E->CHECKVAL<float>(3);
             E->Push(obj->GetAbsoluteAngle(x, y));
         }
-#else
-        if (target)
-            E->Push(obj->GetAngle(target));
-        else
-        {
-            float x = E->CHECKVAL<float>(2);
-            float y = E->CHECKVAL<float>(3);
-            E->Push(obj->GetAngle(x, y));
-        }
-#endif
 
         return 1;
     }
@@ -707,14 +696,8 @@ namespace LuaWorldObject
         float o = E->CHECKVAL<float>(6);
         uint32 respawnDelay = E->CHECKVAL<uint32>(7, 30);
 
-#ifndef CATA
         QuaternionData rot = QuaternionData::fromEulerAnglesZYX(o, 0.f, 0.f);
-
         E->Push(obj->SummonGameObject(entry, Position(x, y, z, o), rot, Seconds(respawnDelay)));
-#else
-        QuaternionData rot = QuaternionData::fromEulerAnglesZYX(o, 0.f, 0.f);
-        E->Push(obj->SummonGameObject(entry, x, y, z, o, rot, respawnDelay));
-#endif
         return 1;
     }
 
@@ -785,11 +768,8 @@ namespace LuaWorldObject
                 return luaL_argerror(E->L, 7, "valid SpawnType expected");
         }
 
-#ifndef CATA
         E->Push(obj->SummonCreature(entry, x, y, z, o, type, Milliseconds(despawnTimer)));
-#else
-        E->Push(obj->SummonCreature(entry, x, y, z, o, type, despawnTimer));
-#endif
+
         return 1;
     }
 

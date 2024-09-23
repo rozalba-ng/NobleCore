@@ -11,6 +11,7 @@
 #include <RestMgr.h>
 #include "NPCPackets.h"
 #include "PartyPackets.h"
+#include "Unit.h"
 #include <boost/callable_traits/args.hpp>
 
 /***
@@ -1449,6 +1450,17 @@ namespace LuaPlayer
     }
 
     /**
+     * Returns the [Player]s money
+     *
+     * @return uint64 money
+     */
+    int GetMoney(Eluna* E, Player* player)
+    {
+        E->Push(player->GetMoney());
+        return 1;
+    }
+
+    /**
      * Locks the player controls and disallows all movement and casting.
      *
      * @param bool apply = true : lock if true and unlock if false
@@ -1804,6 +1816,26 @@ namespace LuaPlayer
             player->SetPvpFlag(UNIT_BYTE2_FLAG_FFA_PVP);
         else
             player->RemovePvpFlag(UNIT_BYTE2_FLAG_FFA_PVP);
+        return 0;
+    }
+
+    int SetMovement(Eluna* E, Player* player)
+    {
+        int32 pType = E->CHECKVAL<int32>(2);
+
+        switch (pType)
+        {
+        case 1: // MOVE_ROOT
+            player->SetControlled(true, UNIT_STATE_ROOT);
+        case 2: // MOVE_UNROOT
+            player->SetControlled(false, UNIT_STATE_ROOT);
+        case 3: // MOVE_WATER_WALK
+            player->SetWaterWalking(true);
+        case 4: // MOVE_LAND_WALK
+            player->SetWaterWalking(false);
+        default:
+            return 0;
+        }
         return 0;
     }
 
@@ -3476,6 +3508,7 @@ namespace LuaPlayer
         { "GetGuildName", &LuaPlayer::GetGuildName },
         { "GetSpellCooldownDelay", &LuaPlayer::GetSpellCooldownDelay },
         { "GetGuildRank", &LuaPlayer::GetGuildRank },
+        { "SetMovement", &LuaPlayer::SetMovement },
         { "GetHealthBonusFromStamina", &LuaPlayer::GetHealthBonusFromStamina },
         { "GetManaBonusFromIntellect", &LuaPlayer::GetManaBonusFromIntellect },
         { "GetMaxSkillValue", &LuaPlayer::GetMaxSkillValue },
@@ -3508,6 +3541,7 @@ namespace LuaPlayer
         { "GetMailCount", &LuaPlayer::GetMailCount },
         { "GetXP", &LuaPlayer::GetXP },
         { "GetXPForNextLevel", &LuaPlayer::GetXPForNextLevel },
+        { "GetMoney", &LuaPlayer::GetMoney },
 
         // Setters
         { "AdvanceSkill", &LuaPlayer::AdvanceSkill },
