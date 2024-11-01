@@ -261,10 +261,10 @@ class spell_switch_flight : public SpellScript
 
 void AddSC_dragonriding_spell_scripts()
 {
-    RegisterSpellScript(spell_af_skyriding);
-    RegisterSpellScript(spell_af_energy);
-    RegisterSpellScript(spell_af_skyward_ascent);
-    RegisterSpellScript(spell_af_surge_forward);
-    RegisterSpellScript(spell_af_whirling_surge);
+    //RegisterSpellScript(spell_af_skyriding);
+    //RegisterSpellScript(spell_af_energy);
+    //RegisterSpellScript(spell_af_skyward_ascent);
+    //RegisterSpellScript(spell_af_surge_forward);
+    //RegisterSpellScript(spell_af_whirling_surge);
     RegisterSpellScript(spell_switch_flight);
 }

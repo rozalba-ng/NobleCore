@@ -58,14 +58,14 @@ TC_API_EXPORT EnumText EnumUtils<Races>::ToString(Races value)
         case RACE_MECHAGNOME: return { "RACE_MECHAGNOME", "Mechagnome", "Mechagnome (RaceMask bit 14)" };
         case RACE_DRACTHYR_ALLIANCE: return { "RACE_DRACTHYR_ALLIANCE", "Dracthyr", "Dracthyr (Alliance) (RaceMask bit 16)" };
         case RACE_DRACTHYR_HORDE: return { "RACE_DRACTHYR_HORDE", "Dracthyr", "Dracthyr (Horde) (RaceMask bit 15)" };
-        case RACE_EARTHEN_DWARF_HORDE: return { "RACE_EARTHEN_HORDE", "Earthen", "Earthen (Horde) (RaceMask bit 16)" };
-        case RACE_EARTHEN_DWARF_ALLIANCE: return { "RACE_EARTHEN_ALLIANCE", "Earthen", "Earthen (Alliance) (RaceMask bit 17)" };
+        case RACE_EARTHEN_DWARF_HORDE: return { "RACE_EARTHEN_DWARF_HORDE", "Earthen", "Earthen (Horde) (RaceMask bit 17)" };
+        case RACE_EARTHEN_DWARF_ALLIANCE: return { "RACE_EARTHEN_DWARF_ALLIANCE", "Earthen", "Earthen (Alliance) (RaceMask bit 18)" };
         default: throw std::out_of_range("value");
     }
 }
 
 template <>
-TC_API_EXPORT size_t EnumUtils<Races>::Count() { return 27; }
+TC_API_EXPORT size_t EnumUtils<Races>::Count() { return 29; }
 
 template <>
 TC_API_EXPORT Races EnumUtils<Races>::FromIndex(size_t index)

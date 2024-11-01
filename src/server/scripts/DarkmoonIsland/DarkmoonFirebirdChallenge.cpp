@@ -75,7 +75,7 @@
 #include "TemporarySummon.h"
 #include <sstream>
 
-const Position areatrigger_firebird_challenge_list[56] =
+constexpr Position areatrigger_firebird_challenge_list[56] =
 {
     {-4177.096f, 6412.299f, 53.74761f, 0.9677705f},
     {-4153.389f, 6421.354f, 49.73269f, 0.7785892f},
@@ -135,11 +135,69 @@ const Position areatrigger_firebird_challenge_list[56] =
     {-3880.603f, 6715.769f, 22.8216f, 0.8163199f}
 };
 
-//spell - quest 170823
-//new speed - 170820
-//spell starter - 170819
+// Npc - 85546
+class npc_ziggie_sparks : public CreatureScript
+{
+public:
+    npc_ziggie_sparks() : CreatureScript("npc_ziggie_sparks") { }
 
- /// Wings of Flame trigerred - 170820
+    struct npc_ziggie_sparksAI : public ScriptedAI
+    {
+        npc_ziggie_sparksAI(Creature* creature) : ScriptedAI(creature) { }
+
+        bool OnGossipHello(Player* player) override
+        {
+            if (me->IsQuestGiver())
+                player->PrepareQuestMenu(me->GetGUID());
+
+            AddGossipItemFor(player, 16970, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 16970, 1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+
+            player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(me), me->GetGUID());
+            return true;
+        }
+
+        bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
+        {
+            uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+            ClearGossipMenuFor(player);
+
+            switch (action)
+            {
+                // Info
+            case GOSSIP_ACTION_INFO_DEF + 1:
+                player->PlayerTalkClass->ClearMenus();
+                AddGossipItemFor(player, 16972, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                SendGossipMenuFor(player, 24704, me->GetGUID());
+                break;
+                // Ready to play
+            case  GOSSIP_ACTION_INFO_DEF + 2:
+                if (player->HasItemCount(ITEM_DARKMOON_TOKEN))
+                {
+                    CloseGossipMenuFor(player);
+
+                    player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
+                    player->CastSpell(player, WINGS_OF_FLAME_START, true);
+                }
+                break;
+                // I understand
+            case GOSSIP_ACTION_INFO_DEF + 3:
+                player->PlayerTalkClass->ClearMenus();
+                return OnGossipHello(player);
+                break;
+            }
+
+            return false;
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return new npc_ziggie_sparksAI(creature);
+    }
+};
+
+// Wings of Flame triger - 170820
 class spell_darkmoon_firebird_challenge_check_trigger : public SpellScriptLoader
 {
 public:
@@ -155,11 +213,15 @@ public:
             if (!caster)
                 return;
 
-            std::vector<AreaTrigger*> areatriggerlist = caster->GetAreaTriggers(170815);
+            std::vector<AreaTrigger*> areatriggerlist = caster->GetAreaTriggers(SUMMON_RINGS_AT);
 
             for (AreaTrigger* areatrigger : areatriggerlist)
                 areatrigger->RemoveFromWorld();
+
+            caster->RemoveAurasDueToSpell(BLAZING_RING);
+            caster->CastSpell(caster, SLOW_FALL, true);
         }
+
 
         void Register() override
         {
@@ -173,7 +235,7 @@ public:
     }
 };
 
-/// Firebird Challenge - Wings of flame (trigger) 170819
+// Firebird Challenge - Wings of flame (trigger) 170819
 class spell_darkmoon_firebird_challenge : public SpellScriptLoader
 {
 public:
@@ -183,23 +245,25 @@ public:
     {
         PrepareAuraScript(spell_darkmoon_firebird_challenge_AuraScript);
 
+        bool isTriggered = false;
 
-        void OnPeriodic(AuraEffect const* aurEff)
+        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             Unit* caster = GetCaster();
-            if (!caster)
+            if (!caster || isTriggered)
                 return;
 
-            if (aurEff->GetTickNumber() == 1)
+            isTriggered = true;
+
+            for (Position const& spawnPoint : areatrigger_firebird_challenge_list)
             {
-                for (uint8 i = 1; i < 56; ++i)
-                    caster->CastSpell(areatrigger_firebird_challenge_list[i], 170815, true);
+                caster->CastSpell(spawnPoint, SUMMON_RINGS_AT, true);
             }
         }
 
         void Register() override
         {
-            OnEffectPeriodic += AuraEffectPeriodicFn(spell_darkmoon_firebird_challenge_AuraScript::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+            OnEffectApply += AuraEffectApplyFn(spell_darkmoon_firebird_challenge_AuraScript::OnApply, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
         }
     };
 
@@ -209,8 +273,66 @@ public:
     }
 };
 
+// Summon Rings - 170815
+// AreaTriggerID - 3069 (7712)
+class at_darkmoon_firebird_ring : public AreaTriggerEntityScript
+{
+public:
+
+    at_darkmoon_firebird_ring() : AreaTriggerEntityScript("at_darkmoon_firebird_ring") { }
+
+    struct at_darkmoon_firebird_ringAI : AreaTriggerAI
+    {
+        int32 timeInterval;
+
+        at_darkmoon_firebird_ringAI(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger)
+        {
+            timeInterval = 200;
+        }
+
+        void OnUnitEnter(Unit* unit) override
+        {
+            Unit* caster = at->GetCaster();
+
+            if (!caster || !unit)
+                return;
+
+            if (!caster->ToPlayer())
+                return;
+
+            caster->CastSpell(caster, BLAZING_RING, true);
+            caster->CastSpell(caster, WINGS_OF_FLAME_AURA, true);
+            at->RemoveFromWorld();
+
+            if (Aura* shootAura = caster->GetAura(BLAZING_RING))
+            {
+
+                Player* pl = caster->ToPlayer();
+
+                if (shootAura->GetStackAmount() >= 50)
+                {
+                    if (!pl->HasAchieved(ACHIEVEMENT_BLOOD_OF_ALYSRAZOR))
+                    {
+
+                        AchievementEntry const* achiev = sAchievementStore.LookupEntry(ACHIEVEMENT_BLOOD_OF_ALYSRAZOR);
+                        if (pl)
+                            pl->CompletedAchievement(achiev);
+                    }
+                }
+            }
+        }
+    };
+
+    AreaTriggerAI* GetAI(AreaTrigger* areatrigger) const override
+    {
+        return new at_darkmoon_firebird_ringAI(areatrigger);
+    }
+};
+
 void AddSC_darkmoon_firebird_challenge()
 {
-    //new spell_darkmoon_firebird_challenge_check_trigger();
-    //new spell_darkmoon_firebird_challenge();
+    new npc_ziggie_sparks();
+    new spell_darkmoon_firebird_challenge_check_trigger();
+    new spell_darkmoon_firebird_challenge();
+    new at_darkmoon_firebird_ring();
 };

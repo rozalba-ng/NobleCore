@@ -50,7 +50,7 @@ namespace LuaPacket
     int SetOpcode(Eluna* E, WorldPacket* packet)
     {
         uint32 opcode = E->CHECKVAL<uint32>(2);
-        if (opcode >= MAX_CMSG_OPCODE_NUMBER)
+        if (opcode >= NUM_CMSG_OPCODES)
             return luaL_argerror(E->L, 2, "valid opcode expected");
 
         packet->SetOpcode((OpcodesList)opcode);

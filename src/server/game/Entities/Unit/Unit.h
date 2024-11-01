@@ -610,29 +610,6 @@ enum ReactiveType
     MAX_REACTIVE
 };
 
-enum AdvFlyingRateType : uint8
-{
-    ADV_FLYING_AIR_FRICTION = 0,
-    ADV_FLYING_MAX_VEL,
-    ADV_FLYING_LIFT_COEFFICIENT,
-    ADV_FLYING_DOUBLE_JUMP_VEL_MOD,
-    ADV_FLYING_GLIDE_START_MIN_HEIGHT,
-    ADV_FLYING_ADD_IMPULSE_MAX_SPEED,
-    ADV_FLYING_BANKING_RATE_MIN,
-    ADV_FLYING_BANKING_RATE_MAX,
-    ADV_FLYING_PITCHING_RATE_DOWN_MIN,
-    ADV_FLYING_PITCHING_RATE_DOWN_MAX,
-    ADV_FLYING_PITCHING_RATE_UP_MIN,
-    ADV_FLYING_PITCHING_RATE_UP_MAX,
-    ADV_FLYING_TURN_VELOCITY_THRESHOLD_MIN,
-    ADV_FLYING_TURN_VELOCITY_THRESHOLD_MAX,
-    ADV_FLYING_SURFACE_FRICTION,
-    ADV_FLYING_OVER_MAX_DECELERATION,
-    ADV_FLYING_LAUNCH_SPEED_COEFFICIENT,
-
-    ADV_FLYING_MAX_SPEED_TYPE
-};
-
 struct PositionUpdateInfo
 {
     void Reset()
@@ -1171,7 +1148,6 @@ class TC_GAME_API Unit : public WorldObject
         bool SetFall(bool enable);
         bool SetSwim(bool enable);
         bool SetCanFly(bool enable);
-        bool SetCanAdvFly(bool enable);
         bool SetWaterWalking(bool enable);
         bool SetFeatherFall(bool enable);
         bool SetHover(bool enable, bool updateAnimTier = true);
@@ -1181,6 +1157,7 @@ class TC_GAME_API Unit : public WorldObject
         bool SetCanTurnWhileFalling(bool enable);
         bool SetCanDoubleJump(bool enable);
         bool SetDisableInertia(bool disable);
+        bool SetCanAdvFly(bool enable);
         bool SetMoveCantSwim(bool cantSwim);
         void SendSetVehicleRecId(uint32 vehicleId);
 
@@ -1714,6 +1691,14 @@ class TC_GAME_API Unit : public WorldObject
         void SetSpeed(UnitMoveType mtype, float newValue);
         void SetSpeedRate(UnitMoveType mtype, float rate);
 
+        int32 GetFlightCapabilityID() const { return m_unitData->FlightCapabilityID; }
+        void SetFlightCapabilityID(int32 flightCapabilityId, bool clientUpdate);
+        float GetAdvFlyingSpeed(AdvFlyingRateTypeSingle speedType) const { return m_advFlyingSpeed[speedType]; }
+        float GetAdvFlyingSpeedMin(AdvFlyingRateTypeRange speedType) const { return m_advFlyingSpeed[speedType]; }
+        float GetAdvFlyingSpeedMax(AdvFlyingRateTypeRange speedType) const { return m_advFlyingSpeed[speedType + 1]; }
+        void UpdateAdvFlyingSpeed(AdvFlyingRateTypeSingle speedType, bool clientUpdate);
+        void UpdateAdvFlyingSpeed(AdvFlyingRateTypeRange speedType, bool clientUpdate);
+
         void FollowerAdded(AbstractFollower* f) { m_followingMe.insert(f); }
         void FollowerRemoved(AbstractFollower* f) { m_followingMe.erase(f); }
         void RemoveAllFollowers();
@@ -1806,9 +1791,6 @@ class TC_GAME_API Unit : public WorldObject
         virtual bool CanEnterWater() const = 0;
         virtual bool CanSwim() const;
 
-        uint32 GetFlightCapabilityID() const { return m_unitData->FlightCapabilityID; }
-        void SetFlightCapabilityID(uint32 flightCapabilityID);
-        float GetAdvFlyingSpeed(AdvFlyingRateType speedType) const { return _advFlyingSpeeds[speedType]; }
         void CalculateAdvFlyingSpeeds();
         float GetAdvFlyingVelocity() const;
 
@@ -1888,32 +1870,13 @@ class TC_GAME_API Unit : public WorldObject
 
         std::string GetDebugInfo() const override;
 
-        UF::UpdateField<UF::UnitData, 0, TYPEID_UNIT> m_unitData;
+        UF::UpdateField<UF::UnitData, int32(WowCS::EntityFragment::CGObject), TYPEID_UNIT> m_unitData;
 
     protected:
         explicit Unit (bool isWorldObject);
 
         UF::UpdateFieldFlag GetUpdateFieldFlagsFor(Player const* target) const override;
-        void BuildValuesCreate(ByteBuffer* data, Player const* target) const override;
-        void BuildValuesUpdate(ByteBuffer* data, Player const* target) const override;
 
-    public:
-        void BuildValuesUpdateWithFlag(ByteBuffer* data, UF::UpdateFieldFlag flags, Player const* target) const override;
-        void BuildValuesUpdateForPlayerWithMask(UpdateData* data, UF::ObjectData::Mask const& requestedObjectMask,
-            UF::UnitData::Mask const& requestedUnitMask, Player const* target) const;
-
-        struct ValuesUpdateForPlayerWithMaskSender // sender compatible with MessageDistDeliverer
-        {
-            explicit ValuesUpdateForPlayerWithMaskSender(Unit const* owner) : Owner(owner) { }
-
-            Unit const* Owner;
-            UF::ObjectData::Base ObjectMask;
-            UF::UnitData::Base UnitMask;
-
-            void operator()(Player const* player) const;
-        };
-
-    protected:
         void DestroyForPlayer(Player* target) const override;
         void ClearUpdateMask(bool remove) override;
 
@@ -1971,6 +1934,7 @@ class TC_GAME_API Unit : public WorldObject
         Trinity::Containers::FlatSet<AuraApplication*, VisibleAuraSlotCompare> m_visibleAurasToUpdate;
 
         std::array<float, MAX_MOVE_TYPE> m_speed_rate;
+        std::array<float, ADV_FLYING_MAX_SPEED_TYPE> m_advFlyingSpeed;
 
         Unit* m_unitMovedByMe;    // only ever set for players, and only for direct client control
         Player* m_playerMovingMe; // only set for direct client control (possess effects, vehicles and similar)

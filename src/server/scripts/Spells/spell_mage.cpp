@@ -41,6 +41,7 @@
 #include "ScriptedCreature.h"
 #include "InstanceScript.h"
 #include "SpellInfo.h"
+#include <iostream>
 
 enum MageSpells
 {
@@ -120,9 +121,13 @@ enum MageSpells
     SPELL_MAGE_RULE_OF_THREES_BUFF               = 264774,
     SPELL_ARCANE_CHARGE                          = 36032,
     SPELL_MAGE_RULE_OF_THREES                    = 264354,
+
     SPELL_MAGE_METEOR_BURN                       = 155158,
     SPELL_MAGE_METEOR_VISUAL                     = 174556,
     SPELL_MAGE_ARCANE_ORB_DAMAGE                 = 153640,
+    SPELL_MAGE_FROZEN_ORB                        = 84714,
+    SPELL_MAGE_FROZEN_ORB_DAMAGE                 = 84721,
+
 };
 
 // 110909 - Alter Time Aura
@@ -1738,15 +1743,80 @@ private:
 
 // Arcane Orb - 153626
 // AreaTriggerID - 1612
-struct at_mage_arcane_orb : AreaTriggerAI
+class at_mage_arcane_orb : public AreaTriggerEntityScript
 {
-    at_mage_arcane_orb(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
+public:
+    at_mage_arcane_orb() : AreaTriggerEntityScript("at_mage_arcane_orb") { }
 
-    void OnUnitEnter(Unit* unit) override
+    struct at_mage_arcane_orbAI : AreaTriggerAI
     {
-        if (Unit* caster = at->GetCaster())
-            if (caster->IsValidAttackTarget(unit))
-                caster->CastSpell(unit, SPELL_MAGE_ARCANE_ORB_DAMAGE, true);
+        at_mage_arcane_orbAI(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
+
+        void OnUnitEnter(Unit* unit) override
+        {
+            if (Unit* caster = at->GetCaster())
+            {
+                std::cout << "Caster Getted";
+                if (caster->IsValidAttackTarget(unit))
+                {
+                    std::cout << "Target Valid";
+                    caster->CastSpell(unit, SPELL_MAGE_ARCANE_ORB_DAMAGE, TRIGGERED_FULL_MASK);
+                }
+            }
+        }
+    };
+
+    AreaTriggerAI* GetAI(AreaTrigger* areatrigger) const override
+    {
+        return new at_mage_arcane_orbAI(areatrigger);
+    }
+};
+
+// Frozen Orb - 84714
+// AreaTriggerID - 8661
+struct at_mage_frozen_orb : AreaTriggerAI
+{
+    at_mage_frozen_orb(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger)
+    {
+        damageInterval = 500;
+    }
+
+    uint32 damageInterval;
+    bool procDone = false;
+
+    void OnUpdate(uint32 diff) override
+    {
+        Unit* caster = at->GetCaster();
+        if (!caster || !caster->IsPlayer())
+            return;
+
+        if (damageInterval <= diff)
+        {
+            if (!procDone)
+            {
+                for (ObjectGuid guid : at->GetInsideUnits())
+                {
+                    if (Unit* unit = ObjectAccessor::GetUnit(*caster, guid))
+                    {
+                        if (caster->IsValidAttackTarget(unit))
+                        {
+                            if (caster->HasAura(SPELL_MAGE_FINGERS_OF_FROST_AURA))
+                                caster->CastSpell(caster, SPELL_MAGE_FINGERS_OF_FROST_VISUAL_UI, true);
+
+                            caster->CastSpell(caster, SPELL_MAGE_FINGERS_OF_FROST_AURA, true);
+
+                            procDone = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            caster->CastSpell(at->GetPosition(), SPELL_MAGE_FROZEN_ORB_DAMAGE, true);
+            damageInterval = 500;
+        }
+        else
+            damageInterval -= diff;
     }
 };
 
@@ -1804,5 +1874,6 @@ void AddSC_mage_spell_scripts()
     new at_mage_meteor_timer();
     new at_mage_meteor_burn();
     RegisterSpellScript(spell_mage_presence_of_mind);
-    RegisterAreaTriggerAI(at_mage_arcane_orb);
+    new at_mage_arcane_orb();
+    RegisterAreaTriggerAI(at_mage_frozen_orb);
 }

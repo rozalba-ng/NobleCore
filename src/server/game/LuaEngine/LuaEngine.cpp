@@ -792,7 +792,7 @@ int Eluna::Register(uint8 regtype, uint32 entry, ObjectGuid guid, uint32 instanc
         case Hooks::REGTYPE_PACKET:
             if (event_id < Hooks::PACKET_EVENT_COUNT)
             {
-                if (entry >= MAX_CMSG_OPCODE_NUMBER)
+                if (entry >= NUM_CMSG_OPCODES)
                 {
                     luaL_unref(L, LUA_REGISTRYINDEX, functionRef);
                     luaL_error(L, "Couldn't find a creature with (ID: {})!", entry);
