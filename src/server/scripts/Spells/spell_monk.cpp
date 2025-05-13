@@ -273,7 +273,7 @@ class spell_monk_life_cocoon : public SpellScript
             calmingCoalescence->GetBase()->Remove();
         }
 
-        GetSpell()->SetSpellValue(SPELLVALUE_BASE_POINT0, absorb);
+        GetSpell()->SetSpellValue({ SPELLVALUE_BASE_POINT0, absorb });
     }
 
     void Register() override
@@ -772,6 +772,7 @@ class spell_monk_zen_pilgrimage : public SpellScriptLoader
 {
 public:
     spell_monk_zen_pilgrimage() : SpellScriptLoader("spell_monk_zen_pilgrimage") { }
+
     class spell_monk_zen_pilgrimage_SpellScript : public SpellScript
     {
         SpellCastResult CheckDist()
@@ -787,6 +788,7 @@ public:
                     }
             return SPELL_CAST_OK;
         }
+
         void HandleOnCast()
         {
             if (Unit* caster = GetCaster())
@@ -799,12 +801,14 @@ public:
                     }
                 }
         }
+
         void Register() override
         {
             OnCast += SpellCastFn(spell_monk_zen_pilgrimage_SpellScript::HandleOnCast);
             OnCheckCast += SpellCheckCastFn(spell_monk_zen_pilgrimage_SpellScript::CheckDist);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_zen_pilgrimage_SpellScript();
@@ -816,6 +820,7 @@ class spell_monk_zen_pilgrimage_return : public SpellScriptLoader
 {
 public:
     spell_monk_zen_pilgrimage_return() : SpellScriptLoader("spell_monk_zen_pilgrimage_return") { }
+
     class spell_monk_zen_pilgrimage_return_SpellScript : public SpellScript
     {
         void HandleDummy(SpellEffIndex /*effIndex*/)
@@ -832,11 +837,13 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             OnEffectHitTarget += SpellEffectFn(spell_monk_zen_pilgrimage_return_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_zen_pilgrimage_return_SpellScript();
@@ -854,6 +861,7 @@ class spell_monk_tiger_palm : public SpellScript
             powerStrikes->Remove();
         }
     }
+
     void Register() override
     {
         OnEffectHitTarget += SpellEffectFn(spell_monk_tiger_palm::HandleHit, EFFECT_1, SPELL_EFFECT_ENERGIZE);
@@ -865,9 +873,9 @@ class spell_monk_zen_flight_check : public SpellScriptLoader
 {
 public:
     spell_monk_zen_flight_check() : SpellScriptLoader("spell_monk_zen_flight_check") { }
+
     class spell_monk_zen_flight_check_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_zen_flight_check_SpellScript);
         SpellCastResult CheckTarget()
         {
             if (Player* _player = GetCaster()->ToPlayer())
@@ -889,22 +897,25 @@ public:
             }
             return SPELL_CAST_OK;
         }
+
         void Register() override
         {
             OnCheckCast += SpellCheckCastFn(spell_monk_zen_flight_check_SpellScript::CheckTarget);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_zen_flight_check_SpellScript();
     }
+
     class spell_monk_zen_flight_check_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_zen_flight_check_AuraScript);
         bool Load() override
         {
             return GetCaster() && GetCaster()->GetTypeId() == TYPEID_PLAYER;
         }
+
         void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
         {
             if (!GetCaster())
@@ -913,11 +924,13 @@ public:
                 if (caster->GetSkillValue(SKILL_RIDING) >= 375)
                     amount = 310;
         }
+
         void Register() override
         {
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_monk_zen_flight_check_AuraScript::CalculateAmount, EFFECT_1, SPELL_AURA_MOD_INCREASE_VEHICLE_FLIGHT_SPEED);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_zen_flight_check_AuraScript();
@@ -927,17 +940,18 @@ public:
 // Disable - 116095
 class spell_monk_disable : public SpellScript
 {
-    PrepareSpellScript(spell_monk_disable);
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_MONK_DISABLE, SPELL_MONK_DISABLE_ROOT });
     }
+
     void HandleOnEffectHitTarget(SpellEffIndex /*effectIndex*/)
     {
         if (Unit* target = GetExplTargetUnit())
             if (target->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED))
                 GetCaster()->CastSpell(target, SPELL_MONK_DISABLE_ROOT, true);
     }
+
     void Register() override
     {
         OnEffectHitTarget += SpellEffectFn(spell_monk_disable::HandleOnEffectHitTarget, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
@@ -947,7 +961,6 @@ class spell_monk_disable : public SpellScript
 // Disable - 116095
 class aura_monk_disable : public AuraScript
 {
-    PrepareAuraScript(aura_monk_disable);
     bool CheckProc(ProcEventInfo& eventInfo)
     {
         if (DamageInfo* damageInfo = eventInfo.GetDamageInfo())
@@ -962,6 +975,7 @@ class aura_monk_disable : public AuraScript
         }
         return false;
     }
+
     void Register() override
     {
         DoCheckProc += AuraCheckProcFn(aura_monk_disable::CheckProc);
@@ -973,9 +987,9 @@ class spell_monk_spear_hand_strike : public SpellScriptLoader
 {
 public:
     spell_monk_spear_hand_strike() : SpellScriptLoader("spell_monk_spear_hand_strike") { }
+
     class spell_monk_spear_hand_strike_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_spear_hand_strike_SpellScript);
         void HandleOnHit()
         {
             if (Player* _player = GetCaster()->ToPlayer())
@@ -990,11 +1004,13 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             OnHit += SpellHitFn(spell_monk_spear_hand_strike_SpellScript::HandleOnHit);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_spear_hand_strike_SpellScript();
@@ -1006,20 +1022,22 @@ class spell_monk_fortifying_brew : public SpellScriptLoader
 {
 public:
     spell_monk_fortifying_brew() : SpellScriptLoader("spell_monk_fortifying_brew") { }
+
     class spell_monk_fortifying_brew_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_fortifying_brew_SpellScript);
         void HandleDummy(SpellEffIndex /*effIndex*/)
         {
             Unit* caster = GetCaster();
             if (caster && caster->GetTypeId() == TYPEID_PLAYER)
                 caster->CastSpell(caster, SPELL_MONK_FORTIFYING_BREW, true);
         }
+
         void Register() override
         {
             OnEffectHitTarget += SpellEffectFn(spell_monk_fortifying_brew_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_fortifying_brew_SpellScript();
@@ -1031,9 +1049,9 @@ class spell_monk_purifying_brew : public SpellScriptLoader
 {
 public:
     spell_monk_purifying_brew() : SpellScriptLoader("spell_monk_purifying_brew") { }
+
     class spell_monk_purifying_brew_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_purifying_brew_SpellScript);
         void HandleOnHit()
         {
             if (Unit* caster = GetCaster())
@@ -1054,11 +1072,13 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             OnHit += SpellHitFn(spell_monk_purifying_brew_SpellScript::HandleOnHit);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_purifying_brew_SpellScript();
@@ -1070,9 +1090,9 @@ class spell_monk_breath_of_fire : public SpellScriptLoader
 {
 public:
     spell_monk_breath_of_fire() : SpellScriptLoader("spell_monk_breath_of_fire") { }
+
     class spell_monk_breath_of_fire_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_breath_of_fire_SpellScript);
         void HandleAfterHit()
         {
             if (Unit* caster = GetCaster())
@@ -1090,11 +1110,13 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             AfterHit += SpellHitFn(spell_monk_breath_of_fire_SpellScript::HandleAfterHit);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_breath_of_fire_SpellScript();
@@ -1106,19 +1128,22 @@ class spell_monk_dampen_harm : public SpellScriptLoader
 {
 public:
     spell_monk_dampen_harm() : SpellScriptLoader("spell_monk_dampen_harm") { }
+
     class spell_monk_dampen_harm_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_dampen_harm_AuraScript);
         int32 healthPct;
+
         bool Load() override
         {
             healthPct = GetSpellInfo()->GetEffect(EFFECT_0).CalcValue(GetCaster());
             return GetUnitOwner()->ToPlayer();
         }
+
         void CalculateAmount(AuraEffect const* /*auraEffect*/, int32& amount, bool& /*canBeRecalculated*/)
         {
             amount = -1;
         }
+
         void Absorb(AuraEffect* auraEffect, DamageInfo& dmgInfo, uint32& absorbAmount)
         {
             Unit* target = GetTarget();
@@ -1128,30 +1153,17 @@ public:
             absorbAmount = dmgInfo.GetDamage() * (GetSpellInfo()->GetEffect(EFFECT_0).CalcValue(GetCaster()) / 100);
             auraEffect->GetBase()->DropCharge();
         }
+
         void Register() override
         {
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_monk_dampen_harm_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
             OnEffectAbsorb += AuraEffectAbsorbFn(spell_monk_dampen_harm_AuraScript::Absorb, EFFECT_0);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_dampen_harm_AuraScript();
-    }
-};
-
-// 324312 - Clash
-class spell_monk_clash : public SpellScript
-{
-    void HandleDummy(SpellEffIndex /*effIndex*/)
-    {
-        GetCaster()->CastSpell(GetHitUnit(), SPELL_MONK_CLASH_RUSH, true);
-        GetCaster()->CastSpell(GetHitUnit(), SPELL_MONK_CLASH_STUN, true);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_monk_clash::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
 
@@ -1160,9 +1172,9 @@ class spell_monk_healing_elixirs_aura : public SpellScriptLoader
 {
 public:
     spell_monk_healing_elixirs_aura() : SpellScriptLoader("spell_monk_healing_elixirs_aura") { }
+
     class spell_monk_healing_elixirs_aura_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_healing_elixirs_aura_AuraScript);
         void OnProc(AuraEffect* /*aurEff*/, ProcEventInfo& eventInfo)
         {
             PreventDefaultAction();
@@ -1181,11 +1193,13 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             OnEffectProc += AuraEffectProcFn(spell_monk_healing_elixirs_aura_AuraScript::OnProc, EFFECT_0, SPELL_AURA_DUMMY);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_healing_elixirs_aura_AuraScript();
@@ -1197,6 +1211,7 @@ public:
 struct at_monk_ring_of_peace : AreaTriggerAI
 {
     at_monk_ring_of_peace(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
+
     void OnUnitEnter(Unit* unit) override
     {
         Unit* caster = at->GetCaster();
@@ -1216,6 +1231,7 @@ struct at_monk_ring_of_peace : AreaTriggerAI
 struct at_monk_song_of_chi_ji : AreaTriggerAI
 {
     at_monk_song_of_chi_ji(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
+
     void OnUnitEnter(Unit* unit) override
     {
         Unit* caster = at->GetCaster();
@@ -1234,10 +1250,10 @@ struct at_monk_song_of_chi_ji : AreaTriggerAI
 class spell_monk_chi_wave : public SpellScriptLoader
 {
 public:
-    spell_monk_chi_wave() : SpellScriptLoader("spell_monk_chi_wave") {}
+    spell_monk_chi_wave() : SpellScriptLoader("spell_monk_chi_wave") { }
+
     class spell_monk_chi_wave_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_chi_wave_SpellScript);
         void HandleDummy(SpellEffIndex /*effIndex*/)
         {
             Unit* caster = GetCaster();
@@ -1249,11 +1265,13 @@ public:
             else if (!caster->IsFriendlyTo(target))
                 caster->CastSpell(target, 132467, CastSpellExtraArgs(TRIGGERED_FULL_MASK).AddSpellMod(SPELLVALUE_BASE_POINT1, GetEffectValue()));
         }
+
         void Register() override
         {
             OnEffectHitTarget += SpellEffectFn(spell_monk_chi_wave_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_chi_wave_SpellScript();
@@ -1265,9 +1283,9 @@ class spell_monk_chi_wave_healing_bolt : public SpellScriptLoader
 {
 public:
     spell_monk_chi_wave_healing_bolt() : SpellScriptLoader("spell_monk_chi_wave_healing_bolt") { }
+
     class spell_monk_chi_wave_healing_bolt_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_chi_wave_healing_bolt_SpellScript);
         void HandleOnHit()
         {
             if (!GetOriginalCaster())
@@ -1276,11 +1294,13 @@ public:
                 if (Unit* target = GetHitUnit())
                     _player->CastSpell(target, SPELL_MONK_CHI_WAVE_HEAL, true);
         }
+
         void Register() override
         {
             OnHit += SpellHitFn(spell_monk_chi_wave_healing_bolt_SpellScript::HandleOnHit);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_chi_wave_healing_bolt_SpellScript();
@@ -1291,10 +1311,10 @@ public:
 class spell_monk_chi_wave_heal_missile : public SpellScriptLoader
 {
 public:
-    spell_monk_chi_wave_heal_missile() : SpellScriptLoader("spell_monk_chi_wave_heal_missile") {}
+    spell_monk_chi_wave_heal_missile() : SpellScriptLoader("spell_monk_chi_wave_heal_missile") { }
+
     class spell_monk_chi_wave_heal_missile_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_chi_wave_heal_missile_AuraScript);
         void OnRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
         {
             Unit* caster = GetCaster();
@@ -1305,11 +1325,13 @@ public:
             // rerun target selector
             caster->CastSpell(target, 132466, CastSpellExtraArgs(TRIGGERED_FULL_MASK).AddSpellMod(SPELLVALUE_BASE_POINT1, aurEff->GetAmount() - 1).SetTriggeringAura(aurEff));
         }
+
         void Register() override
         {
             OnEffectRemove += AuraEffectRemoveFn(spell_monk_chi_wave_heal_missile_AuraScript::OnRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_chi_wave_heal_missile_AuraScript();
@@ -1320,10 +1342,10 @@ public:
 class spell_monk_chi_wave_damage_missile : public SpellScriptLoader
 {
 public:
-    spell_monk_chi_wave_damage_missile() : SpellScriptLoader("spell_monk_chi_wave_damage_missile") {}
+    spell_monk_chi_wave_damage_missile() : SpellScriptLoader("spell_monk_chi_wave_damage_missile") { }
+
     class spell_monk_chi_wave_damage_missile_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_chi_wave_damage_missile_AuraScript);
         void OnRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
         {
             Unit* caster = GetCaster();
@@ -1333,11 +1355,13 @@ public:
             // rerun target selector
             caster->CastSpell(target, 132466, CastSpellExtraArgs(TRIGGERED_FULL_MASK).AddSpellMod(SPELLVALUE_BASE_POINT1, aurEff->GetAmount() - 1).SetTriggeringAura(aurEff));
         }
+
         void Register() override
         {
             OnEffectRemove += AuraEffectRemoveFn(spell_monk_chi_wave_damage_missile_AuraScript::OnRemove, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_chi_wave_damage_missile_AuraScript();
@@ -1367,6 +1391,7 @@ class spell_monk_chi_wave_target_selector : public SpellScript
         Unit const* m_source;
         float m_range;
     };
+
     class HealUnitCheck
     {
     public:
@@ -1383,11 +1408,13 @@ class spell_monk_chi_wave_target_selector : public SpellScript
     private:
         Unit const* m_source;
     };
+
     bool Load() override
     {
         m_shouldHeal = true; // just for initializing
         return true;
     }
+
     void SelectTarget(std::list<WorldObject*>& targets)
     {
         if (targets.empty())
@@ -1412,6 +1439,7 @@ class spell_monk_chi_wave_target_selector : public SpellScript
         targets.clear();
         targets.push_back(target);
     }
+
     void HandleDummy(SpellEffIndex /*effIndex*/)
     {
         if (!GetEffectValue()) // Ran out of bounces
@@ -1424,11 +1452,13 @@ class spell_monk_chi_wave_target_selector : public SpellScript
         else
             GetExplTargetUnit()->CastSpell(target, 132467, CastSpellExtraArgs(TRIGGERED_FULL_MASK).AddSpellMod(SPELLVALUE_BASE_POINT1, GetEffectValue()).SetOriginalCaster(GetOriginalCaster()->GetGUID()));
     }
+
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_chi_wave_target_selector::SelectTarget, EFFECT_1, TARGET_UNIT_DEST_AREA_ENTRY);
         OnEffectHitTarget += SpellEffectFn(spell_monk_chi_wave_target_selector::HandleDummy, EFFECT_1, SPELL_EFFECT_DUMMY);
     }
+
     bool m_shouldHeal;
 };
 
@@ -1436,6 +1466,7 @@ class spell_monk_chi_wave_target_selector : public SpellScript
 struct at_monk_chi_burst : AreaTriggerAI
 {
     at_monk_chi_burst(AreaTrigger* at) : AreaTriggerAI(at) { }
+
     void OnUnitEnter(Unit* unit) override
     {
         Unit* caster = at->GetCaster();
@@ -1463,9 +1494,9 @@ class spell_monk_chi_burst_heal : public SpellScriptLoader
 {
 public:
     spell_monk_chi_burst_heal() : SpellScriptLoader("spell_monk_chi_burst_heal") { }
+
     class spell_monk_chi_burst_heal_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_chi_burst_heal_SpellScript);
         void HandleHeal(SpellEffIndex /*effIndex*/)
         {
             Unit* caster = GetCaster();
@@ -1480,37 +1511,45 @@ public:
             damage = unit->SpellDamageBonusTaken(caster, spellInfo, damage, HEAL);
             SetHitHeal(damage);
         }
+
         void Register() override
         {
             OnEffectHitTarget += SpellEffectFn(spell_monk_chi_burst_heal_SpellScript::HandleHeal, EFFECT_0, SPELL_EFFECT_HEAL);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_chi_burst_heal_SpellScript();
     }
 };
 
-//115399
 class spell_monk_black_ox_brew : public SpellScriptLoader
 {
 public:
     spell_monk_black_ox_brew() : SpellScriptLoader("spell_monk_black_ox_brew") { }
+
     class spell_monk_black_ox_brew_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_black_ox_brew_SpellScript);
-        void HandleHit(SpellEffIndex /*effIndex*/)
+        void OnCastSpell()
         {
             Unit* caster = GetCaster();
             if (!caster)
                 return;
-            caster->GetSpellHistory()->ResetCharges(sSpellMgr->GetSpellInfo(SPELL_MONK_PURIFYING_BREW, DIFFICULTY_NONE)->ChargeCategoryId);
+
+            SpellInfo const* charge = sSpellMgr->AssertSpellInfo(119582, DIFFICULTY_NONE);
+            caster->GetSpellHistory()->ResetCharges(charge->ChargeCategoryId);
+
+            if (caster->HasSpell(322507))
+                caster->GetSpellHistory()->ResetCooldown(322507, true);
         }
+
         void Register() override
         {
-            OnEffectHitTarget += SpellEffectFn(spell_monk_black_ox_brew_SpellScript::HandleHit, EFFECT_0, SPELL_EFFECT_ENERGIZE);
+            OnCast += SpellCastFn(spell_monk_black_ox_brew_SpellScript::OnCastSpell);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_black_ox_brew_SpellScript();
@@ -1522,9 +1561,9 @@ class spell_monk_jade_serpent_statue : public SpellScriptLoader
 {
 public:
     spell_monk_jade_serpent_statue() : SpellScriptLoader("spell_monk_jade_serpent_statue") { }
+
     class spell_monk_jade_serpent_statue_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_jade_serpent_statue_SpellScript);
         void HandleSummon()
         {
             Unit* caster = GetCaster();
@@ -1545,11 +1584,13 @@ public:
             if ((int32)serpentStatueList.size() >= 1)
                 serpentStatueList.back()->ToTempSummon()->UnSummon();
         }
+
         void Register() override
         {
             OnCast += SpellCastFn(spell_monk_jade_serpent_statue_SpellScript::HandleSummon);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_jade_serpent_statue_SpellScript();
@@ -1587,6 +1628,7 @@ public:
         creature->SetControlled(true, UNIT_STATE_ROOT);
         GetCaster()->VariableStorage.Set(MONK_TRANSCENDENCE_GUID, creature->GetGUID());
     }
+
     static Creature* GetSpirit(Unit* caster)
     {
         ObjectGuid spiritGuid = caster->VariableStorage.GetValue<ObjectGuid>(MONK_TRANSCENDENCE_GUID, ObjectGuid());
@@ -1594,6 +1636,7 @@ public:
             return nullptr;
         return ObjectAccessor::GetCreature(*caster, spiritGuid);
     }
+
     static void DespawnSpirit(Unit* caster)
     {
         // Remove previous one if any
@@ -1601,6 +1644,7 @@ public:
             spirit->DespawnOrUnsummon();
         caster->VariableStorage.Remove(MONK_TRANSCENDENCE_GUID);
     }
+
     void Register() override
     {
         OnEffectSummon += SpellOnEffectSummonFn(spell_monk_transcendence::HandleSummon);
@@ -1618,17 +1662,20 @@ class spell_monk_spirit_of_the_crane_passive : public AuraScript
                 SPELL_MONK_BLACKOUT_KICK_TRIGGERED
             });
     }
+
     bool CheckProc(ProcEventInfo& eventInfo)
     {
         if (eventInfo.GetSpellInfo()->Id != SPELL_MONK_BLACKOUT_KICK_TRIGGERED)
             return false;
         return true;
     }
+
     void HandleProc(AuraEffect* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
     {
         // TODO: Basepoints can be float now... this is 1 but needs to be lower.
         GetTarget()->CastSpell(GetTarget(), SPELL_MONK_SPIRIT_OF_THE_CRANE_MANA, true);
     }
+
     void Register() override
     {
         DoCheckProc += AuraCheckProcFn(spell_monk_spirit_of_the_crane_passive::CheckProc);
@@ -1647,6 +1694,7 @@ class aura_monk_transcendence : public AuraScript
             GetTarget()->RemoveAura(SPELL_MONK_TRANSCENDENCE_RANGE_CHECK);
         }
     }
+
     void HandleDummyTick(AuraEffect const* /*aurEff*/)
     {
         SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(SPELL_MONK_TRANSCENDENCE_TRANSFER, GetCastDifficulty());
@@ -1666,6 +1714,7 @@ class aura_monk_transcendence : public AuraScript
             }
         }
     }
+
     void Register() override
     {
         OnEffectRemove += AuraEffectRemoveFn(aura_monk_transcendence::OnRemove, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
@@ -1691,6 +1740,7 @@ class spell_monk_transcendence_transfer : public SpellScript
             return SPELL_FAILED_OUT_OF_RANGE;
         return SPELL_CAST_OK;
     }
+
     void HandleOnCast()
     {
         Unit* caster = GetCaster();
@@ -1702,6 +1752,7 @@ class spell_monk_transcendence_transfer : public SpellScript
         caster->NearTeleportTo(*spirit, true);
         spirit->NearTeleportTo(*caster, true);
     }
+
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_monk_transcendence_transfer::CheckCast);
@@ -1714,12 +1765,14 @@ class spell_monk_vivify : public SpellScriptLoader
 {
 public:
     spell_monk_vivify() : SpellScriptLoader("spell_monk_vivify") { }
+
     class spell_monk_vivify_SpellScript : public SpellScript
     {
         void FilterRenewingMist(std::list<WorldObject*>& targets)
         {
             targets.remove_if(Trinity::UnitAuraCheck(false, SPELL_MONK_RENEWING_MIST_HOT, GetCaster()->GetGUID()));
         }
+
         void HandleOnPrepare()
         {
             if (GetCaster()->GetCurrentSpell(CURRENT_CHANNELED_SPELL) && GetCaster()->GetCurrentSpell(CURRENT_CHANNELED_SPELL)->GetSpellInfo()->Id == SPELL_MONK_SOOTHING_MIST)
@@ -1729,6 +1782,7 @@ public:
                 GetSpell()->InitExplicitTargets(targets);
             }
         }
+
         void LifeCycles()
         {
             Player* caster = GetCaster()->ToPlayer();
@@ -1739,6 +1793,7 @@ public:
                 caster->CastSpell(caster, SPELL_MONK_LIFECYCLES_ENVELOPING_MIST, true);
             }
         }
+
         void Register() override
         {
             OnPrepare += SpellOnPrepareFn(spell_monk_vivify_SpellScript::HandleOnPrepare);
@@ -1746,6 +1801,7 @@ public:
             AfterCast += SpellCastFn(spell_monk_vivify_SpellScript::LifeCycles);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_vivify_SpellScript();
@@ -1757,9 +1813,9 @@ class spell_monk_soothing_mist : public SpellScriptLoader
 {
 public:
     spell_monk_soothing_mist() : SpellScriptLoader("spell_monk_soothing_mist") { }
+
     class spell_monk_soothing_mist_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_soothing_mist_AuraScript);
         void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             if (!GetCaster())
@@ -1810,6 +1866,7 @@ public:
                 }
             }
         }
+
         void HandleEffectPeriodic(AuraEffect const* /*aurEff*/)
         {
             if (Unit* caster = GetCaster())
@@ -1818,6 +1875,7 @@ public:
                     if (roll_chance_i(25))
                         caster->CastSpell(caster, SPELL_MONK_SOOTHING_MIST_ENERGIZE, true);
         }
+
         void OnRemove(AuraEffect const* /* aurEff */, AuraEffectHandleModes /*mode*/)
         {
             if (GetCaster())
@@ -1825,6 +1883,7 @@ public:
                     if (target->HasAura(SPELL_MONK_SOOTHING_MIST_VISUAL))
                         target->RemoveAura(SPELL_MONK_SOOTHING_MIST_VISUAL);
         }
+
         void Register() override
         {
             AfterEffectApply += AuraEffectApplyFn(spell_monk_soothing_mist_AuraScript::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
@@ -1832,6 +1891,7 @@ public:
             AfterEffectRemove += AuraEffectRemoveFn(spell_monk_soothing_mist_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_soothing_mist_AuraScript();
@@ -1844,6 +1904,7 @@ class spell_focused_thunder_talent_thunder_focus_tea : public SpellScriptLoader
 {
 public:
     spell_focused_thunder_talent_thunder_focus_tea() : SpellScriptLoader("spell_focused_thunder_talent_thunder_focus_tea") { }
+
     class spell_focused_thunder_talent_thunder_focus_tea_AuraScript : public AuraScript
     {
         void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -1857,11 +1918,13 @@ public:
                     thunder->SetStackAmount(2);
             }
         }
+
         void Register()
         {
             OnEffectApply += AuraEffectApplyFn(spell_focused_thunder_talent_thunder_focus_tea_AuraScript::OnApply, EFFECT_0, SPELL_AURA_ADD_FLAT_MODIFIER, AURA_EFFECT_HANDLE_REAL);
         }
     };
+
     AuraScript* GetAuraScript() const
     {
         return new spell_focused_thunder_talent_thunder_focus_tea_AuraScript();
@@ -1872,18 +1935,21 @@ public:
 class spell_monk_zen_pulse : public SpellScriptLoader
 {
 public:
-    spell_monk_zen_pulse() : SpellScriptLoader("spell_monk_zen_pulse") {}
+    spell_monk_zen_pulse() : SpellScriptLoader("spell_monk_zen_pulse") { }
+
     class spell_monk_zen_pulse_SpellScript : public SpellScript
     {
         void OnHit(SpellEffIndex /*effIndex*/)
         {
             GetCaster()->CastSpell(GetCaster(), SPELL_MONK_ZEN_PULSE_HEAL, true);
         }
+
         void Register() override
         {
             OnEffectHitTarget += SpellEffectFn(spell_monk_zen_pulse_SpellScript::OnHit, EFFECT_1, SPELL_EFFECT_SCHOOL_DAMAGE);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_zen_pulse_SpellScript();
@@ -1893,7 +1959,6 @@ public:
 // 115151 - Renewing Mist
 class spell_monk_renewing_mist : public SpellScript
 {
-    PrepareSpellScript(spell_monk_renewing_mist);
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -1901,12 +1966,14 @@ class spell_monk_renewing_mist : public SpellScript
                 SPELL_MONK_RENEWING_MIST_HOT
             });
     }
+
     void HandleDummy(SpellEffIndex effIndex)
     {
         PreventHitDefaultEffect(effIndex);
         if (Unit* target = GetExplTargetUnit())
             GetCaster()->CastSpell(target, SPELL_MONK_RENEWING_MIST_HOT, true);
     }
+
     void HandleOnCast()
     {
         if (Unit* caster = GetCaster())
@@ -1921,6 +1988,7 @@ class spell_monk_renewing_mist : public SpellScript
             }
         }
     }
+
     void Register() override
     {
         OnCast += SpellCastFn(spell_monk_renewing_mist::HandleOnCast);
@@ -1931,7 +1999,6 @@ class spell_monk_renewing_mist : public SpellScript
 // 119611 - Renewing Mist (HoT)
 class spell_monk_renewing_mist_hot : public AuraScript
 {
-    PrepareAuraScript(spell_monk_renewing_mist_hot);
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -1940,6 +2007,7 @@ class spell_monk_renewing_mist_hot : public AuraScript
                 SPELL_MONK_RENEWING_MIST
             });
     }
+
     void HandlePeriodicHeal(AuraEffect const* /*aurEff*/)
     {
         Unit* caster = GetCaster();
@@ -1948,6 +2016,7 @@ class spell_monk_renewing_mist_hot : public AuraScript
         if (GetTarget()->IsFullHealth())
             caster->CastSpell(GetTarget(), SPELL_MONK_RENEWING_MIST_JUMP, true);
     }
+
     void CalcAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
     {
         Unit* caster = GetCaster();
@@ -1975,6 +2044,7 @@ class spell_monk_renewing_mist_hot : public AuraScript
             }
         }
     }
+
     void Register() override
     {
         OnEffectPeriodic += AuraEffectPeriodicFn(spell_monk_renewing_mist_hot::HandlePeriodicHeal, EFFECT_0, SPELL_AURA_PERIODIC_HEAL);
@@ -1985,7 +2055,6 @@ class spell_monk_renewing_mist_hot : public AuraScript
 // 119607 - Renewing Mist Jump
 class spell_monk_renewing_mist_jump : public SpellScript
 {
-    PrepareSpellScript(spell_monk_renewing_mist_jump);
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -1993,6 +2062,7 @@ class spell_monk_renewing_mist_jump : public SpellScript
                 SPELL_MONK_RENEWING_MIST_HOT
             });
     }
+
     void HandleTargets(std::list<WorldObject*>& targets)
     {
         Unit* caster = GetCaster();
@@ -2019,6 +2089,7 @@ class spell_monk_renewing_mist_jump : public SpellScript
         }
         _previousTargetGuid = previousTarget->GetGUID();
     }
+
     void HandleHit(SpellEffIndex effIndex)
     {
         PreventHitDefaultEffect(effIndex);
@@ -2031,15 +2102,17 @@ class spell_monk_renewing_mist_jump : public SpellScript
                 if (Aura* newAura = caster->AddAura(SPELL_MONK_RENEWING_MIST_HOT, GetHitUnit()))
                 {
                     newAura->SetDuration(oldAura->GetDuration());
-                    previousTarget->SendPlaySpellVisual(GetHitUnit()->GetPosition(), previousTarget->GetOrientation(), SPELL_MONK_VISUAL_RENEWING_MIST, 0, 0, 50.f, false);
+                    previousTarget->SendPlaySpellVisual(GetHitUnit()->GetPosition(), SPELL_MONK_VISUAL_RENEWING_MIST, 0, 0, 50.f, false);
                     oldAura->Remove();
                 }
             }
         }
     }
+
 private:
     ObjectGuid _previousTargetGuid;
     ObjectGuid _additionalTargetGuid;
+
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_renewing_mist_jump::HandleTargets, EFFECT_1, TARGET_UNIT_DEST_AREA_ALLY);
@@ -2050,7 +2123,6 @@ private:
 //191837 - Essence Font
 class spell_monk_essence_font : public SpellScript
 {
-    PrepareSpellScript(spell_monk_essence_font);
     void HandleOnCast()
     {
         if (Unit* caster = GetCaster())
@@ -2066,6 +2138,7 @@ class spell_monk_essence_font : public SpellScript
             }
         }
     }
+
     void Register() override
     {
         OnCast += SpellCastFn(spell_monk_essence_font::HandleOnCast);
@@ -2077,9 +2150,9 @@ class spell_monk_essence_font_heal : public SpellScriptLoader
 {
 public:
     spell_monk_essence_font_heal() : SpellScriptLoader("spell_monk_essence_font_heal") { }
+
     class spell_monk_essence_font_heal_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_essence_font_heal_SpellScript);
         void FilterTargets(std::list<WorldObject*>& p_Targets)
         {
             if (Unit* caster = GetCaster())
@@ -2103,6 +2176,7 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_essence_font_heal_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ALLY);
@@ -2139,12 +2213,14 @@ class spell_monk_mana_tea : public SpellScript
             }
         }
     }
+
     void HandleAfterCast()
     {
         if (mod)
             if (Player* _player = GetCaster()->ToPlayer())
                 _player->AddSpellMod(mod, false);
     }
+
     void Register() override
     {
         BeforeCast += SpellCastFn(spell_monk_mana_tea::HandleBeforeCast);
@@ -2170,6 +2246,7 @@ class aura_monk_mana_tea : public AuraScript
             }
         }
     }
+
     void Register() override
     {
         OnEffectPeriodic += AuraEffectPeriodicFn(aura_monk_mana_tea::OnTick, EFFECT_0, SPELL_AURA_MOD_POWER_COST_SCHOOL_PCT);
@@ -2181,9 +2258,9 @@ class spell_monk_enveloping_mist : public SpellScriptLoader
 {
 public:
     spell_monk_enveloping_mist() : SpellScriptLoader("spell_monk_enveloping_mist") { }
+
     class spell_monk_enveloping_mist_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_enveloping_mist_SpellScript);
         void HandleOnPrepare()
         {
             if (GetCaster()->GetCurrentSpell(CURRENT_CHANNELED_SPELL) && GetCaster()->GetCurrentSpell(CURRENT_CHANNELED_SPELL)->GetSpellInfo()->Id == SPELL_MONK_SOOTHING_MIST)
@@ -2193,6 +2270,7 @@ public:
                 GetSpell()->InitExplicitTargets(targets);
             }
         }
+
         void LifeCycles()
         {
             Player* caster = GetCaster()->ToPlayer();
@@ -2203,12 +2281,14 @@ public:
                 caster->CastSpell(caster, SPELL_MONK_LIFECYCLES_VIVIFY, true);
             }
         }
+
         void Register() override
         {
             OnPrepare += SpellOnPrepareFn(spell_monk_enveloping_mist_SpellScript::HandleOnPrepare);
             AfterCast += SpellCastFn(spell_monk_enveloping_mist_SpellScript::LifeCycles);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_enveloping_mist_SpellScript();
@@ -2218,7 +2298,6 @@ public:
 //137639
 class spell_monk_storm_earth_and_fire : public AuraScript
 {
-    PrepareAuraScript(spell_monk_storm_earth_and_fire);
     void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         Unit* target = GetTarget();
@@ -2226,6 +2305,7 @@ class spell_monk_storm_earth_and_fire : public AuraScript
         target->CastSpell(target, SPELL_MONK_SEF_SUMMON_EARTH, true);
         target->CastSpell(target, SPELL_MONK_SEF_SUMMON_FIRE, true);
     }
+
     void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         GetTarget()->RemoveAurasDueToSpell(SPELL_MONK_SEF_STORM_VISUAL);
@@ -2236,6 +2316,7 @@ class spell_monk_storm_earth_and_fire : public AuraScript
         if (Creature* earthSpirit = GetTarget()->GetSummonedCreatureByEntry(NPC_EARTH_SPIRIT))
             earthSpirit->ToTempSummon()->DespawnOrUnsummon();
     }
+
     void Register() override
     {
         OnEffectApply += AuraEffectApplyFn(spell_monk_storm_earth_and_fire::HandleApply, EFFECT_0, SPELL_AURA_ADD_PCT_MODIFIER, AURA_EFFECT_HANDLE_REAL);
@@ -2247,6 +2328,7 @@ class spell_monk_storm_earth_and_fire : public AuraScript
 struct npc_monk_sef_spirit : public ScriptedAI
 {
     npc_monk_sef_spirit(Creature* creature) : ScriptedAI(creature) { }
+
     void IsSummonedBy(WorldObject* summoner)
     {
         me->SetLevel(summoner->ToUnit()->GetLevel());
@@ -2263,6 +2345,7 @@ class playerScript_monk_earth_fire_storm : public PlayerScript
 {
 public:
     playerScript_monk_earth_fire_storm() : PlayerScript("playerScript_monk_earth_fire_storm") { }
+
     void OnSuccessfulSpellCast(Player* player, Spell* spell) override
     {
         SpellInfo const* spellInfo = spell->GetSpellInfo();
@@ -2285,9 +2368,9 @@ class spell_monk_touch_of_karma : public SpellScriptLoader
 {
 public:
     spell_monk_touch_of_karma() : SpellScriptLoader("spell_monk_touch_of_karma") { }
+
     class spell_monk_touch_of_karma_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_touch_of_karma_AuraScript);
         void CalculateAmount(const AuraEffect* aurEff, int32& amount, bool& /*canBeRecalculated*/)
         {
             if (Unit* caster = GetCaster())
@@ -2297,6 +2380,7 @@ public:
                     const_cast<AuraEffect*>(aurEff)->SetAmount(amount);
                 }
         }
+
         void OnAbsorb(AuraEffect* aurEff, DamageInfo& dmgInfo, uint32& /*absorbAmount*/)
         {
             Unit* caster = GetCaster();
@@ -2313,10 +2397,12 @@ public:
                     }
                 }
         }
+
         void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             GetCaster()->CastSpell(GetCaster(), SPELL_MONK_TOUCH_OF_KARMA_BUFF, true);
         }
+
         void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             Unit* caster = GetCaster();
@@ -2327,6 +2413,7 @@ public:
                 if (Aura* targetAura = aurApp->GetBase())
                     targetAura->Remove();
         }
+
         void Register() override
         {
             OnEffectApply += AuraEffectApplyFn(spell_monk_touch_of_karma_AuraScript::HandleApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
@@ -2336,6 +2423,7 @@ public:
             OnEffectRemove += AuraEffectRemoveFn(spell_monk_touch_of_karma_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_touch_of_karma_AuraScript();
@@ -2345,7 +2433,6 @@ public:
 // 125174 - Touch of Karma Buff
 class spell_monk_touch_of_karma_buff : public AuraScript
 {
-    PrepareAuraScript(spell_monk_touch_of_karma_buff);
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo(
@@ -2353,6 +2440,7 @@ class spell_monk_touch_of_karma_buff : public AuraScript
                 SPELL_MONK_TOUCH_OF_KARMA
             });
     }
+
     void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         Unit* caster = GetCaster();
@@ -2362,6 +2450,7 @@ class spell_monk_touch_of_karma_buff : public AuraScript
             if (Aura* targetAura = aurApp->GetBase())
                 targetAura->Remove();
     }
+
     void Register() override
     {
         OnEffectRemove += AuraEffectRemoveFn(spell_monk_touch_of_karma_buff::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
@@ -2373,18 +2462,20 @@ class spell_monk_fists_of_fury_stun : public SpellScriptLoader
 {
 public:
     spell_monk_fists_of_fury_stun() : SpellScriptLoader("spell_monk_fists_of_fury_stun") { }
+
     class spell_monk_fists_of_fury_stun_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_fists_of_fury_stun_SpellScript);
         void RemoveInvalidTargets(std::list<WorldObject*>& targets)
         {
             targets.remove_if(Trinity::UnitAuraCheck(true, GetSpellInfo()->Id));
         }
+
         void Register() override
         {
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_fists_of_fury_stun_SpellScript::RemoveInvalidTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_24);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_fists_of_fury_stun_SpellScript();
@@ -2395,18 +2486,20 @@ class spell_monk_fists_of_fury_visual_filter : public SpellScriptLoader
 {
 public:
     spell_monk_fists_of_fury_visual_filter() : SpellScriptLoader("spell_monk_fists_of_fury_visual_filter") { }
+
     class spell_monk_fists_of_fury_visual_filter_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_fists_of_fury_visual_filter_SpellScript);
         void RemoveInvalidTargets(std::list<WorldObject*>& targets)
         {
             targets.remove_if(Trinity::UnitAuraCheck(true, 123154, GetCaster()->GetGUID()));
         }
+
         void Register() override
         {
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_fists_of_fury_visual_filter_SpellScript::RemoveInvalidTargets, EFFECT_1, TARGET_UNIT_CONE_ENEMY_24);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_fists_of_fury_visual_filter_SpellScript();
@@ -2417,19 +2510,21 @@ class spell_monk_fists_of_fury_visual : public SpellScriptLoader
 {
 public:
     spell_monk_fists_of_fury_visual() : SpellScriptLoader("spell_monk_fists_of_fury_visual") { }
+
     class spell_monk_fists_of_fury_visual_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_fists_of_fury_visual_AuraScript);
         void OnApply(const AuraEffect* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             SetMaxDuration(1000); //The spell doesn't have a duration on WoWHead and never ends if we don't give it one, so one sec should be good
             SetDuration(1000);    //Same as above
         }
+
         void Register() override
         {
             OnEffectApply += AuraEffectApplyFn(spell_monk_fists_of_fury_visual_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_fists_of_fury_visual_AuraScript();
@@ -2440,9 +2535,9 @@ class spell_monk_fists_of_fury : public SpellScriptLoader
 {
 public:
     spell_monk_fists_of_fury() : SpellScriptLoader("spell_monk_fists_of_fury") { }
+
     class spell_monk_fists_of_fury_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_monk_fists_of_fury_AuraScript);
         void HandlePeriodic(AuraEffect const* aurEff)
         {
             Unit* caster = GetCaster();
@@ -2451,11 +2546,13 @@ public:
             if (aurEff->GetTickNumber() % 6 == 0)
                 caster->CastSpell(GetTarget(), SPELL_MONK_FISTS_OF_FURY_DAMAGE, true);
         }
+
         void Register() override
         {
             OnEffectPeriodic += AuraEffectPeriodicFn(spell_monk_fists_of_fury_AuraScript::HandlePeriodic, EFFECT_2, SPELL_AURA_PERIODIC_DUMMY);
         }
     };
+
     AuraScript* GetAuraScript() const override
     {
         return new spell_monk_fists_of_fury_AuraScript();
@@ -2466,9 +2563,9 @@ class spell_monk_fists_of_fury_damage : public SpellScriptLoader
 {
 public:
     spell_monk_fists_of_fury_damage() : SpellScriptLoader("spell_monk_fists_of_fury_damage") { }
+
     class spell_monk_fists_of_fury_damage_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_fists_of_fury_damage_SpellScript);
         void HandleDamage(SpellEffIndex /*effIndex*/)
         {
             if (!GetCaster())
@@ -2482,11 +2579,13 @@ public:
             l_Damage = l_Target->SpellDamageBonusTaken(l_Player, GetSpellInfo(), l_Damage, SPELL_DIRECT_DAMAGE);
             SetHitDamage(l_Damage);
         }
+
         void Register() override
         {
             OnEffectHitTarget += SpellEffectFn(spell_monk_fists_of_fury_damage_SpellScript::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_fists_of_fury_damage_SpellScript();
@@ -2497,59 +2596,104 @@ public:
 struct npc_monk_xuen : public ScriptedAI
 {
     npc_monk_xuen(Creature* creature) : ScriptedAI(creature) { }
+
     void IsSummonedBy(WorldObject* /*summoner*/)
     {
         me->CastSpell(me, SPELL_MONK_XUEN_AURA, true);
     }
 };
 
-// Whirling Dragon Punch - 152175
-class playerScript_monk_whirling_dragon_punch : public PlayerScript
+// Fists of Fury - 113656
+class spell_fist_of_fury_proc : public SpellScriptLoader
 {
 public:
-    playerScript_monk_whirling_dragon_punch() : PlayerScript("playerScript_monk_whirling_dragon_punch") {}
-    void OnCooldownStart(Player* player, SpellInfo const* spellInfo, uint32 /*itemId*/, int32& cooldown, uint32& /*categoryId*/, int32& /*categoryCooldown*/) override
+    spell_fist_of_fury_proc() : SpellScriptLoader("spell_fist_of_fury_proc") {}
+
+    class spell_fist_of_fury_proc_SpellScript : public SpellScript
     {
-        if (spellInfo->Id == SPELL_MONK_FISTS_OF_FURY)
+        void DragonPunchProc()
         {
-            SpellInfo const* risingSunKickInfo = sSpellMgr->GetSpellInfo(SPELL_MONK_RISING_SUN_KICK, DIFFICULTY_NONE);
-            ApplyCasterAura(player, cooldown, player->GetSpellHistory()->GetChargeRecoveryTime(risingSunKickInfo->ChargeCategoryId));
+            Player* caster = GetCaster()->ToPlayer();
+            if (!caster)
+                return;
+            if (caster->GetSpellHistory()->HasCooldown(113656) && caster->GetSpellHistory()->HasCooldown(107428))
+            {
+                if (!caster->HasAura(196742))
+                    caster->CastSpell(caster, 196742, true);
+            }
         }
+
+        void Register() override
+        {
+            AfterCast += SpellCastFn(spell_fist_of_fury_proc_SpellScript::DragonPunchProc);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
+    {
+        return new spell_fist_of_fury_proc_SpellScript();
     }
-    void OnChargeRecoveryTimeStart(Player* player, uint32 chargeCategoryId, int32& chargeRecoveryTime) override
+};
+
+// Rising Sun Kick - 107428
+class spell_rising_sun_kick_proc : public SpellScriptLoader
+{
+public:
+    spell_rising_sun_kick_proc() : SpellScriptLoader("spell_rising_sun_kick_proc") {}
+
+    class spell_rising_sun_kick_proc_SpellScript : public SpellScript
     {
-        SpellInfo const* risingSunKickInfo = sSpellMgr->GetSpellInfo(SPELL_MONK_RISING_SUN_KICK, DIFFICULTY_NONE);
-        if (risingSunKickInfo->ChargeCategoryId == chargeCategoryId)
+        void DragonPunchProc()
         {
-            SpellInfo const* fistsOfFuryInfo = sSpellMgr->GetSpellInfo(SPELL_MONK_RISING_SUN_KICK, DIFFICULTY_NONE);
-            ApplyCasterAura(player, chargeRecoveryTime, player->GetSpellHistory()->GetRemainingCooldown(fistsOfFuryInfo) == 0s);
+            Player* caster = GetCaster()->ToPlayer();
+            if (!caster)
+                return;
+            if (caster->GetSpellHistory()->HasCooldown(113656) && caster->GetSpellHistory()->HasCooldown(107428))
+            {
+                if (!caster->HasAura(196742))
+                    caster->CastSpell(caster, 196742, true);
+            }
         }
-    }
-private:
-    void ApplyCasterAura(Player* player, int32 cooldown1, int32 cooldown2)
+
+        void Register() override
+        {
+            AfterCast += SpellCastFn(spell_rising_sun_kick_proc_SpellScript::DragonPunchProc);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
     {
-        if (cooldown1 > 0 && cooldown2 > 0)
-        {
-            uint32 whirlingDragonPunchAuraDuration = std::min(cooldown1, cooldown2);
-            player->CastSpell(player, SPELL_MONK_WHIRLING_DRAGON_PUNCH_CASTER_AURA, true);
-            if (Aura* aura = player->GetAura(SPELL_MONK_WHIRLING_DRAGON_PUNCH_CASTER_AURA))
-                aura->SetDuration(whirlingDragonPunchAuraDuration);
-        }
+        return new spell_rising_sun_kick_proc_SpellScript();
     }
 };
 
 // Whirling Dragon Punch - 152175
-class spell_monk_whirling_dragon_punch : public AuraScript
+class spell_monk_whirling_dragon_punch : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_monk_whirling_dragon_punch);
-    void OnTick(AuraEffect const* /*aurEff*/)
+public:
+    spell_monk_whirling_dragon_punch() : SpellScriptLoader("spell_monk_whirling_dragon_punch") {}
+
+    class spell_monk_whirling_dragon_punch_SpellScript : public SpellScript
     {
-        if (GetCaster())
-            GetCaster()->CastSpell(GetCaster(), SPELL_MONK_WHIRLING_DRAGON_PUNCH_DAMAGE, true);
-    }
-    void Register() override
+        void DragonPunchProc()
+        {
+            Player* caster = GetCaster()->ToPlayer();
+            if (!caster)
+                return;
+
+            if (caster->HasAura(196742))
+                caster->RemoveAurasDueToSpell(196742);
+        }
+
+        void Register() override
+        {
+            AfterCast += SpellCastFn(spell_monk_whirling_dragon_punch_SpellScript::DragonPunchProc);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
     {
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_monk_whirling_dragon_punch::OnTick, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+        return new spell_monk_whirling_dragon_punch_SpellScript();
     }
 };
 
@@ -2558,15 +2702,16 @@ class spell_monk_flying_serpent_kick : public SpellScriptLoader
 {
 public:
     spell_monk_flying_serpent_kick() : SpellScriptLoader("spell_monk_flying_serpent_kick") { }
+
     class spell_monk_flying_serpent_kick_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_monk_flying_serpent_kick_SpellScript);
         bool Validate(SpellInfo const* /*spellInfo*/) override
         {
             if (!sSpellMgr->GetSpellInfo(SPELL_MONK_FLYING_SERPENT_KICK_NEW, DIFFICULTY_NONE))
                 return false;
             return true;
         }
+
         void HandleOnCast()
         {
             if (Unit* caster = GetCaster())
@@ -2581,11 +2726,13 @@ public:
                 }
             }
         }
+
         void Register() override
         {
             OnCast += SpellCastFn(spell_monk_flying_serpent_kick_SpellScript::HandleOnCast);
         }
     };
+
     SpellScript* GetSpellScript() const override
     {
         return new spell_monk_flying_serpent_kick_SpellScript();
@@ -2625,7 +2772,6 @@ void AddSC_monk_spell_scripts()
     new spell_monk_purifying_brew();
     new spell_monk_breath_of_fire();
     new spell_monk_dampen_harm();
-    RegisterSpellScript(spell_monk_clash); //Dont stun  NEED FIX
     new spell_monk_healing_elixirs_aura();
     RegisterAreaTriggerAI(at_monk_ring_of_peace);
     RegisterAreaTriggerAI(at_monk_song_of_chi_ji);
@@ -2633,10 +2779,10 @@ void AddSC_monk_spell_scripts()
     new spell_monk_chi_wave_damage_missile();
     new spell_monk_chi_wave_heal_missile();
     new spell_monk_chi_wave_healing_bolt();
-    RegisterSpellScript(spell_monk_chi_wave_target_selector);
+    RegisterSpellScript(spell_monk_chi_wave_target_selector); //unused
     RegisterAreaTriggerAI(at_monk_chi_burst);
     new spell_monk_chi_burst_heal();
-    new spell_monk_black_ox_brew(); // ??  NEED FIX
+    new spell_monk_black_ox_brew();
     new spell_monk_jade_serpent_statue();
     RegisterCreatureAI(npc_monk_jade_serpent_statue);
     RegisterSpellScript(spell_monk_transcendence);
@@ -2664,7 +2810,8 @@ void AddSC_monk_spell_scripts()
     new spell_monk_fists_of_fury_visual();
     new spell_monk_fists_of_fury_visual_filter();
     RegisterCreatureAI(npc_monk_xuen);
-    new playerScript_monk_whirling_dragon_punch(); //need testing    NEED FIX
-    RegisterSpellScript(spell_monk_whirling_dragon_punch); //not check NEED FIX
+    new spell_fist_of_fury_proc();
+    new spell_rising_sun_kick_proc();
+    new spell_monk_whirling_dragon_punch();
     new spell_monk_flying_serpent_kick();
 }

@@ -125,6 +125,7 @@ public:
     uint32 GetEntryIdForNpc(std::string const& key) { return _customNpcStore[key].templateId; }
     uint8 GetModelVariationCountForNpc(std::string const& key);
     uint8 GetEquipmentVariationCountForNpc(std::string const& key);
+    uint8 GetEquipmentVariationCountForNpc(uint32 templateId);
     void LoadCustomNpcs();
     void CreateCustomNpcFromPlayer(Player* player, std::string const& key);
     void SetCustomNpcOutfitEquipmentSlot(std::string const& key, uint8 variationId, EquipmentSlots slot, int32 displayId);
@@ -138,12 +139,15 @@ public:
     void SetCustomNpcCustomizations(std::string const& key, uint8 variationId, Player* player);
     void SetCustomNpcDisplayId(std::string const& key, uint8 variationId, uint32 displayId);
     void SetCustomNpcModelScale(std::string const& key, uint8 variationId, float displayScale);
-    void SetCustomNpcRank(std::string const& key, uint32 rank);
     void SetCustomNpcGuild(std::string const& key, uint8 variationId, uint64 guildId);
     void SetCustomNpcTameable(std::string const& key, bool tameable);
     void LoadCustomNpcSpawn(uint32 templateId, ObjectGuid::LowType spawn);
     void RemoveCustomNpcVariation(std::string const& key, uint8 variationId);
     void DeleteCustomNpc(std::string const& key);
+
+    void SetNpcLeftHand(uint32 templateId, uint8 variationId, int32 itemId, int32 appearanceModId);
+    void SetNpcRightHand(uint32 templateId, uint8 variationId, int32 itemId, int32 appearanceModId);
+    void SetNpcRanged(uint32 templateId, uint8 variationId, int32 itemId, int32 appearanceModId);
 
     // Marker
     void StoreMarkerLocationForPlayer(Player* player, const WorldLocation* marker);

@@ -1451,7 +1451,6 @@ enum ePoisons
 
 class spell_rog_poisons : public SpellScript
 {
-
     void RemovePreviousPoisons()
     {
         if (Player* plr = GetCaster()->ToPlayer())
@@ -1493,7 +1492,6 @@ class spell_rog_poisons : public SpellScript
 // 385616 - Echoing Reprimand
 class spell_rog_echoing_reprimand : public SpellScript
 {
-    PrepareSpellScript(spell_rog_echoing_reprimand);
 
     void HandleOnHit()
     {
@@ -1877,7 +1875,7 @@ void AddSC_rogue_spell_scripts()
     RegisterSpellScript(spell_rog_slice_and_dice);
     RegisterSpellScript(spell_rog_echoing_reprimand);
     new spell_rog_deadly_poison_instant_damage();
-    RegisterSpellScript(spell_rog_poisons);
+    RegisterSpellScript(spell_rog_poisons); //unused
     new spell_rog_fan_of_knives();
     new spell_rog_grappling_hook();
     RegisterSpellScript(spell_rog_blade_rush);

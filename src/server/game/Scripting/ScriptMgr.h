@@ -21,7 +21,6 @@
 #include "Common.h"
 #include "ObjectGuid.h"
 #include "Tuples.h"
-#include "Types.h"
 #include <boost/preprocessor/punctuation/remove_parens.hpp>
 #include <memory>
 #include <vector>
@@ -472,6 +471,15 @@ class TC_GAME_API GameObjectScript : public ScriptObject
 
         // Called when a GameObjectAI object is needed for the gameobject.
         virtual GameObjectAI* GetAI(GameObject* go) const = 0;
+
+        // Called when a player opens a gossip dialog with the gameobject.
+        virtual bool OnGossipHello(Player* /*player*/, GameObject* /*go*/) { return false; }
+
+        // Called when a player selects a gossip item in the gameobject's gossip menu.
+        virtual bool OnGossipSelect(Player* /*player*/, GameObject* /*go*/, uint32 /*sender*/, uint32 /*action*/) { return false; }
+
+        // Called when a player selects a gossip with a code in the gameobject's gossip menu.
+        virtual bool OnGossipSelectCode(Player* /*player*/, GameObject* /*go*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { return false; }
 };
 
 class TC_GAME_API AreaTriggerScript : public ScriptObject
@@ -810,6 +818,9 @@ class TC_GAME_API PlayerScript : public ScriptObject
         // Called when a player completes a movie
         virtual void OnMovieComplete(Player* player, uint32 movieId);
 
+        // Called when a player take damage
+        virtual void OnTakeDamage(Player* /*player*/, uint32 /*damage*/, SpellSchoolMask /*schoolMask*/) { }
+
         // Called when a player choose a response from a PlayerChoice
         virtual void OnPlayerChoiceResponse(Player* player, uint32 choiceId, uint32 responseId);
 
@@ -1113,8 +1124,8 @@ class TC_GAME_API ScriptMgr
 
         void OnNetworkStart();
         void OnNetworkStop();
-        void OnSocketOpen(std::shared_ptr<WorldSocket> socket);
-        void OnSocketClose(std::shared_ptr<WorldSocket> socket);
+        void OnSocketOpen(std::shared_ptr<WorldSocket> const& socket);
+        void OnSocketClose(std::shared_ptr<WorldSocket> const& socket);
         void OnPacketReceive(WorldSession* session, WorldPacket const& packet);
         void OnPacketSend(WorldSession* session, WorldPacket const& packet);
 
@@ -1170,6 +1181,10 @@ class TC_GAME_API ScriptMgr
 
         bool CanCreateGameObjectAI(uint32 scriptId) const;
         GameObjectAI* GetGameObjectAI(GameObject* go);
+
+        bool OnGossipHello(Player* player, GameObject* go);
+        bool OnGossipSelect(Player* player, GameObject* go, uint32 sender, uint32 action);
+        bool OnGossipSelectCode(Player* player, GameObject* go, uint32 sender, uint32 action, const char* code);
 
     public: /* AreaTriggerScript */
 
@@ -1363,42 +1378,52 @@ class TC_GAME_API ScriptMgr
 
     public:
         bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest);
+        void OnPlayerTakeDamage(Player* player, uint32 damage, SpellSchoolMask schoolMask);
 };
 
 namespace Trinity::SpellScripts
 {
     template<typename T>
-    using is_SpellScript = std::is_base_of<SpellScript, T>;
+    concept IsSpellScript = std::is_base_of_v<SpellScript, T>;
 
     template<typename T>
-    using is_AuraScript = std::is_base_of<AuraScript, T>;
+    concept IsAuraScript = std::is_base_of_v<AuraScript, T>;
+
+    template<typename T>
+    concept IsSpellOrAuraScript = IsSpellScript<T> || IsAuraScript<T>;
+
+    template<typename T, typename Other>
+    concept ComplementScriptFor = (IsSpellScript<T> && IsAuraScript<Other>)
+        || (IsAuraScript<T> && IsSpellScript<Other>)
+        || std::same_as<T, void>;
+
+    template<typename T>
+    concept ArgsTuple = Trinity::is_tuple_v<T>;
 }
 
-template <typename... Ts>
+template <Trinity::SpellScripts::IsSpellOrAuraScript Script1, Trinity::SpellScripts::ComplementScriptFor<Script1> Script2, Trinity::SpellScripts::ArgsTuple ArgsType>
 class GenericSpellAndAuraScriptLoader : public SpellScriptLoader
 {
-    using SpellScriptType = typename Trinity::find_type_if_t<Trinity::SpellScripts::is_SpellScript, Ts...>;
-    using AuraScriptType = typename Trinity::find_type_if_t<Trinity::SpellScripts::is_AuraScript, Ts...>;
-    using ArgsType = typename Trinity::find_type_if_t<Trinity::is_tuple, Ts...>;
-
-    static_assert(!std::conjunction_v<std::is_same<SpellScriptType, Trinity::find_type_end>, std::is_same<AuraScriptType, Trinity::find_type_end>>, "At least one of SpellScript/AuraScript arguments must be provided for GenericSpellAndAuraScriptLoader");
-
 public:
     GenericSpellAndAuraScriptLoader(char const* name, ArgsType&& args) : SpellScriptLoader(name), _args(std::move(args)) { }
 
 private:
     SpellScript* GetSpellScript() const override
     {
-        if constexpr (!std::is_same_v<SpellScriptType, Trinity::find_type_end>)
-            return Trinity::new_from_tuple<SpellScriptType>(_args);
+        if constexpr (Trinity::SpellScripts::IsSpellScript<Script1>)
+            return Trinity::new_from_tuple<Script1>(_args);
+        else if constexpr (Trinity::SpellScripts::IsSpellScript<Script2>)
+            return Trinity::new_from_tuple<Script2>(_args);
         else
             return nullptr;
     }
 
     AuraScript* GetAuraScript() const override
     {
-        if constexpr (!std::is_same_v<AuraScriptType, Trinity::find_type_end>)
-            return Trinity::new_from_tuple<AuraScriptType>(_args);
+        if constexpr (Trinity::SpellScripts::IsAuraScript<Script1>)
+            return Trinity::new_from_tuple<Script1>(_args);
+        else if constexpr (Trinity::SpellScripts::IsAuraScript<Script2>)
+            return Trinity::new_from_tuple<Script2>(_args);
         else
             return nullptr;
     }
@@ -1406,10 +1431,10 @@ private:
     ArgsType _args;
 };
 
-#define RegisterSpellScriptWithArgs(spell_script, script_name, ...) new GenericSpellAndAuraScriptLoader<BOOST_PP_REMOVE_PARENS(spell_script), decltype(std::make_tuple(__VA_ARGS__))>(script_name, std::make_tuple(__VA_ARGS__))
-#define RegisterSpellScript(spell_script) RegisterSpellScriptWithArgs(spell_script, #spell_script)
 #define RegisterSpellAndAuraScriptPairWithArgs(script_1, script_2, script_name, ...) new GenericSpellAndAuraScriptLoader<BOOST_PP_REMOVE_PARENS(script_1), BOOST_PP_REMOVE_PARENS(script_2), decltype(std::make_tuple(__VA_ARGS__))>(script_name, std::make_tuple(__VA_ARGS__))
 #define RegisterSpellAndAuraScriptPair(script_1, script_2) RegisterSpellAndAuraScriptPairWithArgs(script_1, script_2, #script_1)
+#define RegisterSpellScriptWithArgs(spell_script, script_name, ...) RegisterSpellAndAuraScriptPairWithArgs(spell_script, void, script_name, __VA_ARGS__)
+#define RegisterSpellScript(spell_script) RegisterSpellAndAuraScriptPairWithArgs(spell_script, void, #spell_script)
 
 template <class A>
 class GenericAuraScriptLoader : public SpellScriptLoader

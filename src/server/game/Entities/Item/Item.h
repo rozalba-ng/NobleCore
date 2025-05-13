@@ -37,13 +37,6 @@ namespace WorldPackets
     }
 }
 
-struct ItemSetEffect
-{
-    uint32 ItemSetID;
-    std::unordered_set<Item const*> EquippedItems;
-    std::unordered_set<ItemSetSpellEntry const*> SetBonuses;
-};
-
 #define MAX_GEM_SOCKETS               MAX_ITEM_PROTO_SOCKETS// (BONUS_ENCHANTMENT_SLOT-SOCK_ENCHANTMENT_SLOT) and item proto size, equal value expected
 
 #define MAX_ENCHANTMENT_OFFSET    3
@@ -54,6 +47,26 @@ enum ItemUpdateState
     ITEM_CHANGED                                 = 1,
     ITEM_NEW                                     = 2,
     ITEM_REMOVED                                 = 3
+};
+
+enum ItemSortInventory
+{
+    ITEM_SORT_SPECIAL_ITEM                       = 0,
+    ITEM_SORT_CONSUMABLE                         = 1,
+    ITEM_SORT_WEAPON                             = 2,
+    ITEM_SORT_SHIELD                             = 3,
+    ITEM_SORT_HEAD                               = 4,
+    ITEM_SORT_SHOULDERS                          = 5,
+    ITEM_SORT_CHEST                              = 6,
+    ITEM_SORT_WRISTS                             = 7,
+    ITEM_SORT_HANDS                              = 8,
+    ITEM_SORT_WAIST                              = 9,
+    ITEM_SORT_LEGS                               = 10,
+    ITEM_SORT_FEET                               = 11,
+    ITEM_SORT_CLOAK                              = 12,
+    ITEM_SORT_ACCESSORY                          = 13,
+    ITEM_SORT_BODY_TABARD                        = 14,
+    ITEM_SORT_OTHER_ITEMS                        = 15
 };
 
 #define MAX_ITEM_SPELLS 5
@@ -222,6 +235,7 @@ class TC_GAME_API Item : public Object
         bool IsBoundByEnchant() const;
         virtual void SaveToDB(CharacterDatabaseTransaction trans);
         virtual bool LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, Field* fields, uint32 entry);
+        void LoadAdditionalDataFromDB(Player const* owner, ItemAdditionalLoadInfo* addionalData);
         void LoadArtifactData(Player const* owner, uint64 xp, uint32 artifactAppearanceId, uint32 artifactTier, std::vector<ArtifactPowerData>& powers);  // must be called after LoadFromDB to have gems (relics) initialized
         void CheckArtifactRelicSlotUnlock(Player const* owner);
 
@@ -342,7 +356,7 @@ class TC_GAME_API Item : public Object
         int32 GetRequiredLevel() const;
 		int32 GetItemStatType(uint32 index) const;
         float GetItemStatValue(uint32 index, Player const* owner) const;
-        SocketColor GetSocketColor(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_SOCKETS); return SocketColor(_bonusData.SocketColor[index]); }
+        uint32 GetSocketColor(uint32 index) const { ASSERT(index < MAX_ITEM_PROTO_SOCKETS); return _bonusData.SocketColor[index]; }
         uint32 GetAppearanceModId() const { return m_itemData->ItemAppearanceModID; }
         void SetAppearanceModId(uint32 appearanceModId) { SetUpdateFieldValue(m_values.ModifyValue(&Item::m_itemData).ModifyValue(&UF::ItemData::ItemAppearanceModID), appearanceModId); }
         uint32 GetDisplayId(Player const* owner) const;
@@ -465,7 +479,8 @@ class TC_GAME_API Item : public Object
         GuidSet allowedGUIDs;
         ItemRandomBonusListId m_randomBonusListId;          // store separately to easily find which bonus list is the one randomly given for stat rerolling
         ObjectGuid m_childItem;
-        std::unordered_map<uint32, uint16> m_artifactPowerIdToIndex;
         std::array<uint32, MAX_ITEM_PROTO_SOCKETS> m_gemScalingLevels;
+
+        int32 GetArtifactPowerIndex(uint32 artifactPowerId) const;
 };
 #endif

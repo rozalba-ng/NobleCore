@@ -481,3 +481,17 @@ Creature* CreatureAI::DoSummonFlyer(uint32 entry, WorldObject* obj, float flight
     pos.m_positionZ += flightZ;
     return me->SummonCreature(entry, pos, summonType, despawnTime);
 }
+
+void CreatureAI::ZoneTalk(uint8 id, WorldObject const* whisperTarget /*= nullptr*/)
+{
+    if (!this)
+        return;
+
+    sCreatureTextMgr->SendChat(me, id, whisperTarget, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_ZONE);
+}
+
+void CreatureAI::Speak(uint32 TextID, uint32 SoundID, Player* TargetedPlayer)
+{
+    me->Say(TextID);
+    me->PlayDirectSound(SoundID, TargetedPlayer, TextID);
+}

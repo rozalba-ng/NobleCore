@@ -138,6 +138,7 @@ enum MageSpells
     SPELL_MAGE_GLACIAL_SPIKE_PROC                = 199844,
     SPELL_MAGE_GLACIAL_SPIKE                     = 199786,
     SPELL_MAGE_GLACIAL_SPIKE_DAMAGE              = 228600,
+    SPELL_MAGE_PRISMATIC_BARRIER                 = 235450,
 
 };
 
@@ -1260,21 +1261,66 @@ uint32 const spell_mage_polymorph_visual::PolymorhForms[6] =
 // 235450 - Prismatic Barrier
 class spell_mage_prismatic_barrier : public AuraScript
 {
-    bool Validate(SpellInfo const* spellInfo) override
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellEffect({ { spellInfo->Id, EFFECT_5 } });
+        return ValidateSpellInfo({ SPELL_MAGE_PRISMATIC_BARRIER });
     }
 
     void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
     {
         canBeRecalculated = false;
         if (Unit* caster = GetCaster())
-            amount = int32(CalculatePct(caster->GetMaxHealth(), GetEffectInfo(EFFECT_5).CalcValue(caster)));
+        {
+            int32 pct = 20;
+
+            SpellInfo const* spellInfo = GetSpellInfo();
+
+            if (spellInfo->GetEffects().size() > 1)
+            {
+                SpellEffectInfo const& effectInfo = spellInfo->GetEffect(EFFECT_1);
+                if (effectInfo.CalcValue(caster) > 0)
+                {
+                    pct = effectInfo.CalcValue(caster);
+                }
+            }
+
+            amount = int32(CalculatePct(caster->GetMaxHealth(), pct));
+        }
+    }
+
+    void HandleAfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Unit* target = GetTarget())
+        {
+            if (Aura* aura = target->GetAura(GetId()))
+            {
+                aura->SetNeedClientUpdateForTargets();
+            }
+        }
+    }
+
+    void HandleAbsorb(AuraEffect* aurEff, DamageInfo& dmgInfo, uint32& absorbAmount)
+    {
+        if (!(GetSpellInfo()->GetSchoolMask() & dmgInfo.GetSchoolMask()))
+            return;
+
+        absorbAmount = std::min(uint32(aurEff->GetAmount()), dmgInfo.GetDamage());
+
+        if (absorbAmount > 0 && GetTarget())
+        {
+            if (Aura* aura = GetTarget()->GetAura(GetId()))
+            {
+                aura->SetNeedClientUpdateForTargets();
+            }
+        }
     }
 
     void Register() override
     {
         DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_mage_prismatic_barrier::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
+        AfterEffectApply += AuraEffectApplyFn(spell_mage_prismatic_barrier::HandleAfterApply, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);
+        OnEffectAbsorb += AuraEffectAbsorbFn(spell_mage_prismatic_barrier::HandleAbsorb, EFFECT_0);
     }
 };
 

@@ -247,24 +247,53 @@ public:
             if (me->IsQuestGiver())
                 player->PrepareQuestMenu(me->GetGUID());
 
-            if (player->GetQuestStatus(QUEST_WHACK_A_GNOLL) == QUEST_STATUS_INCOMPLETE)
-                AddGossipItemFor(player, GossipOptionNpc::None, "I want to play Whack-a-Gnoll! |cFF0000FF(Darkmoon Game Token)|", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 13018, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 13018, 1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
 
             player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(me), me->GetGUID());
             return true;
         }
 
-        bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 /*gossipListId*/) override
+        bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
         {
-            player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
-            player->NearTeleportTo(-3994.28f, 6283.58f, 13.12f, 0.727784f, true);
+            uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+            ClearGossipMenuFor(player);
 
-            me->AddAura(SPELL_OVERRIDE_ACTION, player);
-            me->AddAura(SPELL_ENABLE_POWERBAR, player);
-            player->SetPower(POWER_ALTERNATE_POWER, player->GetReqKillOrCastCurrentCount(QUEST_WHACK_A_GNOLL, 54505));
+            switch (action)
+            {
+                // Info
+            case GOSSIP_ACTION_INFO_DEF + 1:
+                player->PlayerTalkClass->ClearMenus();
+                AddGossipItemFor(player, 16972, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                    SendGossipMenuFor(player, 18350, me->GetGUID());
+                break;
+                // Ready to play
+            case  GOSSIP_ACTION_INFO_DEF + 2:
+                if (player->HasItemCount(ITEM_DARKMOON_TOKEN, 1))
+                {
+                    CloseGossipMenuFor(player);
 
-            CloseGossipMenuFor(player);
-            return true;
+                    player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
+                    player->NearTeleportTo(-3994.28f, 6283.58f, 13.12f, 0.727784f, true);
+
+                    me->AddAura(SPELL_OVERRIDE_ACTION, player);
+                    me->AddAura(SPELL_ENABLE_POWERBAR, player);
+                    player->SetPower(POWER_ALTERNATE_POWER, player->GetReqKillOrCastCurrentCount(QUEST_WHACK_A_GNOLL, 54505));
+                }
+                else
+                {
+                    player->PlayerTalkClass->ClearMenus();
+                    return OnGossipHello(player);
+                }
+                break;
+                // I understand
+            case GOSSIP_ACTION_INFO_DEF + 3:
+                player->PlayerTalkClass->ClearMenus();
+                return OnGossipHello(player);
+                break;
+            }
+
+            return false;
         }
     };
 
@@ -318,20 +347,22 @@ class spell_whack_gnoll_whack : public SpellScriptLoader
 
         class spell_whack_gnoll_whack_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_whack_gnoll_whack_SpellScript);
 
             SpellCastResult CheckCast()
             {
                 Unit* caster = GetCaster();
 
+                Player* player = caster->ToPlayer();
+
                 if (!caster)
                     return SPELL_CAST_OK;
 
+
                 // Todo : On peut rendre le code plus propre en changant la TargetA du spell par 46 et ajouter des conditions, mais perso j'ai la flemme
                 std::list<Creature*> targetList;
-                caster->GetCreatureListWithEntryInGrid(targetList, NPC_GNOLL, 3.0f);
-                caster->GetCreatureListWithEntryInGridAppend(targetList, NPC_DOLL, 3.0f);
-                caster->GetCreatureListWithEntryInGridAppend(targetList, NPC_BOSS, 3.0f);
+                caster->GetCreatureListWithEntryInGrid(targetList, NPC_GNOLL, 2.0f);
+                caster->GetCreatureListWithEntryInGridAppend(targetList, NPC_DOLL, 2.0f);
+                caster->GetCreatureListWithEntryInGridAppend(targetList, NPC_BOSS, 2.0f);
 
                 targetList.remove_if(PositionCheck(GetCaster()));
 
@@ -340,26 +371,38 @@ class spell_whack_gnoll_whack : public SpellScriptLoader
 
                 Creature* target = targetList.front();
 
+                if (!caster->isInFront(target, M_PI / 2))
+                    return SPELL_FAILED_UNIT_NOT_INFRONT;
+
+                int8 score{};
+
                 switch (target->GetEntry())
                 {
                     case NPC_GNOLL:
                     {
                         caster->CastSpell(caster, SPELL_KILL_CREDIT, true);
+                        score = caster->GetPower(POWER_ALTERNATE_POWER);
                         break;
                     }
                     case NPC_DOLL:
                     {
                         caster->CastSpell(caster, SPELL_DOLL_STUN, true);
+                        score = caster->GetPower(POWER_ALTERNATE_POWER);
                         break;
                     }
                     case NPC_BOSS:
                     {
                         for (uint8 i = 0; i < 3; ++i)
                             caster->CastSpell(caster, SPELL_KILL_CREDIT, true);
+                            score = caster->GetPower(POWER_ALTERNATE_POWER);
 
                         break;
                     }
                 }
+
+                if (score >= 45)
+                    if (AchievementEntry const* achiev = sAchievementStore.LookupEntry(9983))
+                        player->CompletedAchievement(achiev);
 
                 caster->Kill(caster, target);
                 return SPELL_CAST_OK;
@@ -386,7 +429,6 @@ public:
 
     class spell_whack_gnoll_override_action_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_whack_gnoll_override_action_AuraScript);
 
         bool Validate(SpellInfo const* /*entry*/) override
         {

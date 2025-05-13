@@ -165,6 +165,13 @@ void WorldPackets::Battleground::BattlemasterJoinArena::Read()
     _worldPacket >> Roles;
 }
 
+void WorldPackets::Battleground::JoinSkirmish::Read()
+{
+    _worldPacket >> Roles;
+    _worldPacket >> Bracket;
+    IsRequeue = _worldPacket.ReadBit();
+}
+
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Battleground::BattlefieldStatusHeader const& header)
 {
     data << header.Ticket;
@@ -325,7 +332,7 @@ WorldPacket const* WorldPackets::Battleground::DestroyArenaUnit::Write()
     return &_worldPacket;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Battleground::RatedPvpInfo::BracketInfo const& bracketInfo)
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Battleground::BracketInfo const& bracketInfo)
 {
     data << int32(bracketInfo.PersonalRating);
     data << int32(bracketInfo.Ranking);
@@ -345,16 +352,17 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Battleground::RatedPvpInf
     data << int32(bracketInfo.PvpTierID);
     data << int32(bracketInfo.SeasonPvpTier);
     data << int32(bracketInfo.BestWeeklyPvpTier);
-    data << int32(bracketInfo.BestSeasonPvpTierEnum);
+    data << uint8(bracketInfo.BestSeasonPvpTierEnum);
+    data << int32(bracketInfo.Rank);
     data.WriteBit(bracketInfo.Disqualified);
     data.FlushBits();
 
     return data;
 }
 
-WorldPacket const* WorldPackets::Battleground::RatedPvpInfo::Write()
+WorldPacket const* WorldPackets::Battleground::RatedPVPInfo::Write()
 {
-    for (BracketInfo const& bracket : Bracket)
+    for (BracketInfo const& bracket : Brackets)
         _worldPacket << bracket;
 
     return &_worldPacket;
@@ -432,5 +440,43 @@ WorldPacket const* WorldPackets::Battleground::UpdateCapturePoint::Write()
 WorldPacket const* WorldPackets::Battleground::CapturePointRemoved::Write()
 {
     _worldPacket << CapturePointGUID;
+    return &_worldPacket;
+}
+
+void WorldPackets::Battleground::AcceptWargameInvite::Read()
+{
+    _worldPacket >> OpposingPartyMember;
+    _worldPacket >> QueueID;
+    _worldPacket >> Accept;
+}
+
+void WorldPackets::Battleground::BattlemasterJoinBrawl::Read()
+{
+    _worldPacket >> RolesMask;
+    _worldPacket >> UnkField;
+}
+
+WorldPacket const* WorldPackets::Battleground::RequestScheduledPVPInfoResponse::Write()
+{
+    _worldPacket.WriteBit(HasBrawlInfo);
+    _worldPacket.WriteBit(HasSpecialEventInfo);
+    _worldPacket.FlushBits();
+
+    if (HasBrawlInfo)
+    {
+        _worldPacket << Brawl->PvpBrawlID;
+        _worldPacket << Brawl->TimeToBrawl;
+        _worldPacket.WriteBit(Brawl->IsActive);
+        _worldPacket.FlushBits();
+    }
+
+    if (HasSpecialEventInfo)
+    {
+        _worldPacket << SpecialEvent->PvpBrawlID;
+        _worldPacket << SpecialEvent->AchievementId;
+        _worldPacket.WriteBit(SpecialEvent->CanQueue);
+        _worldPacket.FlushBits();
+    }
+
     return &_worldPacket;
 }

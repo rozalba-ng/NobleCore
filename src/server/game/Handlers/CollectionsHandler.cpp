@@ -44,3 +44,9 @@ void WorldSession::HandleCollectionItemSetFavorite(WorldPackets::Collections::Co
             break;
     }
 }
+
+void WorldSession::HandleMountClearFanfare(WorldPackets::Collections::MountClearFanfare& packet)
+{
+    if (GetCollectionMgr()->HasMount(packet.spellID))
+        GetCollectionMgr()->UpdateAccountMounts(packet.spellID, MOUNT_STATUS_NONE);
+}

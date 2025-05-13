@@ -52,6 +52,8 @@ public:
             { "visible",    HandleGMVisibleCommand,     rbac::RBAC_PERM_COMMAND_GM_VISIBLE,     Console::No },
             { "on",         HandleGMOnCommand,          rbac::RBAC_PERM_COMMAND_GM,             Console::No },
             { "off",        HandleGMOffCommand,         rbac::RBAC_PERM_COMMAND_GM,             Console::No },
+            { "commentator",HandleGMCommentatorCommand, rbac::RBAC_PERM_COMMAND_GM,             Console::Yes },
+            { "camera",     HandleGMCameraCommand,      rbac::RBAC_PERM_COMMAND_GM,             Console::Yes },
         };
         static ChatCommandTable commandTable =
         {
@@ -236,6 +238,59 @@ public:
         handler->GetPlayer()->SetGameMaster(false);
         handler->GetPlayer()->UpdateTriggerVisibility();
         handler->GetSession()->SendNotification(LANG_GM_OFF);
+        return true;
+    }
+
+    static bool HandleGMCommentatorCommand(ChatHandler* handler, Optional<PlayerIdentifier> player)
+    {
+        if (!player)
+            player = PlayerIdentifier::FromTargetOrSelf(handler);
+
+        if (!player) {
+            TC_LOG_ERROR("network.commands", "Unable to find target for GMCommentatorNameCommand.");
+            return false;
+        }
+
+        Player* target = handler->getSelectedPlayer();
+
+        bool enable = !target->HasPlayerFlag(PLAYER_FLAGS_UBER);
+
+        if (enable) {
+            target->SetPlayerFlag(PLAYER_FLAGS_UBER);
+            target->SetPlayerFlag(PLAYER_FLAGS_COMMENTATOR2);
+            handler->PSendSysMessage("Commentator flags added.");
+        }
+        else {
+            target->RemovePlayerFlag(PLAYER_FLAGS_UBER);
+            target->RemovePlayerFlag(PLAYER_FLAGS_COMMENTATOR2);
+            handler->PSendSysMessage("Commentator flags removed.");
+        }
+
+        return true;
+    }
+
+    static bool HandleGMCameraCommand(ChatHandler* handler, Optional<PlayerIdentifier> player)
+    {
+        if (!player)
+            player = PlayerIdentifier::FromTargetOrSelf(handler);
+
+        if (!player) {
+            TC_LOG_ERROR("network.commands", "Unable to find target for GMCameraNameCommand.");
+            return false;
+        }
+
+        Player* target = handler->getSelectedPlayer();
+        bool enable = !target->HasPlayerFlag(PLAYER_FLAGS_UBER);
+
+        if (enable) {
+            target->SetPlayerFlag(PLAYER_FLAGS_COMMENTATOR_CAMERA);
+            handler->PSendSysMessage("Camera flag added.");
+        }
+        else {
+            target->RemovePlayerFlag(PLAYER_FLAGS_COMMENTATOR_CAMERA);
+            handler->PSendSysMessage("Camera flag removed.");
+        }
+
         return true;
     }
 };

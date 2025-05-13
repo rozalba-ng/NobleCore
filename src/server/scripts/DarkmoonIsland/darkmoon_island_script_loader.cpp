@@ -24,6 +24,8 @@ void AddSC_darkmoon_whack_gnoll();
 void AddSC_darkmoon_shooting_gallery();
 void AddSC_darkmoon_ring_toss();
 void AddSC_darkmoon_firebird_challenge();
+void AddSC_darkmoon_dance_battle();
+void AddSC_DarkmoonBlightBoard();
 
 
 // The name of this function should match:
@@ -38,4 +40,6 @@ void AddDarkmoonIslandScripts()
     AddSC_darkmoon_shooting_gallery();
     AddSC_darkmoon_ring_toss();
     AddSC_darkmoon_firebird_challenge();
+    AddSC_darkmoon_dance_battle();
+    AddSC_DarkmoonBlightBoard();
 }

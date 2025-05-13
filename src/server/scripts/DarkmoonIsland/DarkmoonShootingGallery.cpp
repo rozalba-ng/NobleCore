@@ -105,7 +105,7 @@ public:
 
         void Reset()
         {
-            nextQuoteTimer = urand(1, 60) * 1000;
+            nextQuoteTimer = 40000 + urand(0, 15) * 10000;
             nextQuote = 0;
             nextTargetChangeTimer = 0;
             targetIndex = -1;
@@ -141,7 +141,7 @@ public:
                 if (creature_bunny)
                     creature_bunny->CastSpell(creature_bunny, SPELL_HESHOOTS_TARGET_INDICATOR, true);
 
-                nextTargetChangeTimer = 6500 + urand(0, 1000);
+                nextTargetChangeTimer = 4500 + urand(0, 1000);
             }
             else
                 nextTargetChangeTimer -= diff;
@@ -153,9 +153,7 @@ public:
                 player->PrepareQuestMenu(me->GetGUID());
 
             AddGossipItemFor(player, 6225, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
-
-            if (player->GetQuestStatus(QUEST_HE_SHOOTS_HE_SCORES) == QUEST_STATUS_INCOMPLETE)
-                AddGossipItemFor(player, 6225, 2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+            AddGossipItemFor(player, 6225, 2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
 
             player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(me), me->GetGUID());
             return true;
@@ -170,9 +168,8 @@ public:
             {
                 // Info
             case GOSSIP_ACTION_INFO_DEF + 1:
-                    player->PlayerTalkClass->ClearMenus();
+                AddGossipItemFor(player, 16972, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3); 
                     SendGossipMenuFor(player, 18353, me->GetGUID());
-                    return OnGossipHello(player);
                 break;
                 // Ready to play
             case  GOSSIP_ACTION_INFO_DEF + 2:
@@ -181,7 +178,7 @@ public:
                     CloseGossipMenuFor(player);
 
                     player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
-                    player->CastSpell(player, SPELL_HESHOOTS_CRACKSHOT_ENABLE, true);
+                    player->CastSpell(player, SPELL_HESHOOTS_CRACKSHOT_ENABLE, TRIGGERED_FULL_MASK);
 
                     int16 progress = player->GetReqKillOrCastCurrentCount(QUEST_HE_SHOOTS_HE_SCORES, 54231);
                     if (progress > 0)
@@ -189,6 +186,15 @@ public:
 
                     return true;
                 }
+                else
+                {
+                    player->PlayerTalkClass->ClearMenus();
+                    return OnGossipHello(player);
+                }
+                break;
+            case GOSSIP_ACTION_INFO_DEF + 3:
+                player->PlayerTalkClass->ClearMenus();
+                return OnGossipHello(player);
                 break;
             }
 
@@ -206,51 +212,93 @@ public:
 class spell_heshoots_shoot_hit : public SpellScriptLoader
 {
 public:
-    spell_heshoots_shoot_hit() : SpellScriptLoader("spell_heshoots_shoot_hit") { }
+    spell_heshoots_shoot_hit() : SpellScriptLoader("spell_heshoots_shoot_hit") {}
 
     class spell_heshoots_shoot_hit_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_heshoots_shoot_hit_SpellScript);
+    private:
+        void SetTargets(std::list<WorldObject*>& targets)
+        {
+            Unit* caster = GetCaster();
+            if (!caster || !caster->ToPlayer())
+                return;
+
+            targets.clear();
+
+            std::list<Creature*> potentialTargets;
+            caster->GetCreatureListWithEntryInGrid(potentialTargets, 24171, 10.0f);
+
+            for (Creature* creature : potentialTargets)
+            {
+                if (!creature->IsAlive() || !creature->HasAura(SPELL_HESHOOTS_TARGET_INDICATOR))
+                    continue;
+
+                if (!caster->HasInArc(static_cast<float>(M_PI / 12), creature))
+                    continue;
+
+                float startX = caster->GetPositionX();
+                float startY = caster->GetPositionY();
+                float startZ = caster->GetPositionZ() + caster->GetCollisionHeight() * 0.75f;
+
+                float targetX = creature->GetPositionX();
+                float targetY = creature->GetPositionY();
+                float targetZ = creature->GetPositionZ() + creature->GetCollisionHeight() * 0.75f;
+
+                float dx = targetX - startX;
+                float dy = targetY - startY;
+                float dz = targetZ - startZ;
+                float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+                if (distance > 10.0f)
+                    continue;
+
+                if (distance > 0)
+                {
+                    dx /= distance;
+                    dy /= distance;
+                    dz /= distance;
+                }
+
+                targets.push_back(creature);
+            }
+        }
 
         void HandleDummy(SpellEffIndex /*effIndex*/)
         {
-            if (!GetCaster())
-                return;
-
+            Unit* caster = GetCaster();
             Unit* target = GetHitUnit();
 
-            if (!target)
+            if (!caster || !target)
+                return;
+
+            Player* player = caster->ToPlayer();
+            if (!player)
+                return;
+
+            if (target->GetEntry() != 24171)
                 return;
 
             if (Aura* shootAura = target->GetAura(SPELL_HESHOOTS_TARGET_INDICATOR))
             {
-                target->CastSpell(GetCaster(), SPELL_HESHOOTS_KILL_CREDIT, true);
+                target->CastSpell(player, SPELL_HESHOOTS_KILL_CREDIT, true);
 
-                Player* pl = GetCaster()->ToPlayer();
-
-                if (shootAura->GetMaxDuration() - shootAura->GetDuration() < 1000)
+                if (shootAura->GetMaxDuration() - shootAura->GetDuration() < 1200)
                 {
-                    target->CastSpell(GetCaster(), SPELL_HESHOOTS_KILL_CREDIT_BONUS, true);
-                    AchievementEntry const* achiev = sAchievementStore.LookupEntry(6022);
-                    if (pl)
-                        pl->CompletedAchievement(achiev);
-                }
-
-                if (pl)
-                {
-                    if (pl->GetReqKillOrCastCurrentCount(QUEST_HE_SHOOTS_HE_SCORES, 54231) >= 25)
-                        pl->RemoveAurasDueToSpell(SPELL_HESHOOTS_CRACKSHOT_ENABLE);
+                    target->CastSpell(player, SPELL_HESHOOTS_KILL_CREDIT_BONUS, true);
+                    if (AchievementEntry const* achiev = sAchievementStore.LookupEntry(6022))
+                        player->CompletedAchievement(achiev);
                 }
             }
         }
 
-        void Register()
+        void Register() override
         {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_heshoots_shoot_hit_SpellScript::SetTargets, EFFECT_0, TARGET_UNIT_CONE_ENTRY);
             OnEffectHitTarget += SpellEffectFn(spell_heshoots_shoot_hit_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
         }
     };
 
-    SpellScript* GetSpellScript() const
+    SpellScript* GetSpellScript() const override
     {
         return new spell_heshoots_shoot_hit_SpellScript();
     }
@@ -264,14 +312,21 @@ public:
 
     class spell_heshoots_indicator_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_heshoots_indicator_AuraScript);
 
-        void EffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*modes*/)
+        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
-            if (!GetUnitOwner())
-                return;
+            if (Aura* aura = GetAura())
+            {
+                aura->SetDuration(3000);
+                aura->SetMaxDuration(3000);
 
-            GetUnitOwner()->CastSpell(GetUnitOwner(), SPELL_HESHOOTS_TARGET_INDICATOR_VISUAL, true);
+                TC_LOG_DEBUG("scripts", "Darkmoon Gallery: Set indicator aura duration to 3 seconds");
+            }
+
+            if (Unit* target = GetTarget())
+            {
+                target->CastSpell(target, SPELL_HESHOOTS_TARGET_INDICATOR_VISUAL, true);
+            }
         }
 
         void EffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*modes*/)
@@ -284,7 +339,7 @@ public:
 
         void Register()
         {
-            OnEffectApply += AuraEffectApplyFn(spell_heshoots_indicator_AuraScript::EffectApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            OnEffectApply += AuraEffectApplyFn(spell_heshoots_indicator_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
             OnEffectRemove += AuraEffectApplyFn(spell_heshoots_indicator_AuraScript::EffectRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
         }
     };

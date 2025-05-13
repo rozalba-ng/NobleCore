@@ -28,17 +28,12 @@
 #include "Transport.h"
 #include "DarkmoonIsland.h"
 #include "AchievementMgr.h"
-#include "ScriptMgr.h"
-#include "ScriptedGossip.h"
 #include "ScriptedCreature.h"
-#include "DarkmoonIsland.h"
 #include "Player.h"
-#include "GameObject.h"
 #include "GameObjectAI.h"
 #include "InstanceScript.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
-#include "Player.h"
 #include "ScriptedEscortAI.h"
 #include "WorldSession.h"
 #include "Item.h"
@@ -48,12 +43,10 @@
 #include "AchievementPackets.h"
 #include "DB2HotfixGenerator.h"
 #include "DB2Stores.h"
-#include "CellImpl.h"
 #include "ChatTextBuilder.h"
 #include "Containers.h"
 #include "DatabaseEnv.h"
 #include "GameTime.h"
-#include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "Guild.h"
 #include "GuildMgr.h"
@@ -67,22 +60,9 @@
 #include "AreaTriggerAI.h"
 #include "CreatureAI.h"
 #include "CreatureAIImpl.h"
-#include "SpellScript.h"
-#include "SpellAuras.h"
 #include "SharedDefines.h"
-#include "ObjectAccessor.h"
 #include "TemporarySummon.h"
 #include <sstream>
-
-enum JESSICA_GOSSIP
-{
-    GOSSIP_BUTTON_1 = 13012,
-    GOSSIP_BUTTON_1_ID = 0,
-    GOSSIP_BUTTON_2 = 13012,
-    GOSSIP_BUTTON_2_ID = 1,
-    GOSSIP_BUTTON_3 = 13013,
-    GOSSIP_BUTTON_3_ID = 0,
-};
 
 // 54485 - Jessica Rogers
 class npc_jessica_rogers : public CreatureScript
@@ -99,15 +79,9 @@ public:
             if (me->IsQuestGiver())
                 player->PrepareQuestMenu(me->GetGUID());
 
-            AddGossipItemFor(player, GOSSIP_BUTTON_1, GOSSIP_BUTTON_1_ID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
-            SendGossipMenuFor(player, 18284, me->GetGUID());
-
-            if (player->GetQuestStatus(QUEST_TARGET_TURTLE) == QUEST_STATUS_INCOMPLETE)
-            {
-                AddGossipItemFor(player, GOSSIP_BUTTON_2, GOSSIP_BUTTON_2_ID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
-                SendGossipMenuFor(player, 53027, me->GetGUID());
-            }
-
+            AddGossipItemFor(player, 13012, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);            
+            AddGossipItemFor(player, 13012, 1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+                
             player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(me), me->GetGUID());
             return true;
         }
@@ -120,10 +94,11 @@ public:
             switch (action)
             {
             case GOSSIP_ACTION_INFO_DEF + 1:
-                AddGossipItemFor(player, GOSSIP_BUTTON_3, GOSSIP_BUTTON_3_ID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                AddGossipItemFor(player, 13013, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                    SendGossipMenuFor(player, 18286, me->GetGUID());
                 break;
             case GOSSIP_ACTION_INFO_DEF + 2:
-                if (player->HasItemCount(ITEM_DARKMOON_TOKEN))
+                if (player->HasItemCount(ITEM_DARKMOON_TOKEN, 1))
                 {
                     CloseGossipMenuFor(player);
 
@@ -135,10 +110,15 @@ public:
 
                     return true;
                 }
+                else
+                {
+                    player->PlayerTalkClass->ClearMenus();
+                    return OnGossipHello(player);
+                }
                 break;
             case GOSSIP_ACTION_INFO_DEF + 3:
-                AddGossipItemFor(player, GOSSIP_BUTTON_1, GOSSIP_BUTTON_1_ID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
-                AddGossipItemFor(player, GOSSIP_BUTTON_2, GOSSIP_BUTTON_2_ID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+                player->PlayerTalkClass->ClearMenus();
+                return OnGossipHello(player);
                 break;
             }
             return true;
@@ -159,7 +139,6 @@ public:
 
     class spell_ring_toss_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_ring_toss_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -172,7 +151,6 @@ public:
         void HandleDummy(SpellEffIndex /*effIndex*/)
         {
             Unit* caster = GetCaster();
-            Player* player = GetCaster()->ToPlayer();
 
             WorldLocation* loc = GetHitDest();
 
@@ -191,13 +169,7 @@ public:
                     dubenko->CastSpell(dubenko, SPELL_RINGTOSS_TURTLE_CIRCLE_1, true);
 
                 caster->CastSpell(dubenko, SPELL_RINGTOSS_HIT, false);
-            }
-
-            if (player)
-            {
-                if (player->GetReqKillOrCastCurrentCount(QUEST_TARGET_TURTLE, 54495) >= 3)
-                    player->RemoveAurasDueToSpell(SPELL_RINGTOSS_ENABLE);
-            }            
+            }          
         }
                         
 

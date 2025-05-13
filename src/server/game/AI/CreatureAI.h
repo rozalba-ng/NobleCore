@@ -257,6 +257,10 @@ class TC_GAME_API CreatureAI : public UnitAI
         uint32 const _scriptId;
         bool _isEngaged;
         bool _moveInLOSLocked;
+
+    public:
+        void ZoneTalk(uint8 id, WorldObject const* whisperTarget);
+        void Speak(uint32 TextID, uint32 SoundID, Player* TargetedPlayer);
 };
 
 #endif

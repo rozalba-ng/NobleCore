@@ -93,30 +93,54 @@ public:
             if (me->IsQuestGiver())
                 player->PrepareQuestMenu(me->GetGUID());
 
-            if (player->GetQuestStatus(QUEST_HUMANOID_CANNONBALL) == QUEST_STATUS_INCOMPLETE)
-                AddGossipItemFor(player, GossipOptionNpc::None, "Launch me! |cFF0000FF(Darkmoon Game Token)|r", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 6575, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 6575, 1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
 
             SendGossipMenuFor(player, player->GetGossipTextId(me), me->GetGUID());
             return true;
         }
 
-        bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 /*gossipListId*/) override
+        bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
         {
-            if (!player->HasItemCount(ITEM_DARKMOON_TOKEN))
+            uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+            ClearGossipMenuFor(player);
+
+            switch (action)
             {
-                CloseGossipMenuFor(player);
-                return true;
+                // Info
+            case GOSSIP_ACTION_INFO_DEF + 1:
+                player->PlayerTalkClass->ClearMenus();
+                AddGossipItemFor(player, 16972, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                SendGossipMenuFor(player, 7790, me->GetGUID());
+                break;
+                // Ready to play
+            case  GOSSIP_ACTION_INFO_DEF + 2:
+                if (player->HasItemCount(ITEM_DARKMOON_TOKEN, 1))
+                {
+                    CloseGossipMenuFor(player);
+
+                    player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
+                    player->CastSpell(player, SPELL_ROOT, true);
+                    player->CastSpell(player, 102113, true);
+                    if (Aura* flyAura = player->AddAura(SPELL_HELPER_FLY, player))
+                        flyAura->SetDuration(5000);
+                    player->CastSpell(player, SPELL_CANON_PREPARATION, true);
+
+                }
+                else
+                {
+                    player->PlayerTalkClass->ClearMenus();
+                    return OnGossipHello(player);
+                }
+                break;
+                // I understand
+            case GOSSIP_ACTION_INFO_DEF + 3:
+                player->PlayerTalkClass->ClearMenus();
+                return OnGossipHello(player);
+                break;
             }
 
-            player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
-            player->CastSpell(player, SPELL_ROOT, true);
-            player->CastSpell(player, 102113, true);
-            if (Aura* flyAura = player->AddAura(SPELL_HELPER_FLY, player))
-                flyAura->SetDuration(5000);
-            player->CastSpell(player, SPELL_CANON_PREPARATION, true);
-
-            CloseGossipMenuFor(player);
-            return true;
+            return false;
         }
     };
 
@@ -227,7 +251,6 @@ public:
 
 class spell_darkmoon_canon_preparation : public AuraScript
 {
-    PrepareAuraScript(spell_darkmoon_canon_preparation);
 
     void HandleTriggerSpell(AuraEffect const* /*aurEff*/)
     {

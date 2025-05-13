@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "Cell.h"
 #include "CellImpl.h"
+#include "ScriptedCreature.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "SpellScript.h"
@@ -28,7 +29,6 @@
 #include "Transport.h"
 #include "DarkmoonIsland.h"
 #include "AchievementMgr.h"
-#include "ScriptedCreature.h"
 #include "GameObjectAI.h"
 #include "InstanceScript.h"
 #include "Log.h"
@@ -47,19 +47,24 @@
 #include <sstream>
 #include <G3D/Quat.h>
 
-enum eSpells
+enum TonkSpells
 {
-    SPELL_PROGRESS_BAR = 102178,
-    SPELL_SUMMON_TONK = 100752,
+    SPELL_TONK_ENABLE                   = 102178,
+    SPELL_TONK_SHOOT                    = 24933, //27766
+    SPELL_TONK_NITRO_BOOST              = 102297,
+    SPELL_TONK_KILL_CREDIT              = 110162,
+    SPELL_TONK_STAY_OUT                 = 109976,
+
+    SPELL_ENEMY_TONK_MARKED             = 102341,
+    SPELL_ENEMY_TONK_CANNON_BLAST       = 102227,
 };
 
-enum TonkCommander
+enum TonkNPCs
 {
-    EVENT_TONKCOMMANDER_START_GAME_1 = 1,
-    EVENT_TONKCOMMANDER_START_GAME_2 = 2,
-    EVENT_TONKCOMMANDER_START_GAME_3 = 3,
-    EVENT_TONKCOMMANDER_FINISH_GAME  = 4,
-    EVENT_TONKCOMMANDER_PLAYER_POS   = 5,
+    NPC_PLAYER_TONK                     = 54588,
+    NPC_ENEMY_TONK                      = 54642,
+    NPC_ENEMY_MINIZEP                   = 54643,
+    NPC_TONK_TARGET                     = 33081,
 };
 
 #define TONK_TARGET_POSITION_COUNT 33
@@ -100,221 +105,160 @@ const Position tonkTargetPositions[TONK_TARGET_POSITION_COUNT] = {
     {-4135.285645f, 6321.727539f, 13.116712f, 4.992911f}
 };
 
-class npc_finlay_coolshot : public CreatureScript
+const Position playerSpawnPosition = { -4130.196777f, 6320.329102f, 13.116393f, 4.368710f };
+const Position playerKickPosition = { -4125.278809f, 6332.548828f, 12.219045f, 4.313733f };
+const Position circleCenterPosition = { -4135.632813f, 6302.201172f, 13.116685f, 1.336366f };
+const float circleBattleRadius = 17.0f;
+
+#define FINLAY_QUOTE_1 "Hey, hey! Command a tonk in glorious battle!"
+#define FINLAY_QUOTE_2 "Step right up and try a tonk!"
+#define FINLAY_QUOTE_3 "Tonks! We got tonks here!"
+#define FINLAY_QUOTE_4 "We're under attack! Step up and do your part!"
+
+#define FINLAY_QUOTES_TOTAL 4
+const char* finlayQuotes[FINLAY_QUOTES_TOTAL] = {
+    FINLAY_QUOTE_1, FINLAY_QUOTE_2, FINLAY_QUOTE_3, FINLAY_QUOTE_4
+};
+
+struct TargetSpawn
+{
+    ObjectGuid guid;
+    uint8 pos;
+    uint32 nextSpawnTime;
+    uint32 nextCheckTime;
+};
+
+#define TONK_TARGETS_MAX 8
+
+class npc_finlay_darkmoon : public CreatureScript
 {
 public:
-    npc_finlay_coolshot() : CreatureScript("npc_finlay_coolshot") { }
+    npc_finlay_darkmoon() : CreatureScript("npc_finlay_darkmoon") { }
 
-    struct npc_finlay_coolshotAI : public ScriptedAI
+    struct npc_finlay_darkmoonAI : public ScriptedAI
     {
-        npc_finlay_coolshotAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_finlay_darkmoonAI(Creature* c) : ScriptedAI(c)
+        {
+            spawnedTonks = false;
+            Reset();
+        }
 
-        EventMap events;
-
-        bool Active;
+        uint32 nextQuoteTimer;
+        uint32 nextCheckTimer;
+        uint8 nextQuote;
+        TargetSpawn targetSpawns[TONK_TARGETS_MAX];
+        bool spawnedTonks;
 
         void Reset()
         {
-            Active = false;
-        }
+            nextQuoteTimer = urand(1, 60) * 1000;
+            nextCheckTimer = 1000;
+            nextQuote = 0;
 
-        void StartGame()
-        {
-            if (!Active)
+            memset(&targetSpawns, 0, sizeof(targetSpawns));
+
+            if (!spawnedTonks)
             {
-                events.ScheduleEvent(EVENT_TONKCOMMANDER_START_GAME_1, 0s);
-                events.ScheduleEvent(EVENT_TONKCOMMANDER_START_GAME_2, 0s);
-                events.ScheduleEvent(EVENT_TONKCOMMANDER_START_GAME_3, 0s);
-                events.ScheduleEvent(EVENT_TONKCOMMANDER_FINISH_GAME, 60s);
+                uint8 point;
+                for (uint32 i = 0; i < 3; i++)
+                {
+                    point = urand(0, TONK_TARGET_POSITION_COUNT);
+                    me->SummonCreature(NPC_ENEMY_TONK, tonkTargetPositions[point], TEMPSUMMON_MANUAL_DESPAWN);
+                }
+                spawnedTonks = true;
             }
         }
 
-        void UpdateAI(uint32 diff)
+        bool IsSpawnAtPos(uint8 pos)
         {
-            events.Update(diff);
-
-            while (uint32 eventId = events.ExecuteEvent())
+            for (uint32 i = 0; i < TONK_TARGETS_MAX; i++)
             {
-                switch (eventId)
+                if (pos == targetSpawns[i].pos)
+                    return true;
+            }
+            return false;
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (nextQuoteTimer <= diff)
+            {
+                nextQuoteTimer = 30000 + urand(0, 15) * 10000; // 30 - 180s (step by 10s, not so big importance)
+                me->Say(54605, me);
+
+                nextQuote++;
+                if (nextQuote >= FINLAY_QUOTES_TOTAL)
+                    nextQuote = 0;
+            }
+            else
+                nextQuoteTimer -= diff;
+
+            if (nextCheckTimer <= diff)
+            {
+                Map::PlayerList const& plList = me->GetMap()->GetPlayers();
+                Player* tmp;
+                for (Map::PlayerList::const_iterator itr = plList.begin(); itr != plList.end(); ++itr)
                 {
-                case EVENT_TONKCOMMANDER_START_GAME_1:
-                    switch (urand(0, 16))
-                    {
-                    case 0:
-                        me->SummonCreature(33081, -4141.6f, 6315.88f, 13.11f, 4.91587f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 1:
-                        me->SummonCreature(33081, -4146.43f, 6309.72f, 13.11f, 5.9655f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 2:
-                        me->SummonCreature(33081, -4143.39f, 6314.97f, 13.11f, 5.87662f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 3:
-                        me->SummonCreature(33081, -4128.46f, 6312.61f, 13.11f, 0.0794366f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 4:
-                        me->SummonCreature(33081, -4123.75f, 6305.47f, 13.11f, 3.03825f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 5:
-                        me->SummonCreature(33081, -4136.6f, 6301.53f, 13.1176f, 1.45875f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 6:
-                        me->SummonCreature(33081, -4139.58f, 6308.16f, 13.1176f, 1.04362f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 7:
-                        me->SummonCreature(33081, -4142.23f, 6291.32f, 13.1167f, 0.986097f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 8:
-                        me->SummonCreature(33081, -4136.95f, 6289.13f, 13.1167f, 1.68022f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 9:
-                        me->SummonCreature(33081, -4126.09f, 6292.85f, 13.1167f, 2.36872f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 10:
-                        me->SummonCreature(33081, -4139.19f, 6287.29f, 13.1167f, 1.47097f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 11:
-                        me->SummonCreature(33081, -4148.21f, 6301.88f, 13.1165f, 0.0309724f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 12:
-                        me->SummonCreature(33081, -4142.29f, 6299.38f, 13.1165f, 0.0309724f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 13:
-                        me->SummonCreature(33081, -4124.66f, 6299.65f, 13.1165f, 2.8671f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 14:
-                        me->SummonCreature(33081, -4133.37f, 6308.8f, 13.1165f, 1.07716f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 15:
-                        me->SummonCreature(33081, -4132.44f, 6291.18f, 13.1165f, 2.16906f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 16:
-                        me->SummonCreature(33081, -4137.18f, 6295.24f, 13.1165f, 4.25818f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    }
-                    events.ScheduleEvent(EVENT_TONKCOMMANDER_START_GAME_1, 5s);
-                    break;
-                case EVENT_TONKCOMMANDER_START_GAME_2:
-                    switch (urand(0, 16))
-                    {
-                    case 0:
-                        me->SummonCreature(33081, -4141.6f, 6315.88f, 13.11f, 4.91587f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 1:
-                        me->SummonCreature(33081, -4146.43f, 6309.72f, 13.11f, 5.9655f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 2:
-                        me->SummonCreature(33081, -4143.39f, 6314.97f, 13.11f, 5.87662f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 3:
-                        me->SummonCreature(33081, -4128.46f, 6312.61f, 13.11f, 0.0794366f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 4:
-                        me->SummonCreature(33081, -4123.75f, 6305.47f, 13.11f, 3.03825f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 5:
-                        me->SummonCreature(33081, -4136.6f, 6301.53f, 13.1176f, 1.45875f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 6:
-                        me->SummonCreature(33081, -4139.58f, 6308.16f, 13.1176f, 1.04362f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 7:
-                        me->SummonCreature(33081, -4142.23f, 6291.32f, 13.1167f, 0.986097f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 8:
-                        me->SummonCreature(33081, -4136.95f, 6289.13f, 13.1167f, 1.68022f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 9:
-                        me->SummonCreature(33081, -4126.09f, 6292.85f, 13.1167f, 2.36872f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 10:
-                        me->SummonCreature(33081, -4139.19f, 6287.29f, 13.1167f, 1.47097f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 11:
-                        me->SummonCreature(33081, -4148.21f, 6301.88f, 13.1165f, 0.0309724f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 12:
-                        me->SummonCreature(33081, -4142.29f, 6299.38f, 13.1165f, 0.0309724f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 13:
-                        me->SummonCreature(33081, -4124.66f, 6299.65f, 13.1165f, 2.8671f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 14:
-                        me->SummonCreature(33081, -4133.37f, 6308.8f, 13.1165f, 1.07716f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 15:
-                        me->SummonCreature(33081, -4132.44f, 6291.18f, 13.1165f, 2.16906f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 16:
-                        me->SummonCreature(33081, -4137.18f, 6295.24f, 13.1165f, 4.25818f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    }
-                    events.ScheduleEvent(EVENT_TONKCOMMANDER_START_GAME_2, 5s);
-                    break;
-                case EVENT_TONKCOMMANDER_START_GAME_3:
-                    switch (urand(0, 16))
-                    {
-                    case 0:
-                        me->SummonCreature(33081, -4141.6f, 6315.88f, 13.11f, 4.91587f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 1:
-                        me->SummonCreature(33081, -4146.43f, 6309.72f, 13.11f, 5.9655f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 2:
-                        me->SummonCreature(33081, -4143.39f, 6314.97f, 13.11f, 5.87662f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 3:
-                        me->SummonCreature(33081, -4128.46f, 6312.61f, 13.11f, 0.0794366f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 4:
-                        me->SummonCreature(33081, -4123.75f, 6305.47f, 13.11f, 3.03825f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 5:
-                        me->SummonCreature(33081, -4136.6f, 6301.53f, 13.1176f, 1.45875f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 6:
-                        me->SummonCreature(33081, -4139.58f, 6308.16f, 13.1176f, 1.04362f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 7:
-                        me->SummonCreature(33081, -4142.23f, 6291.32f, 13.1167f, 0.986097f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 8:
-                        me->SummonCreature(33081, -4136.95f, 6289.13f, 13.1167f, 1.68022f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 9:
-                        me->SummonCreature(33081, -4126.09f, 6292.85f, 13.1167f, 2.36872f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 10:
-                        me->SummonCreature(33081, -4139.19f, 6287.29f, 13.1167f, 1.47097f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 11:
-                        me->SummonCreature(33081, -4148.21f, 6301.88f, 13.1165f, 0.0309724f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 12:
-                        me->SummonCreature(33081, -4142.29f, 6299.38f, 13.1165f, 0.0309724f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 13:
-                        me->SummonCreature(33081, -4124.66f, 6299.65f, 13.1165f, 2.8671f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 14:
-                        me->SummonCreature(33081, -4133.37f, 6308.8f, 13.1165f, 1.07716f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 15:
-                        me->SummonCreature(33081, -4132.44f, 6291.18f, 13.1165f, 2.16906f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    case 16:
-                        me->SummonCreature(33081, -4137.18f, 6295.24f, 13.1165f, 4.25818f, TEMPSUMMON_TIMED_DESPAWN, 10s);
-                        break;
-                    }
-                    events.ScheduleEvent(EVENT_TONKCOMMANDER_START_GAME_3, 5s);
-                    break;
-                case EVENT_TONKCOMMANDER_FINISH_GAME:
-                    Active = false;
-                    events.CancelEvent(EVENT_TONKCOMMANDER_START_GAME_1);
-                    events.CancelEvent(EVENT_TONKCOMMANDER_START_GAME_2);
-                    events.CancelEvent(EVENT_TONKCOMMANDER_START_GAME_3);
-                    break;
+                    tmp = itr->GetSource();
+                    if (!tmp)
+                        continue;
+
+                    // is further - dont care
+                    if (!tmp->IsWithinDist2d(&circleCenterPosition, circleBattleRadius))
+                        continue;
+
+                    // has enable aura - dont care
+                    if (tmp->HasAura(SPELL_TONK_ENABLE))
+                        continue;
+
+                    tmp->CastSpell(tmp, SPELL_TONK_STAY_OUT, true);
                 }
+
+                nextCheckTimer = 500;
+            }
+            else
+                nextCheckTimer -= diff;
+
+            for (uint32 i = 0; i < TONK_TARGETS_MAX; i++)
+            {
+                if (targetSpawns[i].nextCheckTime <= diff)
+                {
+                    Creature* cr = ObjectAccessor::GetCreature(*me, targetSpawns[i].guid);
+                    if (!cr || cr->isDead())
+                    {
+                        targetSpawns[i].nextSpawnTime = 2000;
+                        targetSpawns[i].nextCheckTime = 5000;
+                    }
+                    else
+                    {
+                        targetSpawns[i].nextCheckTime = 2000;
+                    }
+                }
+                else
+                    targetSpawns[i].nextCheckTime -= diff;
+
+                if (targetSpawns[i].nextSpawnTime <= diff)
+                {
+                    targetSpawns[i].nextSpawnTime = urand(20000, 40000);
+                    if (Creature* cr = ObjectAccessor::GetCreature(*me, targetSpawns[i].guid))
+                    {
+                        cr->DespawnOrUnsummon(1s);
+                    }
+
+                    uint8 chosen = 0;
+                    do
+                    {
+                        chosen = urand(0, TONK_TARGET_POSITION_COUNT);
+                    } while (IsSpawnAtPos(chosen));
+
+                    targetSpawns[i].pos = chosen;
+
+                    Creature* cr = me->SummonCreature(NPC_TONK_TARGET, tonkTargetPositions[chosen], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000ms);
+                    if (cr)
+                        targetSpawns[i].guid = cr->GetGUID();
+                }
+                else
+                    targetSpawns[i].nextSpawnTime -= diff;
             }
         }
 
@@ -323,52 +267,183 @@ public:
             if (me->IsQuestGiver())
                 player->PrepareQuestMenu(me->GetGUID());
 
-            if (player->GetQuestStatus(QUEST_TONK_COMMANDER) == QUEST_STATUS_INCOMPLETE)
-                AddGossipItemFor(player, 13019, 1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 13019, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            AddGossipItemFor(player, 13019, 1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
 
             player->PlayerTalkClass->SendGossipMenu(player->GetGossipTextId(me), me->GetGUID());
             return true;
         }
 
-        bool OnGossipSelect(Player* player, uint32 /*uiSender*/, uint32 /*action*/) override
+        bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
         {
-            if (player->HasItemCount(ITEM_DARKMOON_TOKEN))
+            uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+            ClearGossipMenuFor(player);
+
+            switch (action)
             {
-                CloseGossipMenuFor(player);
-
-                player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
-                player->RemoveAurasByType(SPELL_AURA_MOUNTED);
-                player->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
-
-                player->AddAura(102178, player);
-                player->SetImmuneToAll(true);
-                player->SetPower(POWER_ALTERNATE_POWER, player->GetReqKillOrCastCurrentCount(QUEST_TONK_COMMANDER, 33081));
-
-                if (Creature* summon = me->SummonCreature(54588, -4131.37f, 6317.32f, 13.11f, 4.31f, TEMPSUMMON_TIMED_DESPAWN, 60s))
+                // Info
+            case GOSSIP_ACTION_INFO_DEF + 1:
+                player->PlayerTalkClass->ClearMenus();
+                AddGossipItemFor(player, 16972, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                SendGossipMenuFor(player, 18352, me->GetGUID());
+                return true;
+                // Play
+            case  GOSSIP_ACTION_INFO_DEF + 2:
+                if (player->HasItemCount(ITEM_DARKMOON_TOKEN, 1))
                 {
-                    player->CastSpell(summon, 46598, false);
-                    summon->ApplySpellImmune(102292, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_NORMAL, true);
-                }
+                    player->DestroyItemCount(ITEM_DARKMOON_TOKEN, 1, true);
+                    player->RemoveAurasByType(SPELL_AURA_MOUNTED);
+                    player->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
 
-                CAST_AI(npc_finlay_coolshot::npc_finlay_coolshotAI, me->AI())->StartGame();
-                CAST_AI(npc_finlay_coolshot::npc_finlay_coolshotAI, me->AI())->Active = true;
+                    Creature* summon = player->SummonCreature(NPC_PLAYER_TONK, playerSpawnPosition, TEMPSUMMON_MANUAL_DESPAWN, 0s);
+                    if (summon)
+                    {
+                        summon->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+                        summon->SetUnitFlag(UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+                        summon->SetImmuneToAll(true);
+                        player->EnterVehicle(summon, 0);
+                        player->CastSpell(player, SPELL_TONK_ENABLE, true);
+                        summon->SetImmuneToAll(true);
+
+                        int16 progress = player->GetReqKillOrCastCurrentCount(QUEST_TONK_COMMANDER, 33081);
+                        if (progress > 0)
+                            player->SetPower(POWER_ALTERNATE_POWER, progress);
+                    }
+                }
+                else
+                {
+                    player->PlayerTalkClass->ClearMenus();
+                    return OnGossipHello(player);
+                }
+                return true;
+                // "I understand"
+            case GOSSIP_ACTION_INFO_DEF + 3:
+                player->PlayerTalkClass->ClearMenus();
+                return OnGossipHello(player);
             }
 
-            return true;
+            return false;
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* c) const
     {
-        return new npc_finlay_coolshotAI(creature);
+        return new npc_finlay_darkmoonAI(c);
     }
 };
 
-// npc - 54642
+class spell_tonk_enable : public SpellScriptLoader
+{
+public:
+    spell_tonk_enable() : SpellScriptLoader("spell_tonk_enable") { }
+
+    class spell_tonk_enable_AuraScript : public AuraScript
+    {
+        bool Load()
+        {
+            return true;
+        }
+
+        void EffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*modes*/)
+        {
+            if (!GetUnitOwner() || GetUnitOwner()->GetTypeId() != TYPEID_PLAYER)
+                return;
+        }
+
+        void EffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*modes*/)
+        {
+            if (!GetUnitOwner() || GetUnitOwner()->GetTypeId() != TYPEID_PLAYER)
+                return;
+
+            Unit* owner = GetUnitOwner();
+            if (Creature* vb = owner->ToPlayer()->GetVehicleCreatureBase())
+            {
+                vb->Kill(owner, vb);
+                vb->DespawnOrUnsummon();
+            }
+
+
+            owner->NearTeleportTo(playerKickPosition.GetPositionX(), playerKickPosition.GetPositionY(), playerKickPosition.GetPositionZ(), playerKickPosition.GetOrientation(), false);
+            owner->SetImmuneToAll(false);
+            owner->CastSpell(owner, 109976, true);
+        }
+
+        void Register()
+        {
+            OnEffectApply += AuraEffectApplyFn(spell_tonk_enable_AuraScript::EffectApply, EFFECT_0, SPELL_AURA_ENABLE_POWER_BAR_TIMER, AURA_EFFECT_HANDLE_REAL);
+            OnEffectRemove += AuraEffectApplyFn(spell_tonk_enable_AuraScript::EffectRemove, EFFECT_0, SPELL_AURA_ENABLE_POWER_BAR_TIMER, AURA_EFFECT_HANDLE_REAL);
+        }
+    };
+
+    AuraScript* GetAuraScript() const
+    {
+        return new spell_tonk_enable_AuraScript();
+    }
+};
+
+class npc_darkmoon_tonk_target : public CreatureScript
+{
+public:
+    npc_darkmoon_tonk_target() : CreatureScript("npc_darkmoon_tonk_target") { }
+
+    struct npc_darkmoon_tonk_targetAI : public ScriptedAI
+    {
+        npc_darkmoon_tonk_targetAI(Creature* c) : ScriptedAI(c)
+        {
+            Reset();
+        }
+
+        void SpellHit(WorldObject* caster, SpellInfo const* spellInfo) override
+        {
+            Unit* unitCaster = caster->ToUnit();
+            if (!unitCaster)
+                return;
+
+            if (spellInfo->Id == SPELL_TONK_SHOOT)
+            {
+                Vehicle* veh = unitCaster->GetVehicleKit();
+                if (veh)
+                {
+                    for (uint32 i = 0; i < MAX_VEHICLE_SEATS; i++)
+                    {
+                        if (Unit* passenger = veh->GetPassenger(i))
+                            passenger->CastSpell(passenger, SPELL_TONK_KILL_CREDIT, true);
+                    }
+                }
+                me->CastSpell(me, 100626, true);
+                me->DespawnOrUnsummon(600ms);
+            }
+        }
+    };
+
+    CreatureAI* GetAI(Creature* c) const
+    {
+        return new npc_darkmoon_tonk_targetAI(c);
+    }
+};
+
+class vehicle_darkmoon_steam_tonk : public VehicleScript
+{
+public:
+    vehicle_darkmoon_steam_tonk() : VehicleScript("vehicle_darkmoon_steam_tonk") { }
+
+    void OnRemovePassenger(Vehicle* veh, Unit* passenger)
+    {
+        if (passenger)
+        {
+            passenger->RemoveAurasDueToSpell(SPELL_TONK_ENABLE);
+        }
+
+        if (Unit* base = veh->GetBase())
+            if (base->ToCreature())
+                base->ToCreature()->DespawnOrUnsummon(0s);
+    }
+};
+
 class npc_darkmoon_enemy_tonk : public CreatureScript
 {
 public:
-    npc_darkmoon_enemy_tonk() : CreatureScript("npc_darkmoon_enemy_tonk") {}
+    npc_darkmoon_enemy_tonk() : CreatureScript("npc_darkmoon_enemy_tonk") { }
 
     struct npc_darkmoon_enemy_tonkAI : public ScriptedAI
     {
@@ -422,27 +497,26 @@ public:
 
             if (targetCheckTimer <= diff)
             {
-                if (!target)
+                if (!target.IsEmpty())
                 {
-                    std::vector<Creature*> crList;
-                    GetCreatureListWithEntryInGrid(crList, me, 54588, 4.5f);
-                    for (auto& creature : crList)
+                    std::list<Creature*> crList;
+                    GetCreatureListWithEntryInGrid(crList, me, NPC_PLAYER_TONK, 4.5f);
+                    for (std::list<Creature*>::iterator itr = crList.begin(); itr != crList.end(); ++itr)
                     {
-                        if (creature->isInFront(me, 3.14f/1.5f) && !creature->HasAura(102341))
+                        if ((*itr)->isInFront(me, 7.0f) && !(*itr)->HasAura(SPELL_ENEMY_TONK_MARKED))
                         {
-                            target = creature->GetGUID();
+                            target = (*itr)->GetGUID();
                             me->StopMoving();
-                            me->GetMotionMaster()->MoveIdle();
                             changePath = false;
-                            me->SetFacingToObject(creature);
-                            me->CastSpell(creature, 102341, TRIGGERED_FULL_MASK);
-                            me->CastSpell(creature, 102227, false);
+                            me->SetFacingToObject(*itr);
+                            me->AddAura(SPELL_ENEMY_TONK_MARKED, (*itr));
+                            me->CastSpell((*itr), SPELL_ENEMY_TONK_CANNON_BLAST, false);
                             pathCheckTimer = 3000; // 2s spellcast + 1s delay
                             break;
                         }
                     }
 
-                    if (!target)
+                    if (!target.IsEmpty())
                         targetCheckTimer = 1000;
                     else
                         targetCheckTimer = 2500;
@@ -450,7 +524,7 @@ public:
                 else
                 {
                     Unit* targetUnit = ObjectAccessor::GetUnit(*me, target);
-                    if (targetUnit && targetUnit->IsWithinDist(me, 7.0f, true) && targetUnit->isInFront(me, 3.14f/1.5f))
+                    if (targetUnit && targetUnit->IsWithinDist(me, 7.0f, true) && targetUnit->isInFront(me, 7.0f))
                     {
                         targetUnit->CastSpell(targetUnit, 100626, true);
                         me->DealDamage(me, targetUnit, (targetUnit->GetMaxHealth() / 2) + 1);
@@ -469,116 +543,64 @@ public:
     }
 };
 
-// This is the spell the player can cancel (SPELL_OVERRIDE_ACTION : 102178)
-class spell_tonk_override_action : public SpellScriptLoader
+class spell_tonk_cannon : public SpellScript
 {
-public:
-    spell_tonk_override_action() : SpellScriptLoader("spell_tonk_override_action") { }
+    static constexpr uint32 ALLOWED_ENTRIES[] = { 54642, 33081 };
+    static constexpr float MAX_DISTANCE = 7.0f;
 
-    class spell_tonk_override_action_AuraScript : public AuraScript
+    void FilterTargets(std::list<WorldObject*>& targets)
     {
-        PrepareAuraScript(spell_tonk_override_action_AuraScript);
+        Unit* caster = GetCaster();
+        Player* player = caster->GetCharmerOrOwnerPlayerOrPlayerItself();
 
-        bool Validate(SpellInfo const* /*entry*/) override
+        if (Vehicle* vehicle = caster->GetVehicleKit())
+            if (Unit* passenger = vehicle->GetPassenger(0))
+                if (passenger->GetTypeId() == TYPEID_PLAYER)
+                    player = passenger->ToPlayer();
+
+        if (!player)
+            return;
+
+        targets.remove_if([player](WorldObject* target)
         {
-            return true;
-        }
+            if (target->GetTypeId() != TYPEID_UNIT)
+                return true;
 
-        void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            Unit* target = GetTarget();
+            Creature* creature = target->ToCreature();
+            if (!creature)
+                return true;
 
-            if (!target)
-                return;
+            bool entryValid = false;
+            for (auto entry : ALLOWED_ENTRIES)
+                if (creature->GetEntry() == entry)
+                    entryValid = true;
 
-            target->SetPower(POWER_ALTERNATE_POWER, 0);
-            target->CastSpell(target, 109976, true);
-            target->SetImmuneToAll(false);
-        }
+            if (!entryValid)
+                return true;
 
-        void Register() override
-        {
-            OnEffectRemove += AuraEffectRemoveFn(spell_tonk_override_action_AuraScript::OnRemove, EFFECT_2, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const override
-    {
-        return new spell_tonk_override_action_AuraScript();
-    }
-};
-
-class PositionCheck
-{
-public:
-    PositionCheck(Unit* caster) : _caster(caster) {}
-
-    bool operator()(WorldObject* unit)
-    {
-        bool isTooFar = _caster->GetDistance2d(unit) >= 2.5f;
-        bool isNotInFront = !_caster->isInFront(unit, 90.0f);
-        return isTooFar || isNotInFront;
+            return !player->IsWithinDistInMap(target, MAX_DISTANCE) ||
+                !player->HasInLine(target, 2.0f, player->GetObjectScale());
+        });
     }
 
-private:
-    Unit* _caster;
-};
-
-// SPELL_SHOOT : 102292
-class spell_tonk_shoot : public SpellScriptLoader
-{
-public:
-    spell_tonk_shoot() : SpellScriptLoader("spell_tonk_shoot") { }
-
-    class spell_tonk_shoot_SpellScript : public SpellScript
+    void HandleDamage(SpellEffIndex /*effIndex*/)
     {
-        PrepareSpellScript(spell_tonk_shoot_SpellScript);
-
-        SpellCastResult CheckCast()
+        if (Unit* target = GetHitUnit())
         {
-            Unit* caster = GetCaster();
-
-            if (!caster)
-                return SPELL_CAST_OK;
-
-            std::list<Creature*> targetList;
-            caster->GetCreatureListWithEntryInGrid(targetList, 54642, 2.5f);
-            caster->GetCreatureListWithEntryInGrid(targetList, 33081, 2.5f);
-
-            targetList.remove_if(PositionCheck(GetCaster()));
-
-            if (targetList.empty())
-                return SPELL_CAST_OK;
-
-            Creature* target = targetList.front();
-
-            switch (target->GetEntry())
+            if (target->GetEntry() == 54588 ||
+                target->GetTypeId() == TYPEID_PLAYER)
             {
-            case 54642:
-            {
-                caster->CastSpell(caster, 110162, true);
-                break;
+                PreventHitDamage();
+                TC_LOG_ERROR("spells", "TonkCannon: Blocked damage to invalid target %s",
+                    target->GetName().c_str());
             }
-            case 33081:
-            {
-                caster->SetPower(POWER_ALTERNATE_POWER, (caster->GetPower(POWER_ALTERNATE_POWER) + 1));
-                break;
-            }
-            }
-            caster->Kill(caster, target);
-            return SPELL_CAST_OK;
         }
+    }
 
-        void Register() override
-        {
-            OnCheckCast += SpellCheckCastFn(spell_tonk_shoot_SpellScript::CheckCast);
-        }
-
-    };
-
-    SpellScript* GetSpellScript() const override
+    void Register() override
     {
-        return new spell_tonk_shoot_SpellScript();
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_tonk_cannon::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENTRY);
+        OnEffectHitTarget += SpellEffectFn(spell_tonk_cannon::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
     }
 };
 
@@ -598,12 +620,12 @@ public:
 
 void AddSC_darkmoon_tonk()
 {
-    //npc
-    new npc_finlay_coolshot();
+    new npc_finlay_darkmoon();
+    new spell_tonk_enable();
+    new npc_darkmoon_tonk_target();
+    new vehicle_darkmoon_steam_tonk();
     new npc_darkmoon_enemy_tonk();
-    //spell
-    new spell_tonk_override_action();
-    new spell_tonk_shoot();
+    new spell_tonk_cannon();
     //areatrigger
     new at_tonks_zone();
 };

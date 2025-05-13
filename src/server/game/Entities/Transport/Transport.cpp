@@ -207,7 +207,7 @@ void Transport::Update(uint32 diff)
     size_t eventToTriggerIndex = _eventsToTrigger->find_first();
     if (eventToTriggerIndex != boost::dynamic_bitset<uint8>::npos)
     {
-        while (eventToTriggerIndex < _transportInfo->Events.size() && _transportInfo->Events[eventToTriggerIndex].Timestamp < timer)
+        while (eventToTriggerIndex < _transportInfo->Events.size() && _transportInfo->Events[eventToTriggerIndex].Timestamp <= timer)
         {
             if (TransportPathLeg const* leg = _transportInfo->GetLegForTime(_transportInfo->Events[eventToTriggerIndex].Timestamp))
                 if (leg->MapId == GetMapId())
@@ -525,7 +525,7 @@ TempSummon* Transport::SummonPassenger(uint32 entry, Position const& pos, TempSu
 
 int32 Transport::GetMapIdForSpawning() const
 {
-    return GetGOInfo()->moTransport.SpawnMap;
+    return GetGOInfo()->GetSpawnMap();
 }
 
 void Transport::UpdatePosition(float x, float y, float z, float o)
@@ -558,7 +558,7 @@ void Transport::UpdatePosition(float x, float y, float z, float o)
 
 void Transport::LoadStaticPassengers()
 {
-    uint32 mapId = GetGOInfo()->moTransport.SpawnMap;
+    uint32 mapId = GetGOInfo()->GetSpawnMap();
     if (!mapId)
         return;
 

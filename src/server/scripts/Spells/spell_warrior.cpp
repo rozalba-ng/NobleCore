@@ -84,6 +84,7 @@ enum WarriorSpells
     SPELL_WARRIOR_SHOCKWAVE_STUN                    = 132168,
     SPELL_WARRIOR_STOICISM                          = 70845,
     SPELL_WARRIOR_STORM_BOLT_STUN                   = 132169,
+    SPELL_WARRIOR_STORM_BOLTS                       = 436162,
     SPELL_WARRIOR_STRATEGIST                        = 384041,
     SPELL_WARRIOR_SWEEPING_STRIKES_EXTRA_ATTACK_1   = 12723,
     SPELL_WARRIOR_SWEEPING_STRIKES_EXTRA_ATTACK_2   = 26654,
@@ -121,8 +122,6 @@ enum WarriorSpells
     SPELL_WARRIOR_FROTHING_BERSERKER                = 215572,
     SPELL_WARRIOR_FRESH_MEAT                        = 215568,
     SPELL_WARRIOR_SUDDEN_DEATH_PROCS                = 280776,
-    SPELL_WARRIOR_SECOND_WIND_DAMAGED               = 202149,
-    SPELL_WARRIOR_SECOND_WIND_HEAL                  = 202147,
     SPELL_WARRIOR_ANGER_MANAGEMENT                  = 152278,
     SPELL_WARRIOR_UNRELENTING_ASSAULT_RANK_1        = 46859,
     SPELL_WARRIOR_UNRELENTING_ASSAULT_RANK_2        = 46860,
@@ -396,6 +395,21 @@ class spell_warr_devastator : public AuraScript
     }
 };
 
+// 260798 - Execute (Arms, Protection)
+class spell_warr_execute_damage : public SpellScript
+{
+    static void CalculateExecuteDamage(SpellEffectInfo const& /*spellEffectInfo*/, Unit const* /*victim*/, int32 const& /*damageOrHealing*/, int32 const& /*flatMod*/, float& pctMod)
+    {
+        // tooltip has 2 multiplier hardcoded in it $damage=${2.0*$260798s1}
+        pctMod *= 2.0f;
+    }
+
+    void Register() override
+    {
+        CalcDamage += SpellCalcDamageFn(spell_warr_execute_damage::CalculateExecuteDamage);
+    }
+};
+
 // 383103  - Fueled by Violence
 class spell_warr_fueled_by_violence : public AuraScript
 {
@@ -528,21 +542,18 @@ class spell_warr_heroic_leap_jump : public SpellScript
 // 202168 - Impending Victory
 class spell_warr_impending_victory : public SpellScript
 {
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_WARRIOR_IMPENDING_VICTORY_HEAL });
-    }
-
-    void HandleAfterCast()
+    void HandleOnHit()
     {
         Unit* caster = GetCaster();
-        caster->CastSpell(caster, SPELL_WARRIOR_IMPENDING_VICTORY_HEAL, true);
-        caster->RemoveAurasDueToSpell(SPELL_WARRIOR_VICTORIOUS);
+        if (!caster)
+            return;
+
+        caster->CastSpell(caster, SPELL_WARRIOR_IMPENDING_VICTORY_HEAL, TRIGGERED_FULL_MASK);
     }
 
     void Register() override
     {
-        AfterCast += SpellCastFn(spell_warr_impending_victory::HandleAfterCast);
+        AfterHit += SpellHitFn(spell_warr_impending_victory::HandleOnHit);
     }
 };
 
@@ -707,20 +718,44 @@ class spell_warr_storm_bolt : public SpellScript
 {
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo
-        ({
-            SPELL_WARRIOR_STORM_BOLT_STUN
-        });
+        return ValidateSpellInfo({ SPELL_WARRIOR_STORM_BOLT_STUN });
     }
 
-    void HandleOnHit(SpellEffIndex /*effIndex*/)
+    void HandleOnHit(SpellEffIndex /*effIndex*/) const
     {
         GetCaster()->CastSpell(GetHitUnit(), SPELL_WARRIOR_STORM_BOLT_STUN, true);
     }
 
     void Register() override
     {
-        OnEffectHitTarget += SpellEffectFn(spell_warr_storm_bolt::HandleOnHit, EFFECT_1, SPELL_EFFECT_DUMMY);
+        OnEffectHitTarget += SpellEffectFn(spell_warr_storm_bolt::HandleOnHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+};
+
+// 107570 - Storm Bolt
+class spell_warr_storm_bolts: public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARRIOR_STORM_BOLTS });
+    }
+
+    bool Load() override
+    {
+        return !GetCaster()->HasAura(SPELL_WARRIOR_STORM_BOLTS);
+    }
+
+    void FilterTargets(std::list<WorldObject*>& targets) const
+    {
+        targets.clear();
+
+        if (Unit* target = GetExplTargetUnit())
+            targets.push_back(target);
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_warr_storm_bolts::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
     }
 };
 
@@ -890,28 +925,58 @@ class spell_warr_victorious_state : public AuraScript
     }
 };
 
-// 34428 - Victory Rush
-class spell_warr_victory_rush : public SpellScript
+// 34428 - Victory Rush (all script)
+class victory_rush_kill_event : public PlayerScript
 {
-    bool Validate(SpellInfo const* /*spellInfo*/) override
+public:
+    victory_rush_kill_event() : PlayerScript("victory_rush_kill_event") {}
+
+    void OnCreatureKill(Player* killer, Creature* killed) override
     {
-        return ValidateSpellInfo
-        ({
-            SPELL_WARRIOR_VICTORIOUS,
-            SPELL_WARRIOR_VICTORY_RUSH_HEAL
-        });
+        if (killer->GetClass() != CLASS_WARRIOR)
+            return;
+
+        if (!killer->isHonorOrXPTarget(killed))
+            return;
+
+        _HandleVictorious(killer);
     }
 
-    void HandleHeal()
+    void OnPVPKill(Player* killer, Player* killed) override
+    {
+        if (killer->GetClass() != CLASS_WARRIOR)
+            return;
+
+        if (!killer->isHonorOrXPTarget(killed))
+            return;
+
+        _HandleVictorious(killer);
+    }
+
+private:
+    void _HandleVictorious(Player* player)
+    {
+        player->CastSpell(player, SPELL_WARRIOR_VICTORIOUS, TRIGGERED_FULL_MASK);
+
+        if (player->HasSpell(SPELL_WARRIOR_IMPENDING_VICTORY))
+            player->GetSpellHistory()->ResetCooldown(SPELL_WARRIOR_IMPENDING_VICTORY, true);
+    }
+};
+
+class spell_warr_victory_rush : public SpellScript
+{
+    void HandleOnHit()
     {
         Unit* caster = GetCaster();
-        caster->CastSpell(caster, SPELL_WARRIOR_VICTORY_RUSH_HEAL, true);
-        caster->RemoveAurasDueToSpell(SPELL_WARRIOR_VICTORIOUS);
+        if (!caster)
+            return;
+
+        caster->CastSpell(caster, SPELL_WARRIOR_VICTORY_RUSH_HEAL, TRIGGERED_FULL_MASK);
     }
 
     void Register() override
     {
-        AfterCast += SpellCastFn(spell_warr_victory_rush::HandleHeal);
+        AfterHit += SpellHitFn(spell_warr_victory_rush::HandleOnHit);
     }
 };
 
@@ -1164,7 +1229,7 @@ class aura_warr_ignore_pain : public AuraScript
             if (!spellInfo)
                 return;
 
-            SpellNonMeleeDamage spell(caster, caster->GetVictim(), spellInfo, { spellInfo->GetSpellXSpellVisualId(caster), 0 }, spellInfo->GetSchoolMask());
+            SpellNonMeleeDamage spell(caster, caster->GetVictim(), spellInfo, { static_cast<int32>(spellInfo->GetSpellXSpellVisualId(caster)), 0 }, spellInfo->GetSchoolMask());
             spell.damage = dmgInfo.GetDamage() - dmgInfo.GetDamage() * 0.9f;
             spell.cleanDamage = spell.damage;
             caster->DealSpellDamage(&spell, false);
@@ -1606,68 +1671,6 @@ public:
     }
 };
 
-//Second wind - 29838
-class spell_warr_second_wind_proc : public AuraScript
-{
-
-    void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
-    {
-        if (!GetCaster())
-            return;
-
-        GetCaster()->CastSpell(GetCaster(), SPELL_WARRIOR_SECOND_WIND_DAMAGED, true);
-    }
-
-    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        Unit* caster = GetCaster();
-        if (!caster)
-            return;
-
-        caster->RemoveAura(SPELL_WARRIOR_SECOND_WIND_DAMAGED);
-        caster->RemoveAura(SPELL_WARRIOR_SECOND_WIND_HEAL);
-    }
-
-    void Register() override
-    {
-        OnEffectProc += AuraEffectProcFn(spell_warr_second_wind_proc::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
-        OnEffectRemove += AuraEffectRemoveFn(spell_warr_second_wind_proc::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-    }
-};
-
-//Second wind (triggered) - 202149
-class spell_warr_second_wind_damaged : public AuraScript
-{
-
-    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        Unit* caster = GetCaster();
-        if (!caster)
-            return;
-
-        /*if(Aura* aura = caster->GetAura(SPELL_WARRIOR_SECOND_WIND_HEAL))
-            aura->GetEffect(EFFECT_0)->SetAmount(0);*/
-        caster->RemoveAura(SPELL_WARRIOR_SECOND_WIND_HEAL);
-    }
-
-    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        Unit* caster = GetCaster();
-        if (!caster)
-            return;
-
-        /*if (Aura* aura = caster->GetAura(SPELL_WARRIOR_SECOND_WIND_HEAL))
-            aura->GetEffect(EFFECT_0)->SetAmount(sSpellMgr->GetSpellInfo(SPELL_WARRIOR_SECOND_WIND_HEAL)->GetEffect(EFFECT_0)->BasePoints);*/
-        caster->CastSpell(caster, SPELL_WARRIOR_SECOND_WIND_HEAL, true);
-    }
-
-    void Register() override
-    {
-        OnEffectApply += AuraEffectApplyFn(spell_warr_second_wind_damaged::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
-        OnEffectRemove += AuraEffectRemoveFn(spell_warr_second_wind_damaged::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-    }
-};
-
 //152278 Anger Management
 class anger_management : public PlayerScript
 {
@@ -1835,6 +1838,7 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_colossus_smash);
     RegisterSpellScript(spell_warr_critical_thinking);
     RegisterSpellScript(spell_warr_devastator);
+    RegisterSpellScript(spell_warr_execute_damage);
     RegisterSpellScript(spell_warr_fueled_by_violence);
     RegisterSpellScript(spell_warr_heroic_leap);
     RegisterSpellScript(spell_warr_heroic_leap_jump);
@@ -1847,6 +1851,7 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_shield_charge);
     RegisterSpellScript(spell_warr_shockwave);
     RegisterSpellScript(spell_warr_storm_bolt);
+    RegisterSpellScript(spell_warr_storm_bolts);
     RegisterSpellScript(spell_warr_strategist);
     RegisterSpellScript(spell_warr_sudden_death);
     RegisterSpellScript(spell_warr_sweeping_strikes);
@@ -1872,10 +1877,9 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_enrage_aura);
     new spell_warr_frothing_berserker();
     new spell_warr_odyns_fury();
-    new spell_warr_second_wind_damaged();
-    new spell_warr_second_wind_proc();
     new anger_management();
     new spell_warr_overpower();
     new spell_warr_thunder_clap();
     RegisterSpellScript(spell_warr_cleave_dmg);
+    new victory_rush_kill_event();
 }

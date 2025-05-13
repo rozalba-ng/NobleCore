@@ -451,7 +451,7 @@ void QueryPetName::Read()
 
 WorldPacket const* QueryPetNameResponse::Write()
 {
-    _worldPacket << UnitGUID;
+    _worldPacket << PetGUID;
     _worldPacket.WriteBit(Allow);
 
     if (Allow)

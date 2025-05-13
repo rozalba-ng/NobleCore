@@ -205,7 +205,6 @@ public:
 
     class spell_darkmoon_firebird_challenge_allow_fly_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_darkmoon_firebird_challenge_allow_fly_AuraScript);
 
         void HandleRemove(AuraEffect const*, AuraEffectHandleModes)
         {
@@ -243,7 +242,6 @@ public:
 
     class spell_darkmoon_firebird_challenge_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_darkmoon_firebird_challenge_AuraScript);
 
         bool isTriggered = false;
 
@@ -315,6 +313,16 @@ public:
                     {
 
                         AchievementEntry const* achiev = sAchievementStore.LookupEntry(ACHIEVEMENT_BLOOD_OF_ALYSRAZOR);
+                        if (pl)
+                            pl->CompletedAchievement(achiev);
+                    }
+                }
+                else if (shootAura->GetStackAmount() >= 10)
+                {
+                    if (!pl->HasAchieved(9250))
+                    {
+
+                        AchievementEntry const* achiev = sAchievementStore.LookupEntry(9250);
                         if (pl)
                             pl->CompletedAchievement(achiev);
                     }

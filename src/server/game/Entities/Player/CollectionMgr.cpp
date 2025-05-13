@@ -374,6 +374,12 @@ void CollectionMgr::LoadAccountMounts(PreparedQueryResult result)
     } while (result->NextRow());
 }
 
+bool CollectionMgr::UpdateAccountMounts(uint32 spellID, MountStatusFlags flags)
+{
+    _saveMounts.insert(MountContainer::value_type(spellID, flags));
+    return _mounts.insert(MountContainer::value_type(spellID, flags)).second;
+}
+
 void CollectionMgr::SaveAccountMounts(LoginDatabaseTransaction trans)
 {
     for (auto const& mount : _mounts)
@@ -429,6 +435,11 @@ void CollectionMgr::MountSetFavorite(uint32 spellId, bool favorite)
         itr->second = MountStatusFlags(itr->second & ~MOUNT_IS_FAVORITE);
 
     SendSingleMountUpdate(*itr);
+}
+
+bool CollectionMgr::HasMount(uint32 spellID)
+{
+    return _mounts.find(spellID) != _mounts.end();
 }
 
 void CollectionMgr::SendSingleMountUpdate(std::pair<uint32, MountStatusFlags> mount)

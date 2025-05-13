@@ -177,6 +177,12 @@ public:
 
     std::vector<ChatCommand> GetCommands() const override
     {
+        static std::vector<ChatCommand> typimgCommandTable =
+        {
+            { "on",              rbac::RBAC_PERM_COMMAND_TYPING_ON,     false,      &HandleTipingOnCommand,     ""},
+            { "off",             rbac::RBAC_PERM_COMMAND_TYPING_OFF,    false,      &HandleTipingOffCommand,    ""},
+        };
+
         static std::vector<ChatCommand> commandTable =
         {
             { "barbershop",      rbac::RBAC_PERM_COMMAND_BARBER,        false,      &HandleBarberCommand,       ""},
@@ -186,16 +192,45 @@ public:
             { "npcguidsay",      rbac::RBAC_PERM_COMMAND_NPC_SAY,       false,      &HandleNpcGuidSay,          ""},
             { "npcguidyell",     rbac::RBAC_PERM_COMMAND_NPC_YELL,      false,      &HandleNpcGuidYell,         ""},
             { "settime",         rbac::RBAC_PERM_COMMAND_NPC_YELL,      false,      &HandleSetTimeCommand,      ""},
+            { "typing",          typimgCommandTable },
         };
 
         return commandTable;
+    }
+
+    // custom command .typing on
+    static bool HandleTipingOnCommand(ChatHandler* handler)
+    {
+        Player* plr = handler->GetSession()->GetPlayer();
+
+        if (!plr)
+            return false;
+
+        plr->CastSpell(plr, 156354, false);
+
+        return true;
+    }
+
+    // custom command .typing off
+    static bool HandleTipingOffCommand(ChatHandler* handler)
+    {
+        Player* plr = handler->GetSession()->GetPlayer();
+
+        if (!plr)
+            return false;
+
+        if (plr->HasAura(156354))
+            plr->RemoveAura(156354);
+
+        return true;
     }
 
     // custom command .barber
     static bool HandleBarberCommand(ChatHandler* handler)
     {
         WorldPackets::Misc::EnableBarberShop packet;
-        handler->GetSession()->GetPlayer()->SendDirectMessage(WorldPackets::Misc::EnableBarberShop().Write());
+        packet.CustomizationFeatureMask = 0x7FFFFFFF;
+        handler->GetSession()->GetPlayer()->SendDirectMessage(packet.Write());
 
         return true;
     }

@@ -1012,6 +1012,11 @@ void WorldPackets::Movement::MoveSetCollisionHeightAck::Read()
     _worldPacket >> As<uint8>(Reason);
 }
 
+void WorldPackets::Movement::DiscardedTimeSyncAcks::Read()
+{
+    _worldPacket >> MaxSequenceIndex;
+}
+
 void WorldPackets::Movement::MoveTimeSkipped::Read()
 {
     _worldPacket >> MoverGUID;

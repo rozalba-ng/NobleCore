@@ -424,7 +424,7 @@ Creature* Roleplay::CreatureCreate(Player* creator, CreatureTemplate const* crea
         data.spawnPoint.Relocate(creator->GetTransOffsetX(), creator->GetTransOffsetY(), creator->GetTransOffsetZ(), creator->GetTransOffsetO());
         if (Creature* creature = trans->CreateNPCPassenger(guid, &data))
         {
-            creature->SaveToDB(trans->GetGOInfo()->moTransport.SpawnMap, { map->GetDifficultyID() });
+            creature->SaveToDB(trans->GetGOInfo()->GetSpawnMap(), { map->GetDifficultyID() });
             sObjectMgr->AddCreatureToGrid(&data);
             return creature;
         }
@@ -937,37 +937,53 @@ void Roleplay::SetCustomNpcOutfitGender(std::string const& key, uint8 variationI
 void Roleplay::SetCustomNpcLeftHand(std::string const& key, uint8 variationId, int32 itemId, int32 appearanceModId)
 {
     uint32 templateId = _customNpcStore[key].templateId;
+    SetNpcLeftHand(templateId, variationId, itemId, appearanceModId);
+    ReloadSpawnedCustomNpcs(key);
+}
+
+void Roleplay::SetNpcLeftHand(uint32 templateId, uint8 variationId, int32 itemId, int32 appearanceModId)
+{
     EnsureEquipmentInfoExists(templateId, variationId);
     EquipmentInfo _equipmentInfo = sObjectMgr->_equipmentInfoStore[templateId][variationId];
     _equipmentInfo.Items[1].ItemId = itemId;
     _equipmentInfo.Items[1].AppearanceModId = appearanceModId;
     sObjectMgr->_equipmentInfoStore[templateId][variationId] = _equipmentInfo;
     SaveNpcEquipmentInfoToDb(templateId, variationId);
-    ReloadSpawnedCustomNpcs(key);
 }
 
 void Roleplay::SetCustomNpcRightHand(std::string const& key, uint8 variationId, int32 itemId, int32 appearanceModId)
 {
     uint32 templateId = _customNpcStore[key].templateId;
+    SetNpcRightHand(templateId, variationId, itemId, appearanceModId);
+    ReloadSpawnedCustomNpcs(key);
+}
+
+void Roleplay::SetNpcRightHand(uint32 templateId, uint8 variationId, int32 itemId, int32 appearanceModId)
+{
     EnsureEquipmentInfoExists(templateId, variationId);
     EquipmentInfo _equipmentInfo = sObjectMgr->_equipmentInfoStore[templateId][variationId];
     _equipmentInfo.Items[0].ItemId = itemId;
     _equipmentInfo.Items[0].AppearanceModId = appearanceModId;
     sObjectMgr->_equipmentInfoStore[templateId][variationId] = _equipmentInfo;
     SaveNpcEquipmentInfoToDb(templateId, variationId);
-    ReloadSpawnedCustomNpcs(key);
 }
 
 void Roleplay::SetCustomNpcRanged(std::string const& key, uint8 variationId, int32 itemId, int32 appearanceModId)
 {
     uint32 templateId = _customNpcStore[key].templateId;
+    SetNpcRanged(templateId, variationId, itemId, appearanceModId);
+    ReloadSpawnedCustomNpcs(key);
+}
+
+
+void Roleplay::SetNpcRanged(uint32 templateId, uint8 variationId, int32 itemId, int32 appearanceModId)
+{
     EnsureEquipmentInfoExists(templateId, variationId);
     EquipmentInfo _equipmentInfo = sObjectMgr->_equipmentInfoStore[templateId][variationId];
     _equipmentInfo.Items[2].ItemId = itemId;
     _equipmentInfo.Items[2].AppearanceModId = appearanceModId;
     sObjectMgr->_equipmentInfoStore[templateId][variationId] = _equipmentInfo;
     SaveNpcEquipmentInfoToDb(templateId, variationId);
-    ReloadSpawnedCustomNpcs(key);
 }
 
 void Roleplay::SetCustomNpcDisplayId(std::string const& key, uint8 variationId, uint32 displayId)
@@ -1436,7 +1452,10 @@ uint8 Roleplay::GetModelVariationCountForNpc(std::string const& key) {
     return sObjectMgr->_creatureTemplateStore[_customNpcStore[key].templateId].Models.size();
 }
 uint8 Roleplay::GetEquipmentVariationCountForNpc(std::string const& key) {
-    return sObjectMgr->_equipmentInfoStore[_customNpcStore[key].templateId].size();
+    return GetEquipmentVariationCountForNpc(_customNpcStore[key].templateId);
+}
+uint8 Roleplay::GetEquipmentVariationCountForNpc(uint32 templateId) {
+    return sObjectMgr->_equipmentInfoStore[templateId].size();
 }
 
 void Roleplay::StoreMarkerLocationForPlayer(Player* player, const WorldLocation* marker)

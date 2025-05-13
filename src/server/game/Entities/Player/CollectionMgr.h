@@ -153,6 +153,9 @@ public:
     void MountSetFavorite(uint32 spellId, bool favorite);
     void SendSingleMountUpdate(std::pair<uint32, MountStatusFlags> mount);
     MountContainer const& GetAccountMounts() const { return _mounts; }
+    bool HasMount(uint32 spellID);
+
+    bool UpdateAccountMounts(uint32 spellID, MountStatusFlags flags);
 
     // Appearances
     void LoadItemAppearances();
@@ -200,6 +203,7 @@ private:
     ToyBoxContainer _toys;
     HeirloomContainer _heirlooms;
     MountContainer _mounts;
+    MountContainer _saveMounts;
     std::unique_ptr<boost::dynamic_bitset<uint32>> _appearances;
     std::unordered_map<uint32, std::unordered_set<ObjectGuid>> _temporaryAppearances;
     std::unordered_map<uint32, CollectionItemState> _favoriteAppearances;

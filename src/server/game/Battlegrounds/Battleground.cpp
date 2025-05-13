@@ -867,6 +867,8 @@ void Battleground::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
 
     if (participant) // if the player was a match participant, remove auras, calc rating, update queue
     {
+        Group* group = GetBgRaid(team);
+
         if (player)
         {
             player->ClearAfkReports();
@@ -882,7 +884,7 @@ void Battleground::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
             if (SendPacket && bgQueueTypeId)
             {
                 WorldPackets::Battleground::BattlefieldStatusNone battlefieldStatus;
-                BattlegroundMgr::BuildBattlegroundStatusNone(&battlefieldStatus, player, player->GetBattlegroundQueueIndex(*bgQueueTypeId), player->GetBattlegroundQueueJoinTime(*bgQueueTypeId));
+                BattlegroundMgr::BuildBattlegroundStatusNone(&battlefieldStatus, group ? group->GetGUID() : player->GetGUID(), player->GetBattlegroundQueueIndex(*bgQueueTypeId), player->GetBattlegroundQueueJoinTime(*bgQueueTypeId));
                 player->SendDirectMessage(battlefieldStatus.Write());
             }
 
@@ -892,12 +894,11 @@ void Battleground::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
         }
 
         // remove from raid group if player is member
-        if (Group* group = GetBgRaid(team))
-        {
-            if (!group->RemoveMember(guid))                // group was disbanded
-                SetBgRaid(team, nullptr);
-        }
+        if (group && !group->RemoveMember(guid))                // group was disbanded
+            SetBgRaid(team, nullptr);
+
         DecreaseInvitedCount(team);
+
         //we should update battleground queue, but only if bg isn't ending
         if (isBattleground() && GetStatus() < STATUS_WAIT_LEAVE && bgQueueTypeId)
         {

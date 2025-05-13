@@ -251,7 +251,7 @@ namespace WorldPackets
 
             void Read() override;
 
-            Array<uint64, 1> QueueIDs;
+            std::vector<uint64> QueueIDs;
             uint8 Roles = 0;
             int32 BlacklistMap[2] = { };
         };
@@ -265,6 +265,18 @@ namespace WorldPackets
 
             uint8 TeamSizeIndex = 0;
             uint8 Roles = 0;
+        };
+
+        class JoinSkirmish final : public ClientPacket
+        {
+        public:
+            JoinSkirmish(WorldPacket&& packet) : ClientPacket(CMSG_BATTLEMASTER_JOIN_SKIRMISH, std::move(packet)) {}
+
+            void Read() override;
+
+            uint8 Roles = 0;
+            uint8 Bracket = 0;
+            bool IsRequeue = false;
         };
 
         class BattlefieldLeave final : public ClientPacket
@@ -434,44 +446,47 @@ namespace WorldPackets
             void Read() override { }
         };
 
-        class RequestRatedPvpInfo final : public ClientPacket
+        class RequestRatedPVPInfo  final : public ClientPacket
         {
         public:
-            RequestRatedPvpInfo(WorldPacket&& packet) : ClientPacket(CMSG_REQUEST_RATED_PVP_INFO, std::move(packet)) { }
+            RequestRatedPVPInfo(WorldPacket&& packet) : ClientPacket(CMSG_REQUEST_RATED_PVP_INFO, std::move(packet)) { }
 
             void Read() override { }
         };
 
-        class RatedPvpInfo final : public ServerPacket
+        struct BracketInfo
+        {
+            int32 PersonalRating = 0;
+            int32 Ranking = 0;
+            int32 SeasonPlayed = 0;
+            int32 SeasonWon = 0;
+            int32 SeasonFactionPlayed = 0;
+            int32 SeasonFactionWon = 0;
+            int32 WeeklyPlayed = 0;
+            int32 WeeklyWon = 0;
+            int32 RoundsSeasonPlayed = 0;
+            int32 RoundsSeasonWon = 0;
+            int32 RoundsWeeklyPlayed = 0;
+            int32 RoundsWeeklyWon = 0;
+            int32 BestWeeklyRating = 0;
+            int32 LastWeeksBestRating = 0;
+            int32 BestSeasonRating = 0;
+            int32 PvpTierID = 0;
+            int32 SeasonPvpTier = 0;
+            int32 BestWeeklyPvpTier = 0;
+            int32 BestSeasonPvpTierEnum = 0;
+            int32 Rank = 0;
+            bool Disqualified = false;
+        };
+
+        class RatedPVPInfo final : public ServerPacket
         {
         public:
-            RatedPvpInfo() : ServerPacket(SMSG_RATED_PVP_INFO, 9 * sizeof(BracketInfo)) { }
+            RatedPVPInfo() : ServerPacket(SMSG_RATED_PVP_INFO, 9 * sizeof(BracketInfo)) { }
 
             WorldPacket const* Write() override;
 
-            struct BracketInfo
-            {
-                int32 PersonalRating = 0;
-                int32 Ranking = 0;
-                int32 SeasonPlayed = 0;
-                int32 SeasonWon = 0;
-                int32 SeasonFactionPlayed = 0;
-                int32 SeasonFactionWon = 0;
-                int32 WeeklyPlayed = 0;
-                int32 WeeklyWon = 0;
-                int32 RoundsSeasonPlayed = 0;
-                int32 RoundsSeasonWon = 0;
-                int32 RoundsWeeklyPlayed = 0;
-                int32 RoundsWeeklyWon = 0;
-                int32 BestWeeklyRating = 0;
-                int32 LastWeeksBestRating = 0;
-                int32 BestSeasonRating = 0;
-                int32 PvpTierID = 0;
-                int32 SeasonPvpTier = 0;
-                int32 BestWeeklyPvpTier = 0;
-                int32 BestSeasonPvpTierEnum = 0;
-                bool Disqualified = false;
-            } Bracket[9];
+            std::array<BracketInfo, 9> Brackets = { };
         };
 
         struct RatedMatchDeserterPenalty
@@ -569,6 +584,65 @@ namespace WorldPackets
             WorldPacket const* Write() override;
 
             ObjectGuid CapturePointGUID;
+        };
+
+        class AcceptWargameInvite final : public ClientPacket
+        {
+        public:
+            AcceptWargameInvite(WorldPacket&& packet) : ClientPacket(CMSG_ACCEPT_WARGAME_INVITE, std::move(packet)) { }
+
+            void Read() override;
+
+            ObjectGuid OpposingPartyMember;
+            int64 QueueID = 0;
+            bool Accept = false;
+        };
+
+        class BattlemasterJoinBrawl final : public ClientPacket
+        {
+        public:
+            BattlemasterJoinBrawl(WorldPacket&& packet) : ClientPacket(CMSG_BATTLEMASTER_JOIN_BRAWL, std::move(packet)) { }
+
+            void Read() override;
+
+            uint8 RolesMask = 0;
+            uint8 UnkField = 0;
+        };
+
+        class RequestScheduledPVPInfo final : public ClientPacket
+        {
+        public:
+            RequestScheduledPVPInfo(WorldPacket&& packet) : ClientPacket(CMSG_REQUEST_SCHEDULED_PVP_INFO, std::move(packet)) {}
+
+            void Read() override {}
+        };
+
+        struct SpecialEventInfo
+        {
+            int32 PvpBrawlID = 0;
+            int32 AchievementId = 0;
+            bool CanQueue = false;
+        };
+
+        struct BrawlInfo
+        {
+            int32 PvpBrawlID = 0;
+            int32 TimeToBrawl = 0;
+            bool IsActive = false;
+        };
+
+        class RequestScheduledPVPInfoResponse final : public ServerPacket
+        {
+        public:
+            RequestScheduledPVPInfoResponse() : ServerPacket(SMSG_REQUEST_SCHEDULED_PVP_INFO_RESPONSE) { }
+
+            WorldPacket const* Write() override;
+
+            bool HasBrawlInfo = false;
+            bool HasSpecialEventInfo = false;
+
+            Optional<BrawlInfo> Brawl;
+            Optional<SpecialEventInfo> SpecialEvent;
         };
     }
 }

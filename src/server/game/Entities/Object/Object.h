@@ -1020,6 +1020,7 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
             AreaTrigger* SelectNearestAreaTrigger(uint32 spellId, float distance) const;
             std::list<AreaTrigger*> SelectNearestAreaTriggers(uint32 spellId, float range);
             std::list<Player*> SelectNearestPlayers(float range, bool alive);
+            Player* SelectRandomPlayerInRange(float range, bool alive);
             template <typename Container>
             void GetCreatureListInGrid(Container& creatureContainer, float maxSearchRange = 250.0f) const;
             ThisCore::AnyData VariableStorage;

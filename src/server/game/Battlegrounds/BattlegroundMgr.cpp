@@ -22,6 +22,7 @@
 #include "DB2Stores.h"
 #include "DatabaseEnv.h"
 #include "DisableMgr.h"
+#include "FunctionProcessor.h"
 #include "GameEventMgr.h"
 #include "Language.h"
 #include "Log.h"
@@ -31,6 +32,7 @@
 #include "Player.h"
 #include "SharedDefines.h"
 #include "World.h"
+#include <ObjectAccessor.h>
 
 bool BattlegroundTemplate::IsArena() const
 {
@@ -167,9 +169,9 @@ void BattlegroundMgr::BuildBattlegroundStatusHeader(WorldPackets::Battleground::
     header->TournamentRules = false;
 }
 
-void BattlegroundMgr::BuildBattlegroundStatusNone(WorldPackets::Battleground::BattlefieldStatusNone* battlefieldStatus, Player const* player, uint32 ticketId, uint32 joinTime)
+void BattlegroundMgr::BuildBattlegroundStatusNone(WorldPackets::Battleground::BattlefieldStatusNone* battlefieldStatus, ObjectGuid requesterGuid, uint32 ticketId, uint32 joinTime)
 {
-    battlefieldStatus->Ticket.RequesterGuid = player->GetGUID();
+    battlefieldStatus->Ticket.RequesterGuid = requesterGuid;
     battlefieldStatus->Ticket.Id = ticketId;
     battlefieldStatus->Ticket.Type = WorldPackets::LFG::RideType::Battlegrounds;
     battlefieldStatus->Ticket.Time = joinTime;
@@ -203,16 +205,15 @@ void BattlegroundMgr::BuildBattlegroundStatusQueued(WorldPackets::Battleground::
     battlefieldStatus->WaitTime = GetMSTimeDiffToNow(joinTime);
 }
 
-void BattlegroundMgr::BuildBattlegroundStatusFailed(WorldPackets::Battleground::BattlefieldStatusFailed* battlefieldStatus, BattlegroundQueueTypeId queueId, Player const* player, uint32 ticketId, GroupJoinBattlegroundResult result, ObjectGuid const* errorGuid /*= nullptr*/)
+void BattlegroundMgr::BuildBattlegroundStatusFailed(WorldPackets::Battleground::BattlefieldStatusFailed* battlefieldStatus, BattlegroundQueueTypeId queueId, Player const* player, uint32 ticketId, uint32 joinTime, GroupJoinBattlegroundResult result, ObjectGuid const* errorGuid /*= nullptr*/)
 {
     battlefieldStatus->Ticket.RequesterGuid = player->GetGUID();
     battlefieldStatus->Ticket.Id = ticketId;
     battlefieldStatus->Ticket.Type = WorldPackets::LFG::RideType::Battlegrounds;
-    battlefieldStatus->Ticket.Time = player->GetBattlegroundQueueJoinTime(queueId);
+    battlefieldStatus->Ticket.Time = joinTime;
     battlefieldStatus->QueueID = queueId.GetPacked();
     battlefieldStatus->Reason = result;
-    if (errorGuid && (result == ERR_BATTLEGROUND_NOT_IN_BATTLEGROUND || result == ERR_BATTLEGROUND_JOIN_TIMED_OUT))
-        battlefieldStatus->ClientID = *errorGuid;
+    battlefieldStatus->ClientID = *errorGuid;
 }
 
 Battleground* BattlegroundMgr::GetBattleground(uint32 instanceId, BattlegroundTypeId bgTypeId)
@@ -724,4 +725,50 @@ void BattlegroundMgr::AddBattleground(Battleground* bg)
         ptr.reset(bg);
         bg->SetWeakPtr(ptr);
     }
+}
+
+void BattlegroundMgr::AddDelayedEvent(uint64 timeOffset, std::function<void()>&& function)
+{
+    m_Functions.AddDelayedEvent(timeOffset, std::move(function));
+}
+
+void BattlegroundMgr::InitWargame(Player* player, ObjectGuid opposingPartyMember, uint64 queueID, bool accept)
+{
+    if (player->InBattleground())
+        return;
+
+    auto group = player->GetGroup();
+    if (!group)
+        return;
+
+    auto opposingPartyLeader = ObjectAccessor::FindPlayer(opposingPartyMember);
+    if (!opposingPartyLeader)
+        return;
+
+    auto opposingGroup = opposingPartyLeader->GetGroup();
+    if (!opposingGroup)
+        return;
+
+    if (!opposingPartyLeader->HasWargameRequest())
+        return;
+
+    auto request = opposingPartyLeader->GetWargameRequest();
+    if (request->QueueID != queueID || request->OpposingPartyMemberGUID != player->GetGUID())
+        return;
+
+    if (accept)
+    {
+        ///@TODO: Send notification to opposing party ?
+        return;
+    }
+
+    BattlegroundTypeId bgTypeId = GetRandomBG(BattlegroundTypeId());
+
+    auto battlegroundTemplate = GetBattlegroundTemplateByTypeId(bgTypeId);
+    if (!battlegroundTemplate)
+        return;
+
+    auto bracketEntry = sDB2Manager.GetBattlegroundBracketByLevel(battlegroundTemplate->MapIDs.front(), MAX_LEVEL);
+    if (!bracketEntry)
+        return;
 }

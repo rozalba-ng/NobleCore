@@ -376,13 +376,12 @@ namespace WorldPackets
         class QueryPetNameResponse final : public ServerPacket
         {
         public:
-            QueryPetNameResponse() : ServerPacket(SMSG_QUERY_PET_NAME_RESPONSE, 16 + 1) { }
+            QueryPetNameResponse() : ServerPacket(SMSG_QUERY_PET_NAME_RESPONSE) { }
 
             WorldPacket const* Write() override;
 
-            ObjectGuid UnitGUID;
+            ObjectGuid PetGUID;
             bool Allow = false;
-
             bool HasDeclined = false;
             DeclinedName DeclinedNames;
             WorldPackets::Timestamp<> Timestamp;

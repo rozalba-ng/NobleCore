@@ -125,6 +125,23 @@ namespace LuaGuild
     }
 
     /**
+     * Sets the leader of this [Guild]
+     *
+     * In multistate, this method is only available in the WORLD state
+     *
+     * @param [Player] leader : the [Player] leader to change
+     * @param bool isSelfPromote : default 'false', should only be set to 'true' 
+     */
+    int SetLeader(Eluna* E, Guild* guild)
+    {
+        Player* player = E->CHECKOBJ<Player>(2);
+        bool isSelfPromote = E->CHECKVAL<bool>(3, false);
+
+        guild->HandleSetNewGuildMaster(player->GetSession(), player->GetName(), isSelfPromote);
+        return 0;
+    }
+
+    /**
      * Sets the information of the bank tab specified
      *
      * In multistate, this method is only available in the WORLD state
@@ -257,6 +274,7 @@ namespace LuaGuild
         // Setters
         { "SetBankTabText", &LuaGuild::SetBankTabText, METHOD_REG_WORLD }, // World state method only in multistate
         { "SetMemberRank", &LuaGuild::SetMemberRank, METHOD_REG_WORLD }, // World state method only in multistate
+        { "SetLeader", &LuaGuild::SetLeader, METHOD_REG_WORLD }, // World state method only in multistate
 
         // Other
         { "SendPacket", &LuaGuild::SendPacket },

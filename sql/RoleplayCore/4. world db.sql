@@ -320,6 +320,10 @@ REPLACE INTO `creature_model_info` VALUES (115281, 0, 0, 0, 0);
 REPLACE INTO `creature_model_info` VALUES (116539, 0, 0, 0, 0);
 REPLACE INTO `creature_model_info` VALUES (116687, 0, 0, 0, 0);
 
+-- ----------------------------
+-- Warlock spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (5782, 'spell_warl_fear');
 REPLACE INTO `spell_script_names` VALUES (204730, 'spell_warl_fear_buff');
 REPLACE INTO `spell_script_names` VALUES (146739, 'spell_warl_corruption_effect');
@@ -327,31 +331,56 @@ REPLACE INTO `spell_script_names` VALUES (234153, 'spell_warlock_drain_life');
 REPLACE INTO `spell_script_names` VALUES (205179, 'aura_warl_phantomatic_singularity');
 REPLACE INTO `spell_script_names` VALUES (48181, 'aura_warl_haunt');
 REPLACE INTO `spell_script_names` VALUES (205180, 'spell_warlock_summon_darkglare');
+
+REPLACE INTO `creature_template` VALUES (103673, 0, 0, 'Darkglare', '', '', NULL, '', 0, 0, 954, 0, 1, 0.857143, 1, 0, 0, 1477, 2000, 1, 1, 8, 32768, 2048, 0, 19, 0, 3, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, 'npc_pet_warlock_darkglare', NULL, 53040);
+
 REPLACE INTO `spell_script_names` VALUES (5697, 'spell_warlock_unending_breath');
 REPLACE INTO `spell_script_names` VALUES (111771, 'spell_warl_demonic_gateway');
+
+REPLACE INTO `creature_template` VALUES (59262, 0, 0, 'Demonic Gateway', '', NULL, '', 'interact', 0, 0, 35, 16777216, 1, 1.14286, 1, 0, 0, 2000, 2000, 1, 1, 1, 512, 67108896, 17825793, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_warl_demonic_gateway', NULL, 53040);
+REPLACE INTO `creature_template` VALUES (59271, 0, 0, 'Demonic Gateway', '', NULL, '', 'interact', 0, 0, 35, 16777216, 1, 1.14286, 1, 0, 0, 2000, 2000, 1, 1, 1, 512, 67108896, 17825793, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_warl_demonic_gateway', NULL, 53040);
+
+REPLACE INTO `npc_spellclick_spells` VALUES (59262, 113902, 0, 0);
+REPLACE INTO `npc_spellclick_spells` VALUES (59271, 113902, 0, 0);
+
 REPLACE INTO `spell_script_names` VALUES (105174, 'spell_warl_hand_of_guldan');
 REPLACE INTO `spell_script_names` VALUES (86040, 'spell_warl_hand_of_guldan_damage');
 REPLACE INTO `spell_script_names` VALUES (104316, 'spell_warlock_call_dreadstalkers');
+
+REPLACE INTO `creature_template` VALUES (98035, 0, 0, 'Dreadstalker', '', '', NULL, '', 0, 0, 90, 0, 1, 1.28571, 1, 6, 0, 1444, 2000, 1, 1, 4, 0, 0, 0, 0, 0, 3, 0, '', 0, 1, 0, 133, 0, 0, 1, 0, 0, 'npc_warlock_dreadstalker', NULL, 53040);
+
 REPLACE INTO `spell_script_names` VALUES (205231, 'spell_warl_eye_laser');
 REPLACE INTO `spell_script_names` VALUES (264178, 'spell_warlock_demonbolt_new');
 REPLACE INTO `spell_script_names` VALUES (205145, 'spell_warl_demonic_calling');
 REPLACE INTO `spell_script_names` VALUES (157695, 'spell_warl_demonbolt');
 REPLACE INTO `spell_script_names` VALUES (196277, 'spell_warl_implosion');
 REPLACE INTO `spell_script_names` VALUES (603, 'spell_warlock_doom');
-REPLACE INTO `spell_script_names` VALUES (17962, 'spell_warl_conflagrate');
-REPLACE INTO `spell_script_names` VALUES (17962, 'spell_warl_conflagrate_aura');
 REPLACE INTO `spell_script_names` VALUES (6353, 'spell_warlock_soul_fire');
 REPLACE INTO `spell_script_names` VALUES (196447, 'spell_warl_channel_demonfire');
-REPLACE INTO `spell_script_names` VALUES (152108, 'spell_warl_cataclysm');
 REPLACE INTO `spell_script_names` VALUES (215941, 'spell_warl_soul_conduit');
 REPLACE INTO `spell_script_names` VALUES (232670, 'spell_warr_shadowbolt_affliction');
 REPLACE INTO `spell_script_names` VALUES (104318, 'spell_warlock_fel_firebolt_wild_imp');
+
+REPLACE INTO `creature_template` VALUES (99739, 0, 0, 'Wild Imps', '', '', NULL, '', 0, 0, 90, 0, 1, 1.14286, 1, 0, 0, 0, 2000, 1, 1, 4, 0, 0, 0, 0, 0, 3, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, 'npc_pet_warlock_wild_imp', NULL, 53040);
+
+REPLACE INTO `spell_script_names` VALUES (386344, 'spell_warlock_inquisitors_gaze');
 REPLACE INTO `spell_script_names` VALUES (29722, 'spell_warl_incinerate');
 REPLACE INTO `spell_script_names` VALUES (980, 'spell_warlock_agony');
-REPLACE INTO `spell_script_names` VALUES (386344, 'spell_warlock_inquisitors_gaze');
+REPLACE INTO `spell_script_names` VALUES (3110, 'spell_warlock_imp_firebolt');
+REPLACE INTO `spell_script_names` VALUES (17962, 'spell_warl_conflagrate');
+REPLACE INTO `spell_script_names` VALUES (17962, 'spell_warl_conflagrate_aura');
+REPLACE INTO `spell_script_names` VALUES (152108, 'spell_warl_cataclysm');
+
+-- ----------------------------
+-- Warrior spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (23920, 'spell_warr_spell_reflect');
 REPLACE INTO `spell_script_names` VALUES (228920, 'spell_warr_ravager');
 REPLACE INTO `spell_script_names` VALUES (152277, 'spell_warr_ravager');
+
+REPLACE INTO `creature_template` VALUES (76168, 0, 0, 'Ravager', '', '', NULL, '', 0, 0, 35, 0, 2, 0.714286, 1, 0, 0, 2000, 2000, 1, 1, 1, 33587200, 67667968, 16809984, 0, 0, 10, 0, '', 0, 1, 0, 94, 0, 0, 1, 0, 0, 'npc_warr_ravager', NULL, 53040);
+
 REPLACE INTO `spell_script_names` VALUES (156287, 'spell_warr_ravager_damage');
 REPLACE INTO `spell_script_names` VALUES (190456, 'spell_warr_ignore_pain');
 REPLACE INTO `spell_script_names` VALUES (12975,	'spell_warr_last_stand');
@@ -361,74 +390,162 @@ REPLACE INTO `spell_script_names` VALUES (469, 'spell_warr_shout');
 REPLACE INTO `spell_script_names` VALUES (6673, 'spell_warr_shout');
 REPLACE INTO `spell_script_names` VALUES (1680, 'spell_warr_wirlwind_dmg');
 REPLACE INTO `spell_script_names` VALUES (385952, 'spell_warr_shiel_charge');
+REPLACE INTO `spell_script_names` VALUES (190411, 'spell_warr_whirlwind');
+REPLACE INTO `spell_script_names` VALUES (76856, 'spell_warr_unshackled_fury');
+REPLACE INTO `spell_script_names` VALUES (184361, 'spell_warr_enrage');
+REPLACE INTO `spell_script_names` VALUES (184362, 'spell_warr_enrage_aura');
+REPLACE INTO `spell_script_names` VALUES (215571, 'spell_warr_frothing_berserker');
+REPLACE INTO `spell_script_names` VALUES (214871, 'spell_warr_odyns_fury');
+REPLACE INTO `spell_script_names` VALUES (7384, 'spell_warr_overpower');
+REPLACE INTO `spell_script_names` VALUES (6343, 'spell_warr_thunder_clap');
+REPLACE INTO `spell_script_names` VALUES (845, 'spell_warr_cleave_dmg');
+
+-- ----------------------------
+-- Mage spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (153561, 'spell_mage_meteor');
 REPLACE INTO `spell_script_names` VALUES (153564, 'spell_mage_meteor_damage');
+
+REPLACE INTO `areatrigger_scripts` VALUES (8089, 'at_mage_meteor_timer');
+REPLACE INTO `areatrigger_scripts` VALUES (6211, 'at_mage_meteor_burn');
+
+REPLACE INTO `areatrigger_create_properties` VALUES (177345, 1, 8089, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 3000, 4, 8, 8, 4, 4, 0.3, 0.3, 0, 0, 'at_mage_meteor_timer', 27101);
+
 REPLACE INTO `spell_script_names` VALUES (205025, 'spell_mage_presence_of_mind');
+
+REPLACE INTO `areatrigger_scripts` VALUES (1612, 'at_mage_arcane_orb');
+REPLACE INTO `areatrigger_scripts` VALUES (8661,'at_mage_frozen_orb');
+
+REPLACE INTO `spell_script_names` VALUES (148022, 'spell_mage_icicle_damage');
+REPLACE INTO `spell_script_names` VALUES (76613, 'spell_mastery_icicles_proc');
+REPLACE INTO `spell_script_names` VALUES (148023, 'spell_mastery_icicles_periodic');
+REPLACE INTO `spell_script_names` VALUES (214124, 'spell_mastery_icicles_mod_aura');
+REPLACE INTO `spell_script_names` VALUES (214125, 'spell_mastery_icicles_mod_aura');
+REPLACE INTO `spell_script_names` VALUES (214126, 'spell_mastery_icicles_mod_aura');
+REPLACE INTO `spell_script_names` VALUES (214127, 'spell_mastery_icicles_mod_aura');
+REPLACE INTO `spell_script_names` VALUES (214130, 'spell_mastery_icicles_mod_aura');
+REPLACE INTO `spell_script_names` VALUES (199786, 'spell_mastery_icicles_glacial_spike');
+
+-- ----------------------------
+-- DK spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (48792,	'spell_dk_icebound_fortitude');
 REPLACE INTO `spell_script_names` VALUES (196782, 'aura_dk_outbreak_periodic');
 REPLACE INTO `spell_script_names` VALUES (115994, 'spell_dk_unholy_blight');
 REPLACE INTO `spell_script_names` VALUES (55090, 'spell_dk_scourge_strike');
 REPLACE INTO `spell_script_names` VALUES (152280, 'aura_dk_defile');
+
+REPLACE INTO `areatrigger_scripts` VALUES (6212, 'at_dk_defile');
+
+REPLACE INTO `creature_template` VALUES (82521, 0, 0, 'Defile', '', '', NULL, '', 0, 0, 1, 0, 1, 1, 1, 0, 0, 2000, 2000, 1, 1, 1, 17826816, 16, 0, 0, 0, 10, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_dk_defile', NULL, 53040);
+
 REPLACE INTO `spell_script_names` VALUES (156004, 'spell_dk_defile_aura');
 REPLACE INTO `spell_script_names` VALUES (215969, 'spell_dk_epidemic');
 REPLACE INTO `spell_script_names` VALUES (215969, 'spell_dk_epidemic_aoe');
-REPLACE INTO `spell_script_names` VALUES (357208, 'spell_evo_fire_breath');
-REPLACE INTO `spell_script_names` VALUES (357208, 'spell_evo_fire_breath_2');
+
+-- ----------------------------
+-- Evoker spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (369536, 'spell_evo_soar');
 REPLACE INTO `spell_script_names` VALUES (351239, 'spell_evo_cosmic_visage');
+REPLACE INTO `spell_script_names` VALUES (359073, 'spell_evo_eternity_surge');
+
+-- ----------------------------
+-- Hunter spell fixes
+-- ----------------------------
+REPLACE INTO `areatrigger_create_properties` VALUES (4424, 0, 9170, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 60000, 4, 3, 3, 4, 4, 1, 1, 0, 0, 'at_hun_freezing_trap', 48999);
+REPLACE INTO `areatrigger_create_properties` VALUES (510, 0, 3678, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 20000, 4, 10, 10, 7, 7, 3, 3, 0, 0, 'at_hun_flare', 40120);
+
 REPLACE INTO `spell_script_names` VALUES (34026, 'spell_hun_kill_command');
 REPLACE INTO `spell_script_names` VALUES (259489, 'spell_hun_kill_command');
 REPLACE INTO `spell_script_names` VALUES (83381, 'spell_hun_kill_command_proc');
 REPLACE INTO `spell_script_names` VALUES (19577, 'spell_hun_intimidation');
-REPLACE INTO `spell_script_names` VALUES (375891, 'spell_hun_death_chakram');
 REPLACE INTO `spell_script_names` VALUES (19574, 'spell_hun_bestial_wrath');
 REPLACE INTO `spell_script_names` VALUES (217200, 'spell_hun_barbed_shot');
 REPLACE INTO `spell_script_names` VALUES (120679, 'spell_hun_dire_beast');
-REPLACE INTO `spell_script_names` VALUES (102199, 'spell_hun_stampede');
+
+REPLACE INTO `areatrigger_create_properties` VALUES (1524, 0, 5972, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 4, 5, 5, 2, 2, 0.3, 0.3, 0, 0, 'at_hun_binding_shot', 31478);
+
 REPLACE INTO `spell_script_names` VALUES (321530, 'spell_hun_bloodshed');
 REPLACE INTO `spell_script_names` VALUES (260243, 'spell_hun_volley');
 REPLACE INTO `spell_script_names` VALUES (186387, 'spell_bursting_shot');
+
+REPLACE INTO `areatrigger_create_properties` VALUES (2392, 0, 6966, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 60000, 4, 3, 3, 4, 4, 1, 1, 0, 0, 'at_hun_steel_trap', 48999);
+
 REPLACE INTO `spell_script_names` VALUES (120361, 'spell_hun_barrage');
-REPLACE INTO `spell_script_names` VALUES (269751,'spell_hun_flanking_strike');
-REPLACE INTO `spell_script_names` VALUES (360966,'spell_hun_spearhead');
-REPLACE INTO `spell_script_names` VALUES (259495,'spell_hun_wildfire_bomb');
-REPLACE INTO `spell_script_names` VALUES (115191,'spell_rog_stealth_with_subterfuge');
-REPLACE INTO `spell_script_names` VALUES (115191,'spell_rog_stealth');
+REPLACE INTO `spell_script_names` VALUES (269751, 'spell_hun_flanking_strike');
+REPLACE INTO `spell_script_names` VALUES (360966, 'spell_hun_spearhead');
+REPLACE INTO `spell_script_names` VALUES (259495, 'spell_hunter_wildfire_bomb');
+REPLACE INTO `spell_script_names` VALUES (271014, 'spell_hunter_wildfire_infusion_talent');
+REPLACE INTO `spell_script_names` VALUES (271615, 'spell_hunter_wildfire_infusion_dummy');
+
+REPLACE INTO `areatrigger_scripts` VALUES (12863, 'at_hunter_wildfire_bomb');
+
+REPLACE INTO `areatrigger_template` VALUES (265163, 0, 0, 0, 0, 0);
+
+REPLACE INTO `areatrigger_create_properties` VALUES (12863, 0, 265163, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 'at_hunter_wildfire_bomb', 0);
+
+-- ----------------------------
+-- Rogue spell fixes
+-- ----------------------------
+
+REPLACE INTO `spell_script_names` VALUES (115191, 'spell_rog_stealth_with_subterfuge');
+REPLACE INTO `spell_script_names` VALUES (115191, 'spell_rog_stealth');
 REPLACE INTO `spell_script_names` VALUES (14062, 'spell_rog_nightstalker');
 REPLACE INTO `spell_script_names` VALUES (5171, 'spell_rog_slice_and_dice');
 REPLACE INTO `spell_script_names` VALUES (315496, 'spell_rog_slice_and_dice');
 REPLACE INTO `spell_script_names` VALUES (385616, 'spell_rog_echoing_reprimand');
 REPLACE INTO `spell_script_names` VALUES (2823, 'spell_rog_deadly_poison_instant_damage');
 REPLACE INTO `spell_script_names` VALUES (51723, 'spell_rog_fan_of_knives');
-REPLACE INTO `spell_script_names` VALUES (121411, 'spell_rog_crimson_tempest');
 REPLACE INTO `spell_script_names` VALUES (195457, 'spell_rog_grappling_hook');
 REPLACE INTO `spell_script_names` VALUES (271877, 'spell_rog_blade_rush');
 REPLACE INTO `spell_script_names` VALUES (197835, 'spell_rog_shuriken_storm');
-REPLACE INTO `spell_script_names` VALUES (122773, 'spell_pal_lights_hammer');
-REPLACE INTO `spell_script_names` VALUES (122773, 'spell_pal_light_hammer_init_summon');
+
+-- ----------------------------
+-- Paladin spell fixes
+-- ----------------------------
+
+-- ----------------------------
+-- Monk spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (126892, 'spell_monk_zen_pilgrimage');
-REPLACE INTO `spell_script_names` VALUES (126895, 'spell_monk_zen_pilgrimage_return');
 REPLACE INTO `spell_script_names` VALUES (293866, 'spell_monk_zen_pilgrimage');
+REPLACE INTO `spell_script_names` VALUES (126895, 'spell_monk_zen_pilgrimage_return');
 REPLACE INTO `spell_script_names` VALUES (100780, 'spell_monk_tiger_palm');
 REPLACE INTO `spell_script_names` VALUES (125883, 'spell_monk_zen_flight_check');
 REPLACE INTO `spell_script_names` VALUES (116095, 'spell_monk_disable');
 REPLACE INTO `spell_script_names` VALUES (116705, 'spell_monk_spear_hand_strike');
-REPLACE INTO `spell_script_names` VALUES (107428, 'spell_monk_rising_sun_kick');
 REPLACE INTO `spell_script_names` VALUES (115203, 'spell_monk_fortifying_brew');
 REPLACE INTO `spell_script_names` VALUES (119582, 'spell_monk_purifying_brew');
 REPLACE INTO `spell_script_names` VALUES (115181, 'spell_monk_breath_of_fire');
 REPLACE INTO `spell_script_names` VALUES (122278, 'spell_monk_dampen_harm');
---REPLACE INTO `spell_script_names` VALUES (324312, 'spell_monk_clash');
 REPLACE INTO `spell_script_names` VALUES (122280, 'spell_monk_healing_elixirs_aura');
-REPLACE INTO `spell_script_names` VALUES (116844, 'spell_monk_ring_of_peace');
-REPLACE INTO `spell_script_names` VALUES (140023, 'spell_monk_ring_of_peace_dummy');
+
+REPLACE INTO `areatrigger_scripts` VALUES (3983, 'at_monk_ring_of_peace');
+REPLACE INTO `areatrigger_scripts` VALUES (5484, 'at_monk_song_of_chi_ji');
+
+REPLACE INTO `areatrigger_create_properties` VALUES (718, 0, 3983, 0, 0, 0, 0, 0, 0, -256, 255, 0, 0, 0, 5000, 0, 8, 8, 0, 0, 0, 0, 0, 0, 'at_monk_ring_of_peace', 40120);
+REPLACE INTO `areatrigger_create_properties` VALUES (5484, 0, 10191, 0, 0, 0, 1656, 0, 0, -1, 0, 0, 0, 5716, 5000, 0, 5, 5, 0, 0, 0, 0, 0, 0, 'at_monk_song_of_chi_ji', 48838);
+
 REPLACE INTO `spell_script_names` VALUES (115098, 'spell_monk_chi_wave');
-REPLACE INTO `spell_script_names` VALUES (132464, 'spell_monk_chi_wave_healing_bolt');
-REPLACE INTO `spell_script_names` VALUES (132464, 'spell_monk_chi_wave_heal_missile');
 REPLACE INTO `spell_script_names` VALUES (132467, 'spell_monk_chi_wave_damage_missile');
+REPLACE INTO `spell_script_names` VALUES (132464, 'spell_monk_chi_wave_heal_missile');
+REPLACE INTO `spell_script_names` VALUES (132464, 'spell_monk_chi_wave_healing_bolt');
+
+REPLACE INTO `areatrigger_scripts` VALUES (5300, 'at_monk_chi_burst');
+
+REPLACE INTO `areatrigger_create_properties` VALUES (1316, 0, 5300, 0, 0, 392, 0, 0, 0, -1, 0, 0, 0, 931, 1000, 0, 5, 5, 0, 0, 0, 0, 0, 0, 'at_monk_chi_burst', 40120);
+
 REPLACE INTO `spell_script_names` VALUES (130654, 'spell_monk_chi_burst_heal');
---REPLACE INTO `spell_script_names` VALUES (115399, 'spell_monk_black_ox_brew');
+REPLACE INTO `spell_script_names` VALUES (115399, 'spell_monk_black_ox_brew');
 REPLACE INTO `spell_script_names` VALUES (115313, 'spell_monk_jade_serpent_statue');
+
+REPLACE INTO `creature_template` VALUES (60849, 0, 0, 'Jade Serpent Statue', '', '', NULL, '', 0, 0, 5, 0, 1, 1.14286, 1, 0, 0, 1798, 2000, 1, 1, 1, 512, 32800, 0, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_monk_jade_serpent_statue', NULL, 53040);
+
 REPLACE INTO `spell_script_names` VALUES (101643, 'spell_monk_transcendence');
 REPLACE INTO `spell_script_names` VALUES (101643, 'aura_monk_transcendence');
 REPLACE INTO `spell_script_names` VALUES (119996, 'spell_monk_transcendence_transfer');
@@ -441,9 +558,7 @@ REPLACE INTO `spell_script_names` VALUES (115151, 'spell_monk_renewing_mist_hot'
 REPLACE INTO `spell_script_names` VALUES (119607, 'spell_monk_renewing_mist_jump');
 REPLACE INTO `spell_script_names` VALUES (191837, 'spell_monk_essence_font');
 REPLACE INTO `spell_script_names` VALUES (191840, 'spell_monk_essence_font_heal');
---REPLACE INTO `spell_script_names` VALUES (197908, 'spell_monk_mana_tea');
 REPLACE INTO `spell_script_names` VALUES (124682, 'spell_monk_enveloping_mist');
---REPLACE INTO `spell_script_names` VALUES (137639, 'spell_monk_storm_earth_and_fire');
 REPLACE INTO `spell_script_names` VALUES (122470, 'spell_monk_touch_of_karma');
 REPLACE INTO `spell_script_names` VALUES (125174, 'spell_monk_touch_of_karma_buff');
 REPLACE INTO `spell_script_names` VALUES (113656, 'spell_monk_fists_of_fury');
@@ -451,18 +566,23 @@ REPLACE INTO `spell_script_names` VALUES (117418, 'spell_monk_fists_of_fury_dama
 REPLACE INTO `spell_script_names` VALUES (120086, 'spell_monk_fists_of_fury_stun');
 REPLACE INTO `spell_script_names` VALUES (123154, 'spell_monk_fists_of_fury_visual');
 REPLACE INTO `spell_script_names` VALUES (117418, 'spell_monk_fists_of_fury_visual_filter');
---REPLACE INTO `spell_script_names` VALUES (152175, 'spell_monk_whirling_dragon_punch');
+
+REPLACE INTO `creature_template` VALUES (63508, 0, 0, 'Xuen', '', NULL, NULL, NULL, 0, 0, 35, 0, 1, 1.54286, 1, 0, 0, 721, 2000, 1, 1, 1, 32784, 2048, 0, 0, 0, 1, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, 'npc_monk_xuen', NULL, 53040);
+
 REPLACE INTO `spell_script_names` VALUES (115057, 'spell_monk_flying_serpent_kick');
-REPLACE INTO `spell_script_names` VALUES (148022, 'spell_mage_icicle_damage');
-REPLACE INTO `spell_script_names` VALUES (76613, 'spell_mastery_icicles_proc');
-REPLACE INTO `spell_script_names` VALUES (214124, 'spell_mastery_icicles_mod_aura');
-REPLACE INTO `spell_script_names` VALUES (214125, 'spell_mastery_icicles_mod_aura');
-REPLACE INTO `spell_script_names` VALUES (214126, 'spell_mastery_icicles_mod_aura');
-REPLACE INTO `spell_script_names` VALUES (214127, 'spell_mastery_icicles_mod_aura');
-REPLACE INTO `spell_script_names` VALUES (214130, 'spell_mastery_icicles_mod_aura');
-REPLACE INTO `spell_script_names` VALUES (148023, 'spell_mastery_icicles_periodic');
-REPLACE INTO `spell_script_names` VALUES (199786, 'spell_mastery_icicles_glacial_spike');
-REPLACE INTO `spell_script_names` VALUES (359073, 'spell_evo_eternity_surge');
+
+REPLACE INTO `spell_linked_spell` VALUES (113656, 165144, 0, 'Fists of Fury visual fix');
+REPLACE INTO `spell_linked_spell` VALUES (324312, 324383, 0, 'Monk Clash spell fix');
+REPLACE INTO `spell_linked_spell` VALUES (152175, 158221, 0, 'Monk Whirling Dragon Punch Damage');
+
+REPLACE INTO `spell_script_names` VALUES (113656, 'spell_fist_of_fury_proc');
+REPLACE INTO `spell_script_names` VALUES (107428, 'spell_rising_sun_kick_proc');
+REPLACE INTO `spell_script_names` VALUES (152175, 'spell_monk_whirling_dragon_punch');
+
+-- ----------------------------
+-- DH spell fixes
+-- ----------------------------
+
 REPLACE INTO `spell_script_names` VALUES (195072, 'spell_dh_fel_rush');
 REPLACE INTO `spell_script_names` VALUES (197923, 'spell_dh_fel_rush_dash');
 REPLACE INTO `spell_script_names` VALUES (197922, 'spell_dh_fel_rush_dash_ground');
@@ -521,60 +641,48 @@ REPLACE INTO `spell_script_names` VALUES (203720, 'spell_dh_demon_spikes');
 REPLACE INTO `spell_script_names` VALUES (201427, 'spell_dh_annihilation');
 REPLACE INTO `spell_script_names` VALUES (344862, 'spell_dh_chaos_strike_specless');
 REPLACE INTO `spell_script_names` VALUES (344865, 'spell_dh_fel_rush_specless');
-REPLACE INTO `spell_script_names` VALUES (259495, 'spell_hunter_wildfire_bomb');
-REPLACE INTO `spell_script_names` VALUES (271014, 'spell_hunter_wildfire_infusion_talent');
-REPLACE INTO `spell_script_names` VALUES (271615, 'spell_hunter_wildfire_infusion_dummy');
 
-REPLACE INTO `spell_linked_spell` VALUES (113656, 165144, 0, 'Fists of Fury visual fix');
-
-
-REPLACE INTO `creature_template` VALUES (59262, 0, 0, 'Demonic Gateway', '', NULL, '', 'interact', 0, 0, 35, 16777216, 1, 1.14286, 1, 0, 0, 2000, 2000, 1, 1, 1, 512, 67108896, 17825793, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_warl_demonic_gateway', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (59271, 0, 0, 'Demonic Gateway', '', NULL, '', 'interact', 0, 0, 35, 16777216, 1, 1.14286, 1, 0, 0, 2000, 2000, 1, 1, 1, 512, 67108896, 17825793, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_warl_demonic_gateway', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (103673, 0, 0, 'Darkglare', '', '', NULL, '', 0, 0, 954, 0, 1, 0.857143, 1, 0, 0, 1477, 2000, 1, 1, 8, 32768, 2048, 0, 19, 0, 3, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, 'npc_pet_warlock_darkglare', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (99739, 0, 0, 'Wild Imps', '', '', NULL, '', 0, 0, 90, 0, 1, 1.14286, 1, 0, 0, 0, 2000, 1, 1, 4, 0, 0, 0, 0, 0, 3, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, 'npc_pet_warlock_wild_imp', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (76168, 0, 0, 'Ravager', '', '', NULL, '', 0, 0, 35, 0, 2, 0.714286, 1, 0, 0, 2000, 2000, 1, 1, 1, 33587200, 67667968, 16809984, 0, 0, 10, 0, '', 0, 1, 0, 94, 0, 0, 1, 0, 0, 'npc_warr_ravager', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (82521, 0, 0, 'Defile', '', '', NULL, '', 0, 0, 1, 0, 1, 1, 1, 0, 0, 2000, 2000, 1, 1, 1, 17826816, 16, 0, 0, 0, 10, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_dk_defile', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (102199, 0, 0, 'Stampede', '', '', NULL, '',	0, 0, 35, 0, 1, 1.14286, 1, 0, 0, 1028, 2000, 1, 1, 1, 33554944, 0, 16777216, 0, 0, 10, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, '', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (98035, 0, 0, 'Dreadstalker', '', '', NULL, '', 0, 0, 90, 0, 1, 1.28571, 1, 6, 0, 1444, 2000, 1, 1, 4, 0, 0, 0, 0, 0, 3, 0, '', 0, 1, 0, 133, 0, 0, 1, 0, 0, 'npc_warlock_dreadstalker', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (59738, 0, 0,'Light\'s Hammer', '', '', NULL, '', 0, 0, 35, 0, 1, 1.14286, 1, 0, 0, 2000, 2000, 0, 0, 1, 33554432, 67143680, 16777217, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_pal_lights_hammer', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (60849, 0, 0, 'Jade Serpent Statue', '', '', NULL, '', 0, 0, 5, 0, 1, 1.14286, 1, 0, 0, 1798, 2000, 1, 1, 1, 512, 32800, 0, 0, 0, 11, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_monk_jade_serpent_statue', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (73967, 0, 0, 'Niuzao', '', '', NULL, '', 0, 0, 35, 0, 1, 0.857143, 1, 0, 0, 1989, 2000, 1, 1, 1, 32768, 2048, 0, 0, 0, 1, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, '', NULL, 53040);
---REPLACE INTO `creature_template` VALUES (69792, 0, 0, 'Earth Spirit', '', '', NULL, '', 0, 0, 35, 0, 1, 1.14286, 1, 0, 0, 1749, 2000, 1, 1, 4, 32768, 2064, 0, 0, 0, 7, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_monk_sef_spirit', NULL, 53040);
---REPLACE INTO `creature_template` VALUES (69791, 0, 0, 'Fire Spirit', '', NULL, NULL, NULL, 0, 0, 35, 0, 1, 1.14286, 1, 0, 0, 1749, 2000, 1, 1, 4, 32768, 2064, 0, 0, 0, 7, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, 'npc_monk_sef_spirit', NULL, 53040);
-REPLACE INTO `creature_template` VALUES (63508, 0, 0, 'Xuen', '', NULL, NULL, NULL, 0, 0, 35, 0, 1, 1.54286, 1, 0, 0, 721, 2000, 1, 1, 1, 32784, 2048, 0, 0, 0, 1, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, 'npc_monk_xuen', NULL, 53040);
-
-REPLACE INTO `npc_spellclick_spells` VALUES (59262, 113902, 0, 0);
-REPLACE INTO `npc_spellclick_spells` VALUES (59271, 113902, 0, 0);
-
-REPLACE INTO `areatrigger_scripts` VALUES (8089, 'at_mage_meteor_timer');
-REPLACE INTO `areatrigger_scripts` VALUES (6211, 'at_mage_meteor_burn');
-REPLACE INTO `areatrigger_scripts` VALUES (1612, 'at_mage_arcane_orb');
-REPLACE INTO `areatrigger_scripts` VALUES (6212, 'at_dk_defile');
-REPLACE INTO `areatrigger_scripts` VALUES (3983, 'at_monk_ring_of_peace');
-REPLACE INTO `areatrigger_scripts` VALUES (5484, 'at_monk_song_of_chi_ji');
-REPLACE INTO `areatrigger_scripts` VALUES (5300, 'at_monk_chi_burst');
-REPLACE INTO `areatrigger_scripts` VALUES (8661,'at_mage_frozen_orb');
 REPLACE INTO `areatrigger_scripts` VALUES (6615, 'at_dh_darkness');
 REPLACE INTO `areatrigger_scripts` VALUES (9695, 'at_demon_hunter_mana_rift');
 REPLACE INTO `areatrigger_scripts` VALUES (6482, 'at_demon_hunter_demonic_trample');
 REPLACE INTO `areatrigger_scripts` VALUES (10666, 'at_shattered_soul_fragment');
-REPLACE INTO `areatrigger_scripts` VALUES (12863,'at_hunter_wildfire_bomb');
 
-REPLACE INTO `areatrigger_template` VALUES (265163, 0, 0, 0, 0, 0);
-
-REPLACE INTO `areatrigger_create_properties` VALUES (177345, 1, 8089, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 3000, 4, 8, 8, 4, 4, 0.3, 0.3, 0, 0, 'at_mage_meteor_timer', 27101);
-REPLACE INTO `areatrigger_create_properties` VALUES (4424, 0, 9170, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 60000, 4, 3, 3, 4, 4, 1, 1, 0, 0, 'at_hun_freezing_trap', 48999);
-REPLACE INTO `areatrigger_create_properties` VALUES (510, 0, 3678, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 20000, 4, 10, 10, 7, 7, 3, 3, 0, 0, 'at_hun_flare', 40120);
-REPLACE INTO `areatrigger_create_properties` VALUES (4435, 0, 9181, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 60000, 4, 3, 3, 4, 4, 1, 1, 0, 0, 'at_hun_tar_trap_not_activated', 40120);
-REPLACE INTO `areatrigger_create_properties` VALUES (4436, 0, 3841, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 30000, 4, 8, 8, 10, 10, 5, 5, 0, 0, 'at_hun_tar_trap_activated', 40120);
-REPLACE INTO `areatrigger_create_properties` VALUES (1524, 0, 5972, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 4, 5, 5, 2, 2, 0.3, 0.3, 0, 0, 'at_hun_binding_shot', 31478);
-REPLACE INTO `areatrigger_create_properties` VALUES (2392, 0, 6966, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 60000, 4, 3, 3, 4, 4, 1, 1, 0, 0, 'at_hun_steel_trap', 48999);
-REPLACE INTO `areatrigger_create_properties` VALUES (9810, 0, 14725, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 60000, 4, 3, 3, 4, 4, 1, 1, 0, 0, 'at_hun_explosive_trap', 48999);
-REPLACE INTO `areatrigger_create_properties` VALUES (5484, 0, 10191, 0, 0, 0, 1656, 0, 0, -1, 0, 0, 0, 5716, 5000, 0, 5, 5, 0, 0, 0, 0, 0, 0, 'at_monk_song_of_chi_ji', 48838);
-REPLACE INTO `areatrigger_create_properties` VALUES (1316, 0, 5300, 0, 0, 392, 0, 0, 0, -1, 0, 0, 0, 931, 1000, 0, 5, 5, 0, 0, 0, 0, 0, 0, 'at_monk_chi_burst', 40120);
-REPLACE INTO `areatrigger_create_properties` VALUES (718, 0, 3983, 0, 0, 0, 0, 0, 0, -256, 255, 0, 0, 0, 5000, 0, 8, 8, 0, 0, 0, 0, 0, 0, 'at_monk_ring_of_peace', 40120);
 REPLACE INTO `areatrigger_create_properties` VALUES (6482, 1, 11107, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'at_demon_hunter_demonic_trample', 40120);
 REPLACE INTO `areatrigger_create_properties` VALUES (6007, 1, 10666, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 20000, 0, 1, 1, 0, 0, 0, 0, 0, 0, 'at_shattered_soul_fragment', 32750);
-REPLACE INTO `areatrigger_create_properties` VALUES (12863, 0, 265163, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 'at_hunter_wildfire_bomb', 0);
+
+-- ----------------------------
+-- Misc fix or changes
+-- ----------------------------
+
+REPLACE INTO `creature_template` VALUES (102199, 0, 0, 'Stampede', '', '', NULL, '',	0, 0, 35, 0, 1, 1.14286, 1, 0, 0, 1028, 2000, 1, 1, 1, 33554944, 0, 16777216, 0, 0, 10, 0, '', 0, 1, 0, 0, 0, 0, 1, 0, 0, '', NULL, 53040);
+REPLACE INTO `creature_template` VALUES (73967, 0, 0, 'Niuzao', '', '', NULL, '', 0, 0, 35, 0, 1, 0.857143, 1, 0, 0, 1989, 2000, 1, 1, 1, 32768, 2048, 0, 0, 0, 1, 0, '', 0, 1, 0, 121, 0, 0, 1, 0, 0, '', NULL, 53040);
 
 ALTER TABLE `scrapping_loot_template` ADD `ItemType` tinyint NOT NULL DEFAULT 0 AFTER `Entry`;
+
+-- ----------------------------
+-- Toys fix
+-- ----------------------------
+
+REPLACE INTO `spell_script_names` VALUES (340110, 'spell_necronom_i_nom');
+REPLACE INTO `spell_script_names` VALUES (291106, 'spell_bowl_of_glowing_pufferfish');
+REPLACE INTO `spell_script_names` VALUES (232592, 'spell_twelve_string_guitar');
+
+-- ----------------------------
+-- Advanced fly
+-- ----------------------------
+
+REPLACE INTO `spell_linked_spell` VALUES (372771, 372773, 0, 'Dragonriding energy aura');
+
+REPLACE INTO `spell_script_names` VALUES (373646, 'spell_af_skyriding');
+REPLACE INTO `spell_script_names` VALUES (406095, 'spell_af_skyriding');
+REPLACE INTO `spell_script_names` VALUES (430747, 'spell_af_skyriding');
+REPLACE INTO `spell_script_names` VALUES (430833, 'spell_af_skyriding');
+REPLACE INTO `spell_script_names` VALUES (372771, 'spell_af_energy');
+REPLACE INTO `spell_script_names` VALUES (372773, 'spell_af_energy');
+REPLACE INTO `spell_script_names` VALUES (372610, 'spell_af_skyward_ascent');
+REPLACE INTO `spell_script_names` VALUES (374763, 'spell_af_skyward_ascent');
+REPLACE INTO `spell_script_names` VALUES (386451, 'spell_af_skyward_ascent');
+REPLACE INTO `spell_script_names` VALUES (372608, 'spell_af_surge_forward');
+REPLACE INTO `spell_script_names` VALUES (386449, 'spell_af_surge_forward');
+REPLACE INTO `spell_script_names` VALUES (361584, 'spell_af_whirling_surge');
+REPLACE INTO `spell_script_names` VALUES (436854, 'spell_switch_flight');

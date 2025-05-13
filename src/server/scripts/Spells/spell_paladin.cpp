@@ -1488,7 +1488,6 @@ class spell_pal_selfless_healer : public AuraScript
 // 53600 - Shield of the Righteous
 class spell_pal_shield_of_the_righteous : public SpellScript
 {
-    PrepareSpellScript(spell_pal_shield_of_the_righteous);
 
     void HandleOnHit(SpellEffIndex /*effIndex*/)
     {
@@ -1819,101 +1818,6 @@ class spell_pal_zeal : public AuraScript
     }
 };
 
-// Light's Hammer - 122773
-class spell_pal_lights_hammer : public SpellScriptLoader
-{
-public:
-    spell_pal_lights_hammer() : SpellScriptLoader("spell_pal_lights_hammer") { }
-
-    class spell_pal_lights_hammer_SpellScript : public SpellScript
-    {
-        void HandleAfterCast()
-        {
-            if (Unit* caster = GetCaster())
-            {
-                std::list<Creature*> tempList;
-                std::list<Creature*> LightsHammerlist;
-
-                caster->GetCreatureListWithEntryInGrid(LightsHammerlist, NPC_PALADIN_LIGHTS_HAMMER, 200.0f);
-
-                tempList = LightsHammerlist;
-
-                for (std::list<Creature*>::iterator i = tempList.begin(); i != tempList.end(); ++i)
-                {
-                    Unit* owner = (*i)->GetOwner();
-                    if (owner != nullptr && owner->GetGUID() == caster->GetGUID() && (*i)->IsSummon())
-                        continue;
-
-                    LightsHammerlist.remove((*i));
-                }
-
-                for (std::list<Creature*>::iterator itr = LightsHammerlist.begin(); itr != LightsHammerlist.end(); ++itr)
-                    (*itr)->CastSpell((*itr), SPELL_PALADIN_LIGHTS_HAMMER_TICK, true);
-            }
-        }
-
-        void Register() override
-        {
-            AfterCast += SpellCastFn(spell_pal_lights_hammer_SpellScript::HandleAfterCast);
-        }
-    };
-
-    SpellScript* GetSpellScript() const override
-    {
-        return new spell_pal_lights_hammer_SpellScript();
-    }
-};
-
-// Light's Hammer (Periodic Dummy) - 114918
-class spell_pal_lights_hammer_tick : public SpellScriptLoader
-{
-public:
-    spell_pal_lights_hammer_tick() : SpellScriptLoader("spell_pal_lights_hammer_tick") { }
-
-    class spell_pal_lights_hammer_tick_AuraScript : public AuraScript
-    {
-        void OnTick(AuraEffect const* /*aurEff*/)
-        {
-            if (Unit* caster = GetCaster())
-            {
-                if (caster->GetOwner())
-                {
-                    CastSpellExtraArgs args;
-                    args.SetTriggerFlags(TRIGGERED_FULL_MASK);
-                    args.SetOriginalCaster(caster->GetOwner()->GetGUID());
-                    caster->CastSpell(Position(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ()), SPELL_PALADIN_ARCING_LIGHT_HEAL, args);
-                    caster->CastSpell(Position(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ()), SPELL_PALADIN_ARCING_LIGHT_DAMAGE, args);
-                }
-            }
-        }
-
-        void Register() override
-        {
-            OnEffectPeriodic += AuraEffectPeriodicFn(spell_pal_lights_hammer_tick_AuraScript::OnTick, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
-        }
-    };
-
-    AuraScript* GetAuraScript() const override
-    {
-        return new spell_pal_lights_hammer_tick_AuraScript();
-    }
-};
-
-// Light's Hammer
-// NPC Id - 59738
-class npc_pal_lights_hammer : public ScriptedAI
-{
-public:
-
-    npc_pal_lights_hammer(Creature* creature) : ScriptedAI(creature) {}
-
-    void Reset() override
-    {
-        me->CastSpell(me, SPELL_PALADIN_LIGHT_HAMMER_COSMETIC, true);
-        me->SetUnitFlag(UnitFlags(UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_UNINTERACTIBLE | UNIT_FLAG_REMOVE_CLIENT_CONTROL));
-    }
-};
-
 void AddSC_paladin_spell_scripts()
 {
     RegisterSpellScript(spell_pal_ardent_defender);
@@ -1970,7 +1874,4 @@ void AddSC_paladin_spell_scripts()
     RegisterSpellScript(spell_pal_zeal);
 
     //new
-    new spell_pal_lights_hammer();
-    new spell_pal_lights_hammer_tick();
-    RegisterCreatureAI(npc_pal_lights_hammer);
 }

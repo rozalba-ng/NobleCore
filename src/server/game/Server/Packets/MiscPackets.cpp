@@ -18,6 +18,22 @@
 #include "MiscPackets.h"
 #include "Common.h"
 
+WorldPacket const* WorldPackets::Misc::PreloadWorld::Write()
+{
+    _worldPacket << uint32(MapID);
+    _worldPacket << x;
+    _worldPacket << y;
+    _worldPacket << z;
+    _worldPacket << o;
+    _worldPacket << uint32(unk1);
+    _worldPacket << uint32(unk2);
+    _worldPacket << uint32(unk3);
+    _worldPacket << uint32(unk4);
+    _worldPacket << uint32(unk5);
+    _worldPacket << uint32(unk6);
+    return &_worldPacket;
+}
+
 WorldPacket const* WorldPackets::Misc::BindPointUpdate::Write()
 {
     _worldPacket << BindPosition;
@@ -828,7 +844,7 @@ WorldPacket const* WorldPackets::Misc::LegendaryCraftingOpenNpc::Write()
 
 void WorldPackets::Misc::OverrideScreenFlash::Read()
 {
-    _worldPacket >> BlackScreenOrRedScreen;
+    BlackScreenOrRedScreen = _worldPacket.ReadBit();
 }
 
 WorldPacket const* WorldPackets::Misc::PlayerChoiceClear::Write()
@@ -858,4 +874,42 @@ WorldPacket const* WorldPackets::Misc::AccountWarbandSceneUpdate::Write()
     _worldPacket.FlushBits();
 
     return &_worldPacket;
+}
+
+void WorldPackets::Misc::AccountNotificationAcknowledge::Read()
+{
+    _worldPacket >> unk;
+    _worldPacket >> unk2;
+    _worldPacket >> unk3;
+}
+
+WorldPacket const* WorldPackets::Misc::ShowTradeSkillResponse::Write()
+{
+    _worldPacket << PlayerGUID;
+    _worldPacket << SpellId;
+    _worldPacket << static_cast<uint32>(SkillLineIDs.size());
+    _worldPacket << static_cast<uint32>(SkillRanks.size());
+    _worldPacket << static_cast<uint32>(SkillMaxRanks.size());
+    _worldPacket << static_cast<uint32>(KnownAbilitySpellIDs.size());
+
+    for (auto const& v : SkillLineIDs)
+        _worldPacket << v;
+
+    for (auto const& c : SkillRanks)
+        _worldPacket << c;
+
+    for (auto const& z : SkillMaxRanks)
+        _worldPacket << z;
+
+    for (auto const& t : KnownAbilitySpellIDs)
+        _worldPacket << t;
+
+    return &_worldPacket;
+}
+
+void WorldPackets::Misc::ShowTradeSkill::Read()
+{
+    _worldPacket >> PlayerGUID;
+    _worldPacket >> SpellID;
+    _worldPacket >> SkillLineID;
 }

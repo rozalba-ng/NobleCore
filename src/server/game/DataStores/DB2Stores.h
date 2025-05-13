@@ -210,6 +210,7 @@ TC_GAME_API extern DB2Storage<ModifiedCraftingCategoryEntry>        sModifiedCra
 TC_GAME_API extern DB2Storage<ModifiedCraftingReagentSlotEntry>     sModifiedCraftingReagentSlotStore;
 TC_GAME_API extern DB2Storage<ModifiedCraftingReagentItemEntry>     sModifiedCraftingReagentItemStore;
 TC_GAME_API extern DB2Storage<ModifiedCraftingSpellSlotEntry>       sModifiedCraftingSpellSlotStore;
+TC_GAME_API extern DB2Storage<ModifiedCraftingItemEntry>            sModifiedCraftingItemStore;
 TC_GAME_API extern DB2Storage<ModifierTreeEntry>                    sModifierTreeStore;
 TC_GAME_API extern DB2Storage<MountCapabilityEntry>                 sMountCapabilityStore;
 TC_GAME_API extern DB2Storage<MountEntry>                           sMountStore;
@@ -220,6 +221,7 @@ TC_GAME_API extern DB2Storage<NPCModelItemSlotDisplayInfoEntry>     sNPCModelIte
 TC_GAME_API extern DB2Storage<MythicPlusSeasonEntry>                sMythicPlusSeasonStore;
 TC_GAME_API extern DB2Storage<OverrideSpellDataEntry>               sOverrideSpellDataStore;
 TC_GAME_API extern DB2Storage<ParagonReputationEntry>               sParagonReputationStore;
+TC_GAME_API extern DB2Storage<PerksActivityEntry>                   sPerksActivityStore;
 TC_GAME_API extern DB2Storage<PhaseEntry>                           sPhaseStore;
 TC_GAME_API extern DB2Storage<PlayerConditionEntry>                 sPlayerConditionStore;
 TC_GAME_API extern DB2Storage<PowerDisplayEntry>                    sPowerDisplayStore;
@@ -234,8 +236,12 @@ TC_GAME_API extern DB2Storage<QuestFactionRewardEntry>              sQuestFactio
 TC_GAME_API extern DB2Storage<QuestInfoEntry>                       sQuestInfoStore;
 TC_GAME_API extern DB2Storage<QuestMoneyRewardEntry>                sQuestMoneyRewardStore;
 TC_GAME_API extern DB2Storage<QuestSortEntry>                       sQuestSortStore;
+TC_GAME_API extern DB2Storage<QuestPOIPointEntry>                   sQuestPOIPointStore;
 TC_GAME_API extern DB2Storage<QuestXPEntry>                         sQuestXPStore;
 TC_GAME_API extern DB2Storage<RandPropPointsEntry>                  sRandPropPointsStore;
+TC_GAME_API extern DB2Storage<ResearchBranchEntry>                  sResearchBranchStore;
+TC_GAME_API extern DB2Storage<ResearchProjectEntry>                 sResearchProjectStore;
+TC_GAME_API extern DB2Storage<ResearchSiteEntry>                    sResearchSiteStore;
 TC_GAME_API extern DB2Storage<RewardPackEntry>                      sRewardPackStore;
 TC_GAME_API extern DB2Storage<ScenarioEntry>                        sScenarioStore;
 TC_GAME_API extern DB2Storage<ScenarioStepEntry>                    sScenarioStepStore;
@@ -550,6 +556,7 @@ public:
     PowerTypeEntry const* GetPowerTypeEntry(Powers power) const;
     PowerTypeEntry const* GetPowerTypeByName(std::string const& name) const;
     uint8 GetPvpItemLevelBonus(uint32 itemId) const;
+    static PVPBracketTypesEntry const* GetBattlegroundBracketTypeById(BattlegroundBracketId id);
     static PVPDifficultyEntry const* GetBattlegroundBracketByLevel(uint32 mapid, uint32 level);
     static PVPDifficultyEntry const* GetBattlegroundBracketById(uint32 mapid, BattlegroundBracketId id);
     uint32 GetRequiredLevelForPvpTalentSlot(uint8 slot, Classes class_) const;

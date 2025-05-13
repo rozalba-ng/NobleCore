@@ -74,6 +74,34 @@
 #include "TemporarySummon.h"
 #include <sstream>
 
+const Position mfPos[22] =
+{
+    // Snarler spawn
+    { -3924.37f, 6303.53f, 17.59f, 1.88f },
+    { -4011.98f, 6416.34f, 14.75f, 3.73f },
+    { -4097.92f, 6458.10f, 14.80f, 3.19f },
+    { -4170.17f, 6503.14f, 13.41f, 1.55f },
+    { -4266.80f, 6521.71f, 14.39f, 2.68f },
+    { -4318.40f, 6601.40f, 9.853f, 1.47f },
+    { -4056.26f, 6664.42f, 13.22f, 2.99f },
+    { -4009.05f, 6561.04f, 17.15f, 4.37f },
+    { -3932.42f, 6584.56f, 12.91f, 3.70f },
+    { -3838.57f, 6461.64f, 11.91f, 3.92f },
+    { -4268.83f, 6678.51f, 9.731f, 4.84f },
+    // Dreadhowl spawn
+    { -4225.82f, 6556.37f, 14.61f, 5.84f },
+    { -4141.07f, 6523.72f, 16.81f, 6.06f },
+    { -4073.94f, 6580.90f, 16.70f, 0.27f },
+    { -3957.37f, 6617.45f, 12.66f, 0.43f },
+    { -3865.21f, 6524.91f, 18.89f, 2.94f },
+    { -3872.48f, 6498.26f, 17.90f, 3.39f },
+    { -3914.52f, 6398.61f, 13.61f, 4.04f },
+    { -4038.38f, 6514.68f, 13.36f, 3.01f },
+    { -4344.90f, 6583.72f, 10.64f, 1.75f },
+    { -4193.76f, 6122.50f, 13.00f, 6.06f },
+    { -4082.68f, 6121.38f, 17.41f, 5.37f }
+};
+
 // npc - 55089 55093 55397 55398 
 class npc_fire_juggler_darkmoon : public CreatureScript
 {
@@ -126,6 +154,159 @@ public:
     }
 };
 
+// 71992 - Moonfang <Darkmoon Den Mother>
+class boss_darkmoon_moonfang_mother : public CreatureScript
+{
+    enum eSay
+    {
+        SAY_SUMM_SNARLER = 0,
+        SAY_SUMM_DREADHOWL = 1,
+        SAY_SUMM_MOTHER = 2
+    };
+
+    enum eCreatures
+    {
+        NPC_MOONFANG_SNARLER = 56160,
+        NPC_MOONFANG_DREADHOWL = 71982
+    };
+
+    enum eSpells
+    {
+        SPELL_LEAP_FOR_THE_KILL = 144546,
+        SPELL_FANGS_OF_THE_MOON = 144700,
+        SPELL_MOONFANG_TEARS = 144702,
+        SPELL_CALL_THE_PACK = 144602,
+        SPELL_MOONFANG_CURSE = 144590
+    };
+
+public:
+    boss_darkmoon_moonfang_mother() : CreatureScript("boss_darkmoon_moonfang_mother") {}
+
+    struct boss_darkmoon_moonfang_motherAI : public ScriptedAI
+    {
+        boss_darkmoon_moonfang_motherAI(Creature* creature) : ScriptedAI(creature), summons(me)
+        {
+            me->SetVisible(false);
+            prevEvent1 = true;
+            prevEvent2 = false;
+            sDiedCount = 0;
+        }
+
+        EventMap events;
+        SummonList summons;
+
+        bool prevEvent1;
+        bool prevEvent2;
+        uint8 sDiedCount;
+
+        void Reset() override
+        {
+            events.Reset();
+            summons.DespawnAll();
+
+            if (prevEvent1)
+            {
+                SummonMoonfang();
+                ZoneTalk(SAY_SUMM_SNARLER, nullptr);
+            }
+        }
+
+        void SummonMoonfang()
+        {
+            if (prevEvent1)
+                for (uint8 i = 0; i < 11; i++)
+                    me->SummonCreature(NPC_MOONFANG_SNARLER, mfPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000ms);
+
+            if (prevEvent2)
+                for (uint8 i = 11; i < 22; i++)
+                    me->SummonCreature(NPC_MOONFANG_DREADHOWL, mfPos[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000ms);
+        }
+
+        void SummonedCreatureDies(Creature* /*summon*/, Unit* /*killer*/) override
+        {
+            if (prevEvent1 || prevEvent2)
+                sDiedCount++;
+
+            if (sDiedCount == 11)
+            {
+                prevEvent1 = false;
+                prevEvent2 = true;
+                ZoneTalk(SAY_SUMM_DREADHOWL, nullptr);
+                SummonMoonfang();
+            }
+
+            if (sDiedCount == 22)
+            {
+                prevEvent2 = false;
+                me->SetVisible(true);
+                ZoneTalk(SAY_SUMM_MOTHER, nullptr);
+            }
+        }
+
+        void EnterEvadeMode(EvadeReason /*why*/) override
+        {
+            events.ScheduleEvent(1, 0ms);       // cast leap
+            events.ScheduleEvent(2, 10000ms);   // cast stuns the target
+            events.ScheduleEvent(3, 8000ms);    // cast tears AOE
+            events.ScheduleEvent(4, 64000ms);   // summon moonfangs
+            events.ScheduleEvent(5, 180000ms);  // cast mind control
+        }
+
+        void JustSummoned(Creature* summon) override
+        {
+            summons.Summon(summon);
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            if (!UpdateVictim() && me->IsInCombat())
+                return;
+
+            events.Update(diff);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            if (uint32 eventId = events.ExecuteEvent())
+            {
+                switch (eventId)
+                {
+                case 1:
+                    if (auto target = SelectTarget(SelectTargetMethod::Random, 1, 40.0f, true))
+                        DoCast(target, SPELL_LEAP_FOR_THE_KILL, false);
+
+                    events.ScheduleEvent(1, 12000ms);
+                    break;
+                case 2:
+                    if (auto target = me->GetVictim())
+                        DoCast(target, SPELL_FANGS_OF_THE_MOON, false);
+
+                    events.ScheduleEvent(2, 10000ms);
+                    break;
+                case 3:
+                    DoCast(SPELL_MOONFANG_TEARS);
+                    events.ScheduleEvent(3, 22000ms);
+                    break;
+                case 4:
+                    DoCast(SPELL_CALL_THE_PACK);
+                    events.ScheduleEvent(4, 64000ms);
+                    break;
+                case 5:
+                    DoCast(SPELL_MOONFANG_CURSE);
+                    events.ScheduleEvent(5, 180000ms);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    };
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return new boss_darkmoon_moonfang_motherAI(creature);
+    }
+};
+
  // Whee! - 46668
 class spell_darkmoon_carousel_whee : public SpellScriptLoader
 {
@@ -134,7 +315,6 @@ public:
 
     class spell_darkmoon_carousel_whee_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_darkmoon_carousel_whee_AuraScript);
 
         uint32 update;
 
@@ -193,7 +373,6 @@ public:
 
     class spell_darkmoon_staging_area_teleport_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_darkmoon_staging_area_teleport_SpellScript);
 
         bool Load() override
         {
@@ -264,7 +443,6 @@ public:
 
     class spell_gen_repair_damaged_tonk_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_gen_repair_damaged_tonk_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -309,7 +487,6 @@ public:
 
     class spell_gen_shoe_baby_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_gen_shoe_baby_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -345,7 +522,6 @@ public:
 
     class spell_cook_crunchy_frog_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_cook_crunchy_frog_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -390,7 +566,6 @@ public:
 
     class spell_heal_injuried_carnie_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_heal_injuried_carnie_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -465,7 +640,6 @@ public:
 
     class spell_put_up_darkmoon_banner_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_put_up_darkmoon_banner_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -507,7 +681,6 @@ public:
 
     class spell_darkmoon_deathmatch_SpellScript : public SpellScript
     {
-        PrepareSpellScript(spell_darkmoon_deathmatch_SpellScript);
 
         SpellCastResult CheckRequirement()
         {
@@ -543,6 +716,7 @@ public:
 void AddSC_darkmoon_island()
 {
     new npc_fire_juggler_darkmoon();
+    new boss_darkmoon_moonfang_mother();
 
     new spell_darkmoon_carousel_whee();
     new spell_darkmoon_staging_area_teleport();

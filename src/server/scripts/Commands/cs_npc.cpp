@@ -99,11 +99,28 @@ public:
             { "mount",          HandleNpcSetMountCommand,          rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,       Console::No },
             { "anim",           HandleNpcSetAnimCommand,           rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,       Console::No },
             { "animkit",        HandleNpcSetAnimKitCommand,        rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,       Console::No },
+            { "equipment",      HandleNpcSetEquipmentCommand,      rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,       Console::No },
         };
+
+        static ChatCommandTable npcEquipCommandTable =
+        {
+            { "left",           HandleNpcEquipLeftHandCommand,    rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,        Console::No },
+            { "ranged",         HandleNpcEquipRangedCommand,      rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,        Console::No },
+            { "right",          HandleNpcEquipRightHandCommand,   rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,        Console::No },
+        };
+        static ChatCommandTable npcUnequipCommandTable =
+        {
+            { "left",           HandleNpcUnequipLeftHandCommand,  rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,        Console::No },
+            { "ranged",         HandleNpcUnequipRangedCommand,    rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,        Console::No },
+            { "right",          HandleNpcUnequipRightHandCommand, rbac::RBAC_PERM_COMMAND_NPC_SET_DATA,        Console::No },
+        };
+
         static ChatCommandTable npcCommandTable =
         {
             { "add", npcAddCommandTable },
             { "set", npcSetCommandTable },
+            { "equip", npcEquipCommandTable },
+            { "unequip", npcUnequipCommandTable },
             { "info",           HandleNpcInfoCommand,              rbac::RBAC_PERM_COMMAND_NPC_INFO,           Console::No },
             { "near",           HandleNpcNearCommand,              rbac::RBAC_PERM_COMMAND_NPC_NEAR,           Console::No },
             { "move",           HandleNpcMoveCommand,              rbac::RBAC_PERM_COMMAND_NPC_MOVE,           Console::No },
@@ -1677,6 +1694,265 @@ public:
 
         return true;
     }
+
+  static bool HandleNpcEquipLeftHandCommand(ChatHandler* handler, ItemTemplate const* item, Optional<uint8> variationId, Optional<uint32> modAppearanceId)
+  {
+      if (!item)
+      {
+          handler->SendSysMessage(LANG_COMMAND_NEEDITEMSEND);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      if (!(item->IsWeapon() || item->GetInventoryType() == INVTYPE_HOLDABLE || item->GetInventoryType() == INVTYPE_SHIELD)) {
+          handler->SendSysMessage("The item needs to be a weapon, holdable item or shield.");
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 variation = variationId.value_or(1);
+      if (variation < 1) {
+          variation = 1;
+      }
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if ((modelCount + 1) < variation) {
+          handler->PSendSysMessage("The highest equipment set variation targetted NPC is '%u'. The highest variation that can be added at the moment is '%u'.", modelCount, modelCount + 1);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      sRoleplay->SetNpcLeftHand(templateId, variation, item->GetId(), modAppearanceId.value_or(0));
+
+      target->LoadEquipment(variation, true);
+      handler->PSendSysMessage("Weapon equipped to targetted NPC, equipment variation '%u'!", variation);
+      return true;
+  }
+
+  static bool HandleNpcEquipRightHandCommand(ChatHandler* handler, ItemTemplate const* item, Optional<uint8> variationId, Optional<uint32> modAppearanceId)
+  {
+      if (!item)
+      {
+          handler->SendSysMessage(LANG_COMMAND_NEEDITEMSEND);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      if (!(item->IsWeapon() || item->GetInventoryType() == INVTYPE_HOLDABLE || item->GetInventoryType() == INVTYPE_SHIELD)) {
+          handler->SendSysMessage("The item needs to be a weapon, holdable item or shield.");
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 variation = variationId.value_or(1);
+      if (variation < 1) {
+          variation = 1;
+      }
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if ((modelCount + 1) < variation) {
+          handler->PSendSysMessage("The highest equipment set variation targetted NPC is '%u'. The highest variation that can be added at the moment is '%u'.", modelCount, modelCount + 1);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      sRoleplay->SetNpcRightHand(templateId, variation, item->GetId(), modAppearanceId.value_or(0));
+
+      target->LoadEquipment(variation, true);
+      handler->PSendSysMessage("Weapon equipped to targetted NPC, equipment variation '%u'!", variation);
+      return true;
+  }
+
+  static bool HandleNpcEquipRangedCommand(ChatHandler* handler, ItemTemplate const* item, Optional<uint8> variationId, Optional<uint32> modAppearanceId)
+  {
+      if (!item)
+      {
+          handler->SendSysMessage(LANG_COMMAND_NEEDITEMSEND);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      if (!(item->IsRangedWeapon())) {
+          handler->SendSysMessage("The item needs to be a ranged weapon.");
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 variation = variationId.value_or(1);
+      if (variation < 1) {
+          variation = 1;
+      }
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if ((modelCount + 1) < variation) {
+          handler->PSendSysMessage("The highest equipment set variation targetted NPC is '%u'. The highest variation that can be added at the moment is '%u'.", modelCount, modelCount + 1);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      sRoleplay->SetNpcRanged(templateId, variation, item->GetId(), modAppearanceId.value_or(0));
+
+      target->LoadEquipment(variation, true);
+      handler->PSendSysMessage("Ranged weapon equipped to targetted NPC, equipment variation '%u'!", variation);
+      return true;
+  }
+
+  static bool HandleNpcUnequipLeftHandCommand(ChatHandler* handler, Optional<uint8> variationId)
+  {
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 variation = variationId.value_or(1);
+      if (variation < 1) {
+          variation = 1;
+      }
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if ((modelCount + 1) < variation) {
+          handler->PSendSysMessage("The highest equipment set variation targetted NPC is '%u'. The highest variation that can be added at the moment is '%u'.", modelCount, modelCount + 1);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      sRoleplay->SetNpcLeftHand(templateId, variation, 0, 0);
+      target->LoadEquipment(variation, true);
+      handler->PSendSysMessage("Left hand unequipped from targetted NPC, equipment variation '%u'!", variation);
+      return true;
+  }
+
+  static bool HandleNpcUnequipRightHandCommand(ChatHandler* handler, Optional<uint8> variationId)
+  {
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 variation = variationId.value_or(1);
+      if (variation < 1) {
+          variation = 1;
+      }
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if ((modelCount + 1) < variation) {
+          handler->PSendSysMessage("The highest equipment set variation targetted NPC is '%u'. The highest variation that can be added at the moment is '%u'.", modelCount, modelCount + 1);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      sRoleplay->SetNpcRightHand(templateId, variation, 0, 0);
+      target->LoadEquipment(variation, true);
+      handler->PSendSysMessage("Right hand unequipped from targetted NPC, equipment variation '%u'!", variation);
+      return true;
+  }
+
+  static bool HandleNpcUnequipRangedCommand(ChatHandler* handler, Optional<uint8> variationId)
+  {
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 variation = variationId.value_or(1);
+      if (variation < 1) {
+          variation = 1;
+      }
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if ((modelCount + 1) < variation) {
+          handler->PSendSysMessage("The highest equipment set variation targetted NPC is '%u'. The highest variation that can be added at the moment is '%u'.", modelCount, modelCount + 1);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+
+      sRoleplay->SetNpcRanged(templateId, variation, 0, 0);
+      target->LoadEquipment(variation, true);
+      handler->PSendSysMessage("Ranged weapon unequipped from targetted NPC, equipment variation '%u'!", variation);
+      return true;
+  }
+
+  static bool HandleNpcSetEquipmentCommand(ChatHandler* handler, uint8 variationId) {
+      Player* source = handler->GetSession()->GetPlayer();
+      Creature* target = handler->getSelectedCreature();
+      uint64 guidLow = target ? target->GetSpawnId() : sRoleplay->GetSelectedCreatureGuidFromPlayer(source->GetGUID().GetCounter());
+
+      target = sRoleplay->GetAnyCreature(guidLow);
+      if (!target)
+      {
+          handler->PSendSysMessage("Creature not found!");
+          return true;
+      }
+
+      uint32 templateId = target->GetCreatureTemplate()->Entry;
+
+      uint8 modelCount = sRoleplay->GetEquipmentVariationCountForNpc(templateId);
+      if (modelCount < variationId) {
+          handler->PSendSysMessage("The highest equipment set variation for targetted NPC is '%u'. The specified variation can not be higher than this number.", modelCount);
+          handler->SetSentErrorMessage(true);
+          return false;
+      }
+      target->LoadEquipment(variationId, true);
+      handler->PSendSysMessage("Targetted NPC set to equipment variation '%u'!", variationId);
+      return true;
+  }
 };
 
 void AddSC_npc_commandscript()

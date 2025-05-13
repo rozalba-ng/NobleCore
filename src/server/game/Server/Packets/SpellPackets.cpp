@@ -388,6 +388,7 @@ ByteBuffer& operator<<(ByteBuffer& data, SpellCastData const& spellCastData)
     data << spellCastData.Visual;
     data << uint32(spellCastData.CastFlags);
     data << uint32(spellCastData.CastFlagsEx);
+    data << uint32(spellCastData.CastFlagsEx2);
     data << uint32(spellCastData.CastTime);
     data << spellCastData.MissileTrajectory;
     data << int32(spellCastData.AmmoDisplayID);
@@ -612,8 +613,17 @@ WorldPacket const* ModifyCooldown::Write()
     _worldPacket << int32(SpellID);
     _worldPacket << int32(DeltaTime);
     _worldPacket << Bits<1>(IsPet);
-    _worldPacket << Bits<1>(WithoutCategoryCooldown);
+    _worldPacket << Bits<1>(SkipCategory);
     _worldPacket.FlushBits();
+
+    return &_worldPacket;
+}
+
+WorldPacket const* UpdateCooldown::Write()
+{
+    _worldPacket << int32(SpellID);
+    _worldPacket << float(ModChange);
+    _worldPacket << float(ModRate);
 
     return &_worldPacket;
 }
@@ -690,6 +700,17 @@ WorldPacket const* SetSpellCharges::Write()
     _worldPacket << uint8(ConsumedCharges);
     _worldPacket << float(ChargeModRate);
     _worldPacket << Bits<1>(IsPet);
+    _worldPacket.FlushBits();
+
+    return &_worldPacket;
+}
+
+WorldPacket const* UpdateChargeCategoryCooldown::Write()
+{
+    _worldPacket << int32(Category);
+    _worldPacket << float(ModChange);
+    _worldPacket << float(ModRate);
+    _worldPacket << Bits<1>(Snapshot);
     _worldPacket.FlushBits();
 
     return &_worldPacket;
@@ -964,14 +985,15 @@ MirrorImageComponentedData::~MirrorImageComponentedData() = default;
 WorldPacket const* MirrorImageComponentedData::Write()
 {
     _worldPacket << UnitGUID;
-    _worldPacket << int32(DisplayID);
-    _worldPacket << int32(SpellVisualKitID);
+    _worldPacket << int32(ChrModelID);
     _worldPacket << uint8(RaceID);
     _worldPacket << uint8(Gender);
     _worldPacket << uint8(ClassID);
     _worldPacket << uint32(Customizations.size());
     _worldPacket << GuildGUID;
     _worldPacket << uint32(ItemDisplayID.size());
+    _worldPacket << int32(SpellVisualKitID);
+    _worldPacket << int32(Unused_1115);
 
     for (Character::ChrCustomizationChoice const& customization : Customizations)
         _worldPacket << customization;
@@ -1109,4 +1131,12 @@ void KeyboundOverride::Read()
 {
     _worldPacket >> OverrideID;
 }
+
+void UpdateSpellVisual::Read()
+{
+    _worldPacket >> SpellID;
+    _worldPacket >> Visual;
+    _worldPacket >> TargetGUID;
 }
+}
+

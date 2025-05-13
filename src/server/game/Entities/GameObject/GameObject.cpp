@@ -486,7 +486,7 @@ public:
 
     int32 GetMapIdForSpawning() const override
     {
-        return _owner.GetGOInfo()->transport.SpawnMap;
+        return _owner.GetGOInfo()->GetSpawnMap();
     }
 
     void SetAutoCycleBetweenStopFrames(bool on)
@@ -3283,6 +3283,12 @@ void GameObject::Use(Unit* user, bool ignoreCastInProgress /*= false*/)
                 return;
 
             Player* player = user->ToPlayer();
+
+            if (player->HasAuraType(SPELL_AURA_MOD_SHAPESHIFT))
+            {
+                player->SendDirectMessage(WorldPackets::Misc::DisplayGameError(GameError::ERR_NOT_WHILE_SHAPESHIFTED).Write());
+                return;
+            }
 
             WorldPackets::Misc::EnableBarberShop enableBarberShop;
             enableBarberShop.CustomizationFeatureMask = info->barberChair.CustomizationFeatureMask;

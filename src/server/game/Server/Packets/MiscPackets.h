@@ -40,6 +40,26 @@ namespace WorldPackets
 {
     namespace Misc
     {
+        class PreloadWorld final : public ServerPacket
+        {
+        public:
+            PreloadWorld() : ServerPacket(SMSG_PRELOAD_WORLD) { }
+
+            WorldPacket const* Write() override;
+
+            uint32 MapID = 0;
+            float x = 0.f;
+            float y = 0.f;
+            float z = 0.f;
+            float o = 0.f;
+            uint32 unk1 = -1;
+            uint32 unk2 = -1;
+            uint32 unk3 = 21;
+            uint32 unk4 = 0;
+            uint32 unk5 = 0;
+            uint32 unk6 = 0;
+        };
+
         class BindPointUpdate final : public ServerPacket
         {
         public:
@@ -1061,6 +1081,45 @@ namespace WorldPackets
 
             bool IsFullUpdate = false;
             WarbandSceneCollectionContainer const* WarbandScenes = nullptr;
+        };
+
+        class AccountNotificationAcknowledge final : public ClientPacket
+        {
+        public:
+            AccountNotificationAcknowledge(WorldPacket&& packet) : ClientPacket(CMSG_ACCOUNT_NOTIFICATION_ACKNOWLEDGED, std::move(packet)) { }
+
+            void Read() override;
+
+            int64 unk;
+            int32 unk2;
+            int32 unk3;
+        };
+
+        class ShowTradeSkillResponse final : public ServerPacket
+        {
+        public:
+            ShowTradeSkillResponse() : ServerPacket(SMSG_SHOW_TRADE_SKILL_RESPONSE, 16 + 4 + 12) { }
+
+            WorldPacket const* Write() override;
+
+            ObjectGuid PlayerGUID;
+            uint32 SpellId = 0;
+            std::vector<int32> SkillLineIDs;
+            std::vector<int32> SkillRanks;
+            std::vector<int32> SkillMaxRanks;
+            std::vector<int32> KnownAbilitySpellIDs;
+        };
+
+        class ShowTradeSkill final : public ClientPacket
+        {
+        public:
+            ShowTradeSkill(WorldPacket&& packet) : ClientPacket(CMSG_SHOW_TRADE_SKILL, std::move(packet)) { }
+
+            void Read() override;
+
+            ObjectGuid PlayerGUID;
+            uint32 SpellID = 0;
+            uint32 SkillLineID = 0;
         };
     }
 }

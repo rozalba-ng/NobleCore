@@ -75,6 +75,9 @@ class TC_GAME_API GameObjectAI
         // Called when a player opens a gossip dialog with the gameobject.
         virtual bool OnGossipHello(Player* /*player*/) { return false; }
 
+        // Called when a player opens a gossip dialog with the gameobject.
+        virtual bool OnGossipHello(Player* /*player*/, GameObject* /*go*/) { return false; }
+
         // Called when a player selects a gossip item in the gameobject's gossip menu.
         virtual bool OnGossipSelect(Player* /*player*/, uint32 /*menuId*/, uint32 /*gossipListId*/) { return false; }
 

@@ -388,6 +388,7 @@ class TC_GAME_API SpellInfo
         SpellRangeEntry const* RangeEntry = nullptr;
         float Speed = 0.0f;
         float LaunchDelay = 0.0f;
+        float MinDuration = 0.0f;
         uint32 StackAmount = 0;
         std::array<int32, MAX_SPELL_TOTEMS> Totem = {};
         std::array<uint16, MAX_SPELL_TOTEMS> TotemCategory = {};
@@ -519,7 +520,7 @@ class TC_GAME_API SpellInfo
         bool IsAffected(uint32 familyName, flag128 const& familyFlags) const;
 
         bool IsAffectedBySpellMods() const;
-        bool IsAffectedBySpellMod(SpellModifier const* mod) const;
+        uint32 IsAffectedBySpellMod(SpellModifier const* mod) const;
         bool IsUpdatingTemporaryAuraValuesBySpellMod() const;
 
         bool CanPierceImmuneAura(SpellInfo const* auraSpellInfo) const;

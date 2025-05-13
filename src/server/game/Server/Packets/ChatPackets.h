@@ -101,6 +101,17 @@ namespace WorldPackets
             ChatAddonMessageParams Params;
         };
 
+        // CMSG_COMMENTATOR_ENABLE
+        class CommentatorModeEnable final : public ClientPacket
+        {
+        public:
+            CommentatorModeEnable(WorldPacket&& packet) : ClientPacket(CMSG_COMMENTATOR_ENABLE, std::move(packet)) { }
+
+            void Read() override;
+
+            uint32 Action = 0;
+        };
+
         // CMSG_CHAT_ADDON_MESSAGE_CHANNEL
         class ChatAddonMessageTargeted final : public ClientPacket
         {

@@ -1,14 +1,13 @@
 #include "custom_display_handler.h"
 #include "Define.h"
-#include "Base32.h"
 #include "Chat.h"
 #include "ChatCommand.h"
 #include "Common.h"
 
-
-namespace Noblegarden
+namespace RoleplayCore
 {
     using namespace Trinity::ChatCommands;
+
     class DisplayCommands : public CommandScript
     {
     public:
@@ -32,7 +31,6 @@ namespace Noblegarden
                 { "tabard",    rbac::RBAC_PERM_COMMAND_DISP_TABARD,     false, Display<DISPLAY_TYPE_TABARD>,          "" },
                 { "mainhand",  rbac::RBAC_PERM_COMMAND_DISP_MAINHAND,   false, Display<DISPLAY_TYPE_MAIN>,            "" },
                 { "offhand",   rbac::RBAC_PERM_COMMAND_DISP_OFFHAND,    false, Display<DISPLAY_TYPE_OFF>,             "" },
-                //{ "current",   rbac::RBAC_ROLE_PLAYER, false, SendCurrentTrasmogrification,       "" },
             };
 
             static ChatCommandTable commandTable =
@@ -43,29 +41,31 @@ namespace Noblegarden
             return commandTable;
         }
 
-        template <DisplayType T, bool secondary = false> static bool Display(ChatHandler* handler, char const* args)
+        // Optimized template method for processing display commands
+        template <DisplayType T, bool secondary = false>
+        static bool Display(ChatHandler* handler, char const* args)
         {
-            if (char const* id = handler->extractKeyFromLink((char*)args, "Hitem"))
-            {
-                uint32 bonus = 0;
-
-                if (auto bonuses = strtok(NULL, " "))
-                {
-                    bonus = strtol(bonuses, NULL, 10);
-                }
-
-                DisplayHandler::GetInstance().Display(handler, T, (uint32)strtoul(id, nullptr, 10), bonus, secondary);
-                return true;
-            }
-            else
-            {
+            if (!handler || !args)
                 return false;
-            }
+
+            char const* id = handler->extractKeyFromLink((char*)args, "Hitem");
+            if (!id)
+                return false;
+
+            // Retrieve item ID
+            uint32 itemId = static_cast<uint32>(strtoul(id, nullptr, 10));
+
+            // Retrieve the bonus, if specified
+            uint32 bonus = 0;
+            char* bonusStr = strtok(NULL, " ");
+            if (bonusStr)
+                bonus = strtol(bonusStr, NULL, 10);
+
+            // Call the display handler
+            DisplayHandler::GetInstance().Display(handler, T, itemId, bonus, secondary);
+            return true;
         }
     };
-};
-
-void AddSC_CustomDisplayCommands()
-{
-    new Noblegarden::DisplayCommands();
 }
+
+void AddSC_CustomDisplayCommands() { new RoleplayCore::DisplayCommands(); }

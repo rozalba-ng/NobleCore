@@ -93,6 +93,12 @@ void WorldPackets::Chat::ChatAddonMessage::Read()
     _worldPacket >> Params;
 }
 
+
+void WorldPackets::Chat::CommentatorModeEnable::Read()
+{
+    Action = _worldPacket.ReadBits(3);
+}
+
 void WorldPackets::Chat::ChatAddonMessageTargeted::Read()
 {
     _worldPacket >> Params;

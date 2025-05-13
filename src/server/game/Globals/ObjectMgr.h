@@ -923,7 +923,6 @@ struct PlayerChoiceResponseMawPower
 {
     int32 TypeArtFileID = 0;
     Optional<int32> Rarity;
-    Optional<uint32> RarityColor;
     int32 SpellID = 0;
     int32 MaxStacks = 0;
 };

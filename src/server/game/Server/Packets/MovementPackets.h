@@ -584,6 +584,16 @@ namespace WorldPackets
             float Height = 1.0f;
         };
 
+        class DiscardedTimeSyncAcks final : public ClientPacket
+        {
+        public:
+            DiscardedTimeSyncAcks(WorldPacket&& packet) : ClientPacket(CMSG_DISCARDED_TIME_SYNC_ACKS, std::move(packet)) {}
+
+            void Read() override;
+
+            uint32 MaxSequenceIndex = 0;
+        };
+
         class MoveTimeSkipped final : public ClientPacket
         {
         public:

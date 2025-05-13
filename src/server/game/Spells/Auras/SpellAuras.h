@@ -145,7 +145,10 @@ class TC_GAME_API Aura
         ObjectGuid GetCastItemGUID() const { return m_castItemGuid; }
         uint32 GetCastItemId() const { return m_castItemId; }
         int32 GetCastItemLevel() const { return m_castItemLevel; }
+        uint32 GetSpellXSpellVisualId() const { return m_spellXSpellVisualId; }
+        void SetSpellXSpellVisualId(uint32 visual) { m_spellXSpellVisualId = visual; }
         SpellCastVisual GetSpellVisual() const { return m_spellVisual; }
+        void SetSpellVisual(SpellCastVisual visual) { m_spellVisual = visual; }
         Unit* GetCaster() const;
         WorldObject* GetWorldObjectCaster() const;
         WorldObject* GetOwner() const { return m_owner; }
@@ -225,7 +228,7 @@ class TC_GAME_API Aura
         * @return Aura key.
         */
         AuraKey GenerateKey(uint32& recalculateMask) const;
-        void SetLoadedState(int32 maxDuration, int32 duration, int32 charges, uint8 stackAmount, uint32 recalculateMask, int32* amount);
+        void SetLoadedState(int32 maxDuration, int32 duration, int32 charges, uint32 recalculateMask, int32* amount);
 
         // helpers for aura effects
         bool CanPeriodicTickCrit() const;
@@ -351,7 +354,8 @@ class TC_GAME_API Aura
         ObjectGuid const m_castItemGuid;                    // it is NOT safe to keep a pointer to the item because it may get deleted
         uint32 m_castItemId;
         int32 m_castItemLevel;
-        SpellCastVisual const m_spellVisual;
+        uint32 m_spellXSpellVisualId;
+        SpellCastVisual m_spellVisual;
         time_t const m_applyTime;
         WorldObject* const m_owner;
 

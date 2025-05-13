@@ -856,6 +856,27 @@ namespace LuaCreature
     }
 
     /**
+     * Returns the [Creature]'s rank as defined in the creature template.
+     *
+     * Normal                    = 0,
+     * Elite                     = 1,
+     * RareElite                 = 2,
+     * Obsolete                  = 3,
+     * Rare                      = 4,
+     * Trivial                   = 5,
+     * MinusMob                  = 6
+     * 
+     * @return uint32 rank
+     */
+    int GetRank(Eluna* E, Creature* creature)
+    {
+        CreatureClassifications rank = creature->GetCreatureTemplate()->Classification;
+
+        E->Push(uint32(rank));
+        return 1;
+    }
+
+    /**
      * Returns the loot mode for the [Creature].
      *
      * <pre>
@@ -1375,6 +1396,7 @@ namespace LuaCreature
         { "GetLootMode", &LuaCreature::GetLootMode },
         { "GetNPCFlags", &LuaCreature::GetNPCFlags },
         { "GetExtraFlags", &LuaCreature::GetExtraFlags },
+        { "GetRank", &LuaCreature::GetRank },
         { "GetDBTableGUIDLow", &LuaCreature::GetDBTableGUIDLow },
         { "GetCreatureFamily", &LuaCreature::GetCreatureFamily },
         { "GetThreat", &LuaCreature::GetThreat },

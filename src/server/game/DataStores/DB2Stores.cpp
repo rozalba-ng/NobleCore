@@ -260,6 +260,7 @@ DB2Storage<ModifiedCraftingCategoryEntry>       sModifiedCraftingCategoryStore("
 DB2Storage<ModifiedCraftingReagentItemEntry>    sModifiedCraftingReagentItemStore("ModifiedCraftingReagentItem.db2", &ModifiedCraftingReagentItemLoadInfo::Instance);
 DB2Storage<ModifiedCraftingReagentSlotEntry>    sModifiedCraftingReagentSlotStore("ModifiedCraftingReagentSlot.db2", &ModifiedCraftingReagentSlotLoadInfo::Instance);
 DB2Storage<ModifiedCraftingSpellSlotEntry>      sModifiedCraftingSpellSlotStore("ModifiedCraftingSpellSlot.db2", &ModifiedCraftingSpellSlotLoadInfo::Instance);
+DB2Storage<ModifiedCraftingItemEntry>           sModifiedCraftingItemStore("ModifiedCraftingItem.db2", &ModifiedCraftingItemLoadInfo::Instance);
 DB2Storage<ModifierTreeEntry>                   sModifierTreeStore("ModifierTree.db2", &ModifierTreeLoadInfo::Instance);
 DB2Storage<MountCapabilityEntry>                sMountCapabilityStore("MountCapability.db2", &MountCapabilityLoadInfo::Instance);
 DB2Storage<MountEntry>                          sMountStore("Mount.db2", &MountLoadInfo::Instance);
@@ -280,12 +281,14 @@ DB2Storage<ParagonReputationEntry>              sParagonReputationStore("Paragon
 DB2Storage<PathEntry>                           sPathStore("Path.db2", &PathLoadInfo::Instance);
 DB2Storage<PathNodeEntry>                       sPathNodeStore("PathNode.db2", &PathNodeLoadInfo::Instance);
 DB2Storage<PathPropertyEntry>                   sPathPropertyStore("PathProperty.db2", &PathPropertyLoadInfo::Instance);
+DB2Storage<PerksActivityEntry>                  sPerksActivityStore("PerksActivity.db2", &PerksActivityLoadInfo::Instance);
 DB2Storage<PhaseEntry>                          sPhaseStore("Phase.db2", &PhaseLoadInfo::Instance);
 DB2Storage<PhaseXPhaseGroupEntry>               sPhaseXPhaseGroupStore("PhaseXPhaseGroup.db2", &PhaseXPhaseGroupLoadInfo::Instance);
 DB2Storage<PlayerConditionEntry>                sPlayerConditionStore("PlayerCondition.db2", &PlayerConditionLoadInfo::Instance);
 DB2Storage<PowerDisplayEntry>                   sPowerDisplayStore("PowerDisplay.db2", &PowerDisplayLoadInfo::Instance);
 DB2Storage<PowerTypeEntry>                      sPowerTypeStore("PowerType.db2", &PowerTypeLoadInfo::Instance);
 DB2Storage<PrestigeLevelInfoEntry>              sPrestigeLevelInfoStore("PrestigeLevelInfo.db2", &PrestigeLevelInfoLoadInfo::Instance);
+DB2Storage<PVPBracketTypesEntry>                sPVPBracketTypesStore("PVPBracketTypes.db2", &PvpBracketTypesLoadInfo::Instance);
 DB2Storage<PVPDifficultyEntry>                  sPVPDifficultyStore("PVPDifficulty.db2", &PvpDifficultyLoadInfo::Instance);
 DB2Storage<PVPItemEntry>                        sPVPItemStore("PVPItem.db2", &PvpItemLoadInfo::Instance);
 DB2Storage<PVPStatEntry>                        sPVPStatStore("PVPStat.db2", &PvpStatLoadInfo::Instance);
@@ -299,10 +302,14 @@ DB2Storage<QuestInfoEntry>                      sQuestInfoStore("QuestInfo.db2",
 DB2Storage<QuestLineXQuestEntry>                sQuestLineXQuestStore("QuestLineXQuest.db2", &QuestLineXQuestLoadInfo::Instance);
 DB2Storage<QuestMoneyRewardEntry>               sQuestMoneyRewardStore("QuestMoneyReward.db2", &QuestMoneyRewardLoadInfo::Instance);
 DB2Storage<QuestPackageItemEntry>               sQuestPackageItemStore("QuestPackageItem.db2", &QuestPackageItemLoadInfo::Instance);
+DB2Storage<QuestPOIPointEntry>                  sQuestPOIPointStore("QuestPOIPoint.db2", &QuestPOIPointLoadInfo::Instance);
 DB2Storage<QuestSortEntry>                      sQuestSortStore("QuestSort.db2", &QuestSortLoadInfo::Instance);
 DB2Storage<QuestV2Entry>                        sQuestV2Store("QuestV2.db2", &QuestV2LoadInfo::Instance);
 DB2Storage<QuestXPEntry>                        sQuestXPStore("QuestXP.db2", &QuestXpLoadInfo::Instance);
 DB2Storage<RandPropPointsEntry>                 sRandPropPointsStore("RandPropPoints.db2", &RandPropPointsLoadInfo::Instance);
+DB2Storage<ResearchBranchEntry>                 sResearchBranchStore("ResearchBranch.db2", &ResearchBranchLoadInfo::Instance);
+DB2Storage<ResearchProjectEntry>                sResearchProjectStore("ResearchProject.db2", &ResearchProjectLoadInfo::Instance);
+DB2Storage<ResearchSiteEntry>                   sResearchSiteStore("ResearchSite.db2", &ResearchSiteLoadInfo::Instance);
 DB2Storage<RewardPackEntry>                     sRewardPackStore("RewardPack.db2", &RewardPackLoadInfo::Instance);
 DB2Storage<RewardPackXCurrencyTypeEntry>        sRewardPackXCurrencyTypeStore("RewardPackXCurrencyType.db2", &RewardPackXCurrencyTypeLoadInfo::Instance);
 DB2Storage<RewardPackXItemEntry>                sRewardPackXItemStore("RewardPackXItem.db2", &RewardPackXItemLoadInfo::Instance);
@@ -930,6 +937,7 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sModifiedCraftingReagentSlotStore);
     LOAD_DB2(sModifiedCraftingReagentItemStore);
     LOAD_DB2(sModifiedCraftingSpellSlotStore);
+    LOAD_DB2(sModifiedCraftingItemStore);
     LOAD_DB2(sModifierTreeStore);
     LOAD_DB2(sMountCapabilityStore);
     LOAD_DB2(sMountStore);
@@ -950,12 +958,14 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sPathStore);
     LOAD_DB2(sPathNodeStore);
     LOAD_DB2(sPathPropertyStore);
+    LOAD_DB2(sPerksActivityStore);
     LOAD_DB2(sPhaseStore);
     LOAD_DB2(sPhaseXPhaseGroupStore);
     LOAD_DB2(sPlayerConditionStore);
     LOAD_DB2(sPowerDisplayStore);
     LOAD_DB2(sPowerTypeStore);
     LOAD_DB2(sPrestigeLevelInfoStore);
+    LOAD_DB2(sPVPBracketTypesStore);
     LOAD_DB2(sPVPDifficultyStore);
     LOAD_DB2(sPVPItemStore);
     LOAD_DB2(sPVPStatStore);
@@ -969,10 +979,14 @@ uint32 DB2Manager::LoadStores(std::string const& dataPath, LocaleConstant defaul
     LOAD_DB2(sQuestLineXQuestStore);
     LOAD_DB2(sQuestMoneyRewardStore);
     LOAD_DB2(sQuestPackageItemStore);
+    LOAD_DB2(sQuestPOIPointStore);
     LOAD_DB2(sQuestSortStore);
     LOAD_DB2(sQuestV2Store);
     LOAD_DB2(sQuestXPStore);
     LOAD_DB2(sRandPropPointsStore);
+    LOAD_DB2(sResearchBranchStore);
+    LOAD_DB2(sResearchProjectStore);
+    LOAD_DB2(sResearchSiteStore);
     LOAD_DB2(sRewardPackStore);
     LOAD_DB2(sRewardPackXCurrencyTypeStore);
     LOAD_DB2(sRewardPackXItemStore);
@@ -1314,6 +1328,7 @@ void DB2Manager::IndexLoadedStores()
     for (ChrRaceXChrModelEntry const* raceModel : sChrRaceXChrModelStore)
     {
         _chrPlayerModels.insert(raceModel->ChrModelID);
+
         if (ChrModelEntry const* model = sChrModelStore.LookupEntry(raceModel->ChrModelID))
         {
             _chrModelsByRaceAndGender[{ uint8(raceModel->ChrRacesID), uint8(raceModel->Sex) }] = model;
@@ -3107,6 +3122,15 @@ ParagonReputationEntry const* DB2Manager::GetParagonReputation(uint32 factionId)
 PathDb2 const* DB2Manager::GetPath(uint32 pathId) const
 {
     return Trinity::Containers::MapGetValuePtr(_paths, pathId);
+}
+
+PVPBracketTypesEntry const* DB2Manager::GetBattlegroundBracketTypeById(BattlegroundBracketId id)
+{
+    for (PVPBracketTypesEntry const* entry : sPVPBracketTypesStore)
+        if (entry->BracketID == id)
+            return entry;
+
+    return nullptr;
 }
 
 PVPDifficultyEntry const* DB2Manager::GetBattlegroundBracketByLevel(uint32 mapid, uint32 level)

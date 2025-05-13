@@ -1987,7 +1987,6 @@ namespace LuaGlobalFunctions
 
         const int BAN_ACCOUNT = 0;
         const int BAN_CHARACTER = 1;
-        const int BAN_IP = 2;
 
         BanMode mode = BanMode::BAN_ACCOUNT;
 
@@ -2002,11 +2001,6 @@ namespace LuaGlobalFunctions
                 if (!normalizePlayerName(nameOrIP))
                     return luaL_argerror(E->L, 2, "invalid character name");
                 mode = BanMode::BAN_CHARACTER;
-                break;
-            case BAN_IP:
-                if (!IsIPAddress(nameOrIP.c_str()))
-                    return luaL_argerror(E->L, 2, "invalid ip");
-                mode = BanMode::BAN_IP;
                 break;
             default:
                 return luaL_argerror(E->L, 1, "unknown banmode");
