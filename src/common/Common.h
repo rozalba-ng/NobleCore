@@ -32,6 +32,9 @@
 #include "LockedQueue.h"
 #include "StringFormat.h"
 
+using namespace std::string_literals;
+using namespace std::string_view_literals;
+
 #define STRINGIZE(a) #a
 
 enum TimeConstants

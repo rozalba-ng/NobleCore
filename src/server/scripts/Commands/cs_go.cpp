@@ -39,7 +39,6 @@ EndScriptData */
 #include "Transport.h"
 #include "Util.h"
 #include "WorldSession.h"
-#include <sstream>
 
 using namespace Trinity::ChatCommands;
 
