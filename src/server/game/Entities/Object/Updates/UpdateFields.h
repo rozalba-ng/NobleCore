@@ -214,8 +214,8 @@ struct AzeriteItemData : public IsUpdateFieldStructureTag, public HasChangesMask
 
 struct SpellCastVisual : public IsUpdateFieldStructureTag
 {
-    int32 SpellXSpellVisualID;
-    int32 ScriptVisualID;
+    uint32 SpellXSpellVisualID;
+    uint32 ScriptVisualID;
 
     void WriteCreate(ByteBuffer& data, Object const* owner, Player const* receiver) const;
     void WriteUpdate(ByteBuffer& data, bool ignoreChangesMask, Object const* owner, Player const* receiver) const;

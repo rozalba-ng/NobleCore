@@ -21,7 +21,10 @@
  */
 
 #include "ScriptMgr.h"
+#include "AreaTrigger.h"
+#include "AreaTriggerAI.h"
 #include "DB2Stores.h"
+#include "PathGenerator.h"
 #include "Player.h"
 #include "Spell.h"
 #include "SpellAuraEffects.h"
@@ -63,6 +66,7 @@ enum MonkSpells
     SPELL_MONK_ROLL_BACKWARD                            = 109131,
     SPELL_MONK_ROLL_FORWARD                             = 107427,
     SPELL_MONK_SAVE_THEM_ALL_HEAL_BONUS                 = 390105,
+    SPELL_MONK_SONG_OF_CHI_JI_STUN                      = 198909,
     SPELL_MONK_SOOTHING_MIST                            = 115175,
     SPELL_MONK_STANCE_OF_THE_SPIRITED_CRANE             = 154436,
     SPELL_MONK_STAGGER_DAMAGE_AURA                      = 124255,
@@ -103,7 +107,6 @@ enum MonkSpells
     SPELL_MONK_CLASH_RUSH                               = 324383,
     SPELL_MONK_CLASH_STUN                               = 324382,
     SPELL_MONK_HEALING_ELIXIRS_RESTORE_HEALTH           = 122281,
-    SPELL_MONK_SONG_OF_CHI_JI_STUN                      = 198909,
     SPELL_MONK_CHI_WAVE_HEAL                            = 132463,
     SPELL_MONK_CHI_BURST_HEAL                           = 130654,
     SPELL_MONK_CHI_BURST_DAMAGE                         = 148135,
@@ -533,6 +536,37 @@ class spell_monk_save_them_all : public AuraScript
     {
         DoCheckProc += AuraCheckProcFn(spell_monk_save_them_all::CheckProc);
         OnEffectProc += AuraEffectProcFn(spell_monk_save_them_all::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+    }
+};
+
+// 198898 - Song of Chi-Ji
+struct at_monk_song_of_chi_ji : AreaTriggerAI
+{
+    using AreaTriggerAI::AreaTriggerAI;
+
+    void OnInitialize() override
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(at->GetSpellId(), DIFFICULTY_NONE);
+        if (!spellInfo)
+            return;
+
+        Unit* caster = at->GetCaster();
+        if (!caster)
+            return;
+
+        Position destPos = at->GetFirstCollisionPosition(spellInfo->GetMaxRange(false, caster), 0.0f);
+        PathGenerator path(at);
+
+        path.CalculatePath(destPos.GetPositionX(), destPos.GetPositionY(), destPos.GetPositionZ(), false);
+
+        at->InitSplines(path.GetPath());
+    }
+
+    void OnUnitEnter(Unit* unit) override
+    {
+        if (Unit* caster = at->GetCaster())
+            if (caster->IsValidAttackTarget(unit))
+                caster->CastSpell(unit, SPELL_MONK_SONG_OF_CHI_JI_STUN, TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR);
     }
 };
 
@@ -1222,26 +1256,6 @@ struct at_monk_ring_of_peace : AreaTriggerAI
         if (!caster->IsFriendlyTo(unit))
         {
             caster->CastSpell(unit, SPELL_MONK_RING_OF_PEACE_KNOCKBACK, true);
-        }
-    }
-};
-
-// Song of Chi-Ji - 198898
-// AreaTriggerID - 5484 
-struct at_monk_song_of_chi_ji : AreaTriggerAI
-{
-    at_monk_song_of_chi_ji(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
-
-    void OnUnitEnter(Unit* unit) override
-    {
-        Unit* caster = at->GetCaster();
-        if (!caster || !unit)
-            return;
-        if (!caster->ToPlayer())
-            return;
-        if (!caster->IsFriendlyTo(unit))
-        {
-            caster->CastSpell(unit, SPELL_MONK_SONG_OF_CHI_JI_STUN, true);
         }
     }
 };
@@ -2756,6 +2770,7 @@ void AddSC_monk_spell_scripts()
     RegisterSpellScript(spell_monk_roll);
     RegisterSpellScript(spell_monk_roll_aura);
     RegisterSpellScript(spell_monk_save_them_all);
+    RegisterAreaTriggerAI(at_monk_song_of_chi_ji);
     RegisterSpellScript(spell_monk_stagger);
     RegisterSpellScript(spell_monk_stagger_damage_aura);
     RegisterSpellScript(spell_monk_stagger_debuff_aura);
@@ -2774,7 +2789,6 @@ void AddSC_monk_spell_scripts()
     new spell_monk_dampen_harm();
     new spell_monk_healing_elixirs_aura();
     RegisterAreaTriggerAI(at_monk_ring_of_peace);
-    RegisterAreaTriggerAI(at_monk_song_of_chi_ji);
     new spell_monk_chi_wave();
     new spell_monk_chi_wave_damage_missile();
     new spell_monk_chi_wave_heal_missile();

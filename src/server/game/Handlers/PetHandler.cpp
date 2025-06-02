@@ -426,7 +426,7 @@ void WorldSession::SendQueryPetNameResponse(ObjectGuid guid)
 {
     WorldPackets::Query::QueryPetNameResponse response;
 
-    response.PetGUID = guid;
+    response.UnitGUID = guid;
 
     if (Creature* unit = ObjectAccessor::GetCreatureOrPetOrVehicle(*_player, guid))
     {

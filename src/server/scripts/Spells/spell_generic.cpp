@@ -4922,6 +4922,7 @@ class spell_gen_eject_passengers_3_8 : public SpellScript
 };
 
 // 83781 - Reverse Cast Ride Vehicle
+// 85299 - Reverse Cast Ride Seat 1
 // 258344 - Reverse Cast Ride Vehicle
 class spell_gen_reverse_cast_target_to_caster_triggered: public SpellScript
 {
@@ -5609,6 +5610,20 @@ private:
     float _healthPct;
 };
 
+// 92678 - Abandon Vehicle
+class spell_gen_abandon_vehicle : public SpellScript
+{
+    void HandleHitTarget(SpellEffIndex /*effIndex*/) const
+    {
+        GetHitUnit()->ExitVehicle();
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_gen_abandon_vehicle::HandleHitTarget, EFFECT_FIRST_FOUND, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
 //Allied Race SpellFix
 
 // Arcane Pulse (Nightborne racial) - 260364
@@ -5966,6 +5981,7 @@ void AddSC_generic_spell_scripts()
     RegisterAreaTriggerAI(at_gen_spatial_rift);
     RegisterSpellScript(spell_gen_force_phase_update);
 	RegisterSpellScriptWithArgs(spell_gen_no_npc_damage_below_override, "spell_gen_no_npc_damage_below_override_70", 70.0f);
+    RegisterSpellScript(spell_gen_abandon_vehicle);
 	
 	//Allied Race Spells
     RegisterSpellScript(spell_arcane_pulse);

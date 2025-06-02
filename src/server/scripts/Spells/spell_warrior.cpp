@@ -139,6 +139,20 @@ enum WarriorMisc
     SPELL_VISUAL_BLAZING_CHARGE = 26423
 };
 
+// 107574 - Avatar
+class spell_warr_avatar : public SpellScript
+{
+    void HandleRemoveImpairingAuras(SpellEffIndex /*effIndex*/) const
+    {
+        GetCaster()->RemoveMovementImpairingAuras(true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_warr_avatar::HandleRemoveImpairingAuras, EFFECT_5, SPELL_EFFECT_SCRIPT_EFFECT);
+    }
+};
+
 // 23881 - Bloodthirst
 class spell_warr_bloodthirst : public SpellScript
 {
@@ -972,6 +986,9 @@ class spell_warr_victory_rush : public SpellScript
             return;
 
         caster->CastSpell(caster, SPELL_WARRIOR_VICTORY_RUSH_HEAL, TRIGGERED_FULL_MASK);
+
+        if (GetCaster()->HasAura(SPELL_WARRIOR_VICTORIOUS))
+            GetCaster()->RemoveAura(SPELL_WARRIOR_VICTORIOUS);
     }
 
     void Register() override
@@ -1229,7 +1246,7 @@ class aura_warr_ignore_pain : public AuraScript
             if (!spellInfo)
                 return;
 
-            SpellNonMeleeDamage spell(caster, caster->GetVictim(), spellInfo, { static_cast<int32>(spellInfo->GetSpellXSpellVisualId(caster)), 0 }, spellInfo->GetSchoolMask());
+            SpellNonMeleeDamage spell(caster, caster->GetVictim(), spellInfo, { static_cast<uint32>(spellInfo->GetSpellXSpellVisualId(caster)), 0 }, spellInfo->GetSchoolMask());
             spell.damage = dmgInfo.GetDamage() - dmgInfo.GetDamage() * 0.9f;
             spell.cleanDamage = spell.damage;
             caster->DealSpellDamage(&spell, false);
@@ -1830,6 +1847,7 @@ class spell_warr_cleave_dmg : public SpellScript
 
 void AddSC_warrior_spell_scripts()
 {
+    RegisterSpellScript(spell_warr_avatar);
     RegisterSpellScript(spell_warr_bloodthirst);
     RegisterSpellScript(spell_warr_brutal_vitality);
     RegisterSpellScript(spell_warr_charge);

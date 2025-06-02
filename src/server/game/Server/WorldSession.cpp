@@ -20,7 +20,6 @@
 */
 
 #include "WorldSession.h"
-#include "QueryHolder.h"
 #include "AccountMgr.h"
 #include "AuthenticationPackets.h"
 #include "BattlePetMgr.h"
@@ -124,6 +123,7 @@ WorldSession::WorldSession(uint32 id, std::string&& name, uint32 battlenetAccoun
     _os(std::move(os)),
     _clientBuild(build),
     _clientBuildVariant(clientBuildVariant),
+    _realmListSecret(),
     _battlenetRequestToken(0),
     _logoutTime(0),
     m_inQueue(false),
@@ -134,6 +134,7 @@ WorldSession::WorldSession(uint32 id, std::string&& name, uint32 battlenetAccoun
     m_sessionDbLocaleIndex(locale),
     _timezoneOffset(timezoneOffset),
     m_latency(0),
+    _tutorials(),
     _tutorialsChanged(TUTORIALS_FLAG_NONE),
     _filterAddonMessages(false),
     recruiterId(recruiter),
@@ -150,8 +151,6 @@ WorldSession::WorldSession(uint32 id, std::string&& name, uint32 battlenetAccoun
     _battlePetMgr(std::make_unique<BattlePets::BattlePetMgr>(this)),
     _collectionMgr(std::make_unique<CollectionMgr>(this))
 {
-    memset(_tutorials, 0, sizeof(_tutorials));
-
     if (sock)
     {
         m_Address = sock->GetRemoteIpAddress().to_string();
@@ -977,7 +976,7 @@ void WorldSession::SendAccountDataTimes(ObjectGuid playerGuid, uint32 mask)
 
 void WorldSession::LoadTutorialsData(PreparedQueryResult result)
 {
-    memset(_tutorials, 0, sizeof(uint32) * MAX_ACCOUNT_TUTORIAL_VALUES);
+    _tutorials = { };
 
     if (result)
     {
@@ -992,7 +991,7 @@ void WorldSession::LoadTutorialsData(PreparedQueryResult result)
 void WorldSession::SendTutorialsData()
 {
     WorldPackets::Misc::TutorialFlags packet;
-    memcpy(packet.TutorialData, _tutorials, sizeof(_tutorials));
+    packet.TutorialData = _tutorials;
     SendPacket(packet.Write());
 }
 

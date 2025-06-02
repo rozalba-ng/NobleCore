@@ -2196,7 +2196,7 @@ public:
 
         // non-melee damage
 
-        SpellNonMeleeDamage damageInfo(attacker, target, *spellInfo, { static_cast<int32>((*spellInfo)->GetSpellXSpellVisualId(handler->GetSession()->GetPlayer())), 0 }, (*spellInfo)->SchoolMask);
+        SpellNonMeleeDamage damageInfo(attacker, target, *spellInfo, { static_cast<uint32>((*spellInfo)->GetSpellXSpellVisualId(handler->GetSession()->GetPlayer())), 0 }, (*spellInfo)->SchoolMask);
         damageInfo.damage = damage;
         Unit::DealDamageMods(damageInfo.attacker, damageInfo.target, damageInfo.damage, &damageInfo.absorb);
         target->DealSpellDamage(&damageInfo, true);

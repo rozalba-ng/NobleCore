@@ -930,8 +930,7 @@ void WorldSession::JoinBracket(uint8 slot, uint8 /*rolesMask*/ /*= ROLES_DEFAULT
     bgTypeId = bg->Id;
 
     uint32 joinTime = 0;
-    uint32 avgTime = 0;
-    GroupQueueInfo* ginfo;
+    GroupQueueInfo* ginfo = nullptr;
     GroupJoinBattlegroundResult err = ERR_BATTLEGROUND_NONE;
     Group* grp = player->GetGroup();
     if (!grp || grp->GetLeaderGUID() != player->GetGUID())
