@@ -3501,8 +3501,8 @@ void WorldObject::GetCreatureListWithOptionsInGrid(Container& creatureContainer,
 template <typename Container>
 void WorldObject::GetPlayerListInGrid(Container& playerContainer, float maxSearchRange, bool alive /*= true*/) const
 {
-    Trinity::AnyPlayerInObjectRangeCheck checker(this, maxSearchRange, alive);
-    Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(this, playerContainer, checker);
+    Trinity::AnyUnitInObjectRangeCheck checker(this, maxSearchRange, true, alive);
+    Trinity::PlayerListSearcher searcher(this, playerContainer, checker);
     Cell::VisitWorldObjects(this, searcher, maxSearchRange);
 }
 
@@ -3795,26 +3795,23 @@ void WorldObject::DestroyForNearbyPlayers()
     if (!IsInWorld())
         return;
 
-    std::list<Player*> targets;
-    Trinity::AnyPlayerInObjectRangeCheck check(this, GetVisibilityRange(), false);
-    Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(this, targets, check);
-    Cell::VisitWorldObjects(this, searcher, GetVisibilityRange());
-    for (std::list<Player*>::const_iterator iter = targets.begin(); iter != targets.end(); ++iter)
+    auto destroyer = [this](Player* player)
     {
-        Player* player = (*iter);
-
         if (player == this)
-            continue;
+            return;
 
         if (!player->HaveAtClient(this))
-            continue;
+            return;
 
         if (Unit const* unit = ToUnit(); unit && unit->GetCharmerGUID() == player->GetGUID()) /// @todo this is for puppet
-            continue;
+            return;
 
         DestroyForPlayer(player);
         player->m_clientGUIDs.erase(GetGUID());
-    }
+    };
+
+    Trinity::PlayerDistWorker worker(this, GetVisibilityRange(), destroyer);
+    Cell::VisitWorldObjects(this, worker, GetVisibilityRange());
 }
 
 void WorldObject::UpdateObjectVisibility(bool /*forced*/)
@@ -4055,8 +4052,8 @@ std::list<AreaTrigger*> WorldObject::SelectNearestAreaTriggers(uint32 spellId, f
 std::list<Player*> WorldObject::SelectNearestPlayers(float range, bool alive)
 {
     std::list<Player*> PlayerList;
-    Trinity::AnyPlayerInObjectRangeCheck checker(this, range, alive);
-    Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(this, PlayerList, checker);
+    Trinity::AnyUnitInObjectRangeCheck checker(this, range, alive);
+    Trinity::PlayerListSearcher<Trinity::AnyUnitInObjectRangeCheck> searcher(this, PlayerList, checker);
     Cell::VisitGridObjects(this, searcher, range);
     return PlayerList;
 }
@@ -4088,8 +4085,8 @@ void WorldObject::GetCreatureListInGrid(Container& creatureList, float maxSearch
 Player* WorldObject::FindNearestPlayer(float range, bool /*alive*/)
 {
     Player* player = nullptr;
-    Trinity::AnyPlayerInObjectRangeCheck check(this, GetVisibilityRange());
-    Trinity::PlayerSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(this, player, check);
+    Trinity::AnyUnitInObjectRangeCheck check(this, GetVisibilityRange());
+    Trinity::PlayerSearcher<Trinity::AnyUnitInObjectRangeCheck> searcher(this, player, check);
     Cell::VisitGridObjects(this, searcher, range);
     return player;
 }

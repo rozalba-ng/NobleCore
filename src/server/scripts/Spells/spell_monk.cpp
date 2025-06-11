@@ -48,13 +48,17 @@
 
 enum MonkSpells
 {
+    SPELL_MONK_BURST_OF_LIFE_TALENT                     = 399226,
+    SPELL_MONK_BURST_OF_LIFE_HEAL                       = 399230,
     SPELL_MONK_CALMING_COALESCENCE                      = 388220,
     SPELL_MONK_COMBAT_CONDITIONING                      = 128595,
     SPELL_MONK_CRACKLING_JADE_LIGHTNING_CHANNEL         = 117952,
     SPELL_MONK_CRACKLING_JADE_LIGHTNING_CHI_PROC        = 123333,
     SPELL_MONK_CRACKLING_JADE_LIGHTNING_KNOCKBACK       = 117962,
     SPELL_MONK_CRACKLING_JADE_LIGHTNING_KNOCKBACK_CD    = 117953,
+    SPELL_MONK_ENVELOPING_MIST                          = 124682,
     SPELL_MONK_JADE_WALK                                = 450552,
+    SPELL_MONK_MISTS_OF_LIFE                            = 388548,
     SPELL_MONK_MORTAL_WOUNDS                            = 115804,
     SPELL_MONK_POWER_STRIKE_PROC                        = 129914,
     SPELL_MONK_POWER_STRIKE_ENERGIZE                    = 121283,
@@ -63,6 +67,7 @@ enum MonkSpells
     SPELL_MONK_PROVOKE_AOE                              = 118635,
     SPELL_MONK_NO_FEATHER_FALL                          = 79636,
     SPELL_MONK_OPEN_PALM_STRIKES_TALENT                 = 392970,
+    SPELL_MONK_RENEWING_MIST                            = 119611,
     SPELL_MONK_ROLL_BACKWARD                            = 109131,
     SPELL_MONK_ROLL_FORWARD                             = 107427,
     SPELL_MONK_SAVE_THEM_ALL_HEAL_BONUS                 = 390105,
@@ -96,7 +101,6 @@ enum MonkSpells
     SPELL_MONK_RISING_THUNDER                           = 210804,
     SPELL_MONK_RENEWING_MIST_HOT                        = 119611,
     SPELL_MONK_ESSENCE_FONT_PERIODIC_HEAL               = 191840,
-    SPELL_MONK_ENVELOPING_MIST                          = 124682,
     SPELL_MONK_FORTIFYING_BREW                          = 120954,
     SPELL_MONK_MODERATE_STAGGER                         = 124274,
     SPELL_MONK_LIGHT_STAGGER                            = 124275,
@@ -123,7 +127,6 @@ enum MonkSpells
     SPELL_MONK_ZEN_PULSE_DAMAGE                         = 124081,
     SPELL_MONK_ZEN_PULSE_HEAL                           = 198487,
     SPELL_MONK_COUNTERACT_MAGIC                         = 202428,
-    SPELL_MONK_RENEWING_MIST                            = 115151,
     SPELL_MONK_RENEWING_MIST_JUMP                       = 119607,
     SPELL_MONK_VISUAL_RENEWING_MIST                     = 24599,
     SPELL_MONK_ESSENCE_FONT_HEAL                        = 191840,
@@ -164,6 +167,61 @@ enum StormEarthAndFireSpells
 };
 
 #define MONK_TRANSCENDENCE_GUID "MONK_TRANSCENDENCE_GUID"
+
+// 399226 - Burst of Life (attached to 116849 - Life Cocoon)
+class spell_monk_burst_of_life : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_MONK_BURST_OF_LIFE_HEAL })
+            && ValidateSpellEffect({ { SPELL_MONK_BURST_OF_LIFE_TALENT, EFFECT_0 } });
+    }
+
+    bool Load() override
+    {
+        Unit* caster = GetCaster();
+        return caster && caster->HasAuraEffect(SPELL_MONK_BURST_OF_LIFE_TALENT, EFFECT_0);
+    }
+
+    void AfterRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/) const
+    {
+        AuraRemoveMode removeMode = GetTargetApplication()->GetRemoveMode();
+        if (removeMode != AURA_REMOVE_BY_EXPIRE && (removeMode != AURA_REMOVE_BY_ENEMY_SPELL || aurEff->GetAmount()))
+            return;
+
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        AuraEffect const* burstOfLife = caster->GetAuraEffect(SPELL_MONK_BURST_OF_LIFE_TALENT, EFFECT_0);
+        if (!burstOfLife)
+            return;
+
+        caster->CastSpell(GetTarget(), SPELL_MONK_BURST_OF_LIFE_HEAL, CastSpellExtraArgsInit{
+            .TriggerFlags = TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR,
+            .SpellValueOverrides = { { SPELLVALUE_MAX_TARGETS, burstOfLife->GetAmount() } }
+        });
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_monk_burst_of_life::AfterRemove, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// 399230 - Burst of Life
+class spell_monk_burst_of_life_heal : public SpellScript
+{
+    void FilterTargets(std::list<WorldObject*>& targets) const
+    {
+        Trinity::SelectRandomInjuredTargets(targets, GetSpellValue()->MaxAffectedTargets, true, GetExplTargetUnit());
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_burst_of_life_heal::FilterTargets, EFFECT_1, TARGET_UNIT_DEST_AREA_ALLY);
+    }
+};
 
 // 117952 - Crackling Jade Lightning
 class spell_monk_crackling_jade_lightning : public AuraScript
@@ -282,6 +340,38 @@ class spell_monk_life_cocoon : public SpellScript
     void Register() override
     {
         OnEffectLaunch += SpellEffectFn(spell_monk_life_cocoon::CalculateAbsorb, EFFECT_2, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 388548 - Mists of Life (attached to 116849 - Life Cocoon)
+class spell_monk_mists_of_life : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_MONK_MISTS_OF_LIFE, SPELL_MONK_RENEWING_MIST, SPELL_MONK_ENVELOPING_MIST });
+    }
+
+    bool Load() override
+    {
+        return GetCaster()->HasAuraEffect(SPELL_MONK_MISTS_OF_LIFE, EFFECT_0);
+    }
+
+    void HandleEffectApply(SpellEffIndex /*effIndex*/) const
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+
+        CastSpellExtraArgs args;
+        args.SetTriggerFlags(TRIGGERED_IGNORE_GCD | TRIGGERED_IGNORE_POWER_COST | TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_CAST_TIME | TRIGGERED_DONT_REPORT_CAST_ERROR);
+        args.SetTriggeringSpell(GetSpell());
+
+        caster->CastSpell(target, SPELL_MONK_RENEWING_MIST, args);
+        caster->CastSpell(target, SPELL_MONK_ENVELOPING_MIST, args);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_monk_mists_of_life::HandleEffectApply, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
     }
 };
 
@@ -2757,10 +2847,13 @@ public:
 
 void AddSC_monk_spell_scripts()
 {
+    RegisterSpellScript(spell_monk_burst_of_life);
+    RegisterSpellScript(spell_monk_burst_of_life_heal);
     RegisterSpellScript(spell_monk_crackling_jade_lightning);
     RegisterSpellScript(spell_monk_crackling_jade_lightning_knockback_proc_aura);
     RegisterSpellScript(spell_monk_jade_walk);
     RegisterSpellScript(spell_monk_life_cocoon);
+    RegisterSpellScript(spell_monk_mists_of_life);
     RegisterSpellScript(spell_monk_open_palm_strikes);
     RegisterSpellScript(spell_monk_power_strike_periodic);
     RegisterSpellScript(spell_monk_power_strike_proc);

@@ -500,7 +500,7 @@ void Roleplay::CreatureRefresh(Creature* creature)
     auto newGuidLow = map->GenerateLowGuid<HighGuid::Creature>();
     auto newObjectGuid = ObjectGuid::Create<HighGuid::Creature>(map->GetId(), creature->GetEntry(), newGuidLow);
 
-    map->GetObjectsStore().Insert(creature);
+    map->GetObjectsStore().Insert<Creature>(creature);
 }
 
 CreatureExtraData const* Roleplay::GetCreatureExtraData(uint64 guid)
