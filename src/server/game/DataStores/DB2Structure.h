@@ -512,7 +512,7 @@ struct BattlemasterListEntry
     LocalizedString GameType;
     LocalizedString ShortDescription;
     LocalizedString LongDescription;
-    int8 InstanceType;
+    int32 PvpType;
     int8 MinLevel;
     int8 MaxLevel;
     int8 RatedPlayers;
@@ -525,6 +525,7 @@ struct BattlemasterListEntry
     int32 IconFileDataID;
     int32 RequiredPlayerConditionID;
 
+    BattlemasterType GetType() const { return static_cast<BattlemasterType>(PvpType); }
     EnumFlag<BattlemasterListFlags> GetFlags() const { return static_cast<BattlemasterListFlags>(Flags); }
 };
 
@@ -975,6 +976,8 @@ struct ContentTuningEntry
     int32 ExpansionID;
     int32 HealthItemLevelCurveID;
     int32 DamageItemLevelCurveID;
+    int32 HealthPrimaryStatCurveID;
+    int32 DamagePrimaryStatCurveID;
     int32 MinLevel;
     int32 MaxLevel;
     int32 MinLevelType;
@@ -3402,7 +3405,7 @@ struct PlayerConditionEntry
     uint32 CurrentCompletedQuestLogic;
     uint32 SpellLogic;
     uint32 ItemLogic;
-    uint8 ItemFlags;
+    int32 ItemFlags;
     uint32 AuraSpellLogic;
     uint16 WorldStateExpressionID;
     int32 WeatherID;
@@ -3469,6 +3472,38 @@ struct PlayerConditionEntry
     std::array<int32, 4> TraitNodeEntryID;
     std::array<uint16, 4> TraitNodeEntryMinRank;
     std::array<uint16, 4> TraitNodeEntryMaxRank;
+};
+
+struct PlayerDataElementAccountEntry
+{
+    uint32 ID;
+    int32 StorageIndex;
+    int32 Type;
+
+    PlayerDataElementType GetType() const { return static_cast<PlayerDataElementType>(Type); }
+};
+
+struct PlayerDataElementCharacterEntry
+{
+    uint32 ID;
+    int32 StorageIndex;
+    int32 Type;
+
+    PlayerDataElementType GetType() const { return static_cast<PlayerDataElementType>(Type); }
+};
+
+struct PlayerDataFlagAccountEntry
+{
+    uint32 ID;
+    int32 StorageIndex;
+    int32 Unknown1107;
+};
+
+struct PlayerDataFlagCharacterEntry
+{
+    uint32 ID;
+    int32 StorageIndex;
+    int32 Unknown1107;
 };
 
 struct PowerDisplayEntry
@@ -3655,7 +3690,7 @@ struct QuestSortEntry
 struct QuestV2Entry
 {
     uint32 ID;
-    uint16 UniqueBitFlag;
+    int32 UniqueBitFlag;
     int32 UiQuestDetailsTheme;
 };
 
@@ -4612,7 +4647,7 @@ struct TalentEntry
     uint32 ID;
     LocalizedString Description;
     uint8 TierID;
-    uint8 Flags;
+    int32 Flags;
     uint8 ColumnIndex;
     uint16 TabID;
     int8 ClassID;
@@ -5286,7 +5321,7 @@ struct WMOAreaTableEntry
     uint16 IntroSound;
     uint16 UwIntroSound;
     uint16 AreaTableID;
-    uint8 Flags;
+    int32 Flags;
 };
 
 struct WorldEffectEntry
@@ -5340,7 +5375,7 @@ struct LightSkyboxEntry
 {
     uint32 ID;
     char const* Name;
-    uint8 Flags;
+    int32 Flags;
     int32 SkyboxFileDataID;
     int32 CelestialSkyboxFileDataID;
 };

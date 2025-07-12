@@ -1721,7 +1721,7 @@ struct npc_monk_jade_serpent_statue : public ScriptedAI
 // 101643
 class spell_monk_transcendence : public SpellScript
 {
-public:
+
     void HandleSummon(Creature* creature)
     {
         DespawnSpirit(GetCaster());
@@ -1733,6 +1733,12 @@ public:
         GetCaster()->VariableStorage.Set(MONK_TRANSCENDENCE_GUID, creature->GetGUID());
     }
 
+    void Register() override
+    {
+        OnEffectSummon += SpellOnEffectSummonFn(spell_monk_transcendence::HandleSummon);
+    }
+
+public:
     static Creature* GetSpirit(Unit* caster)
     {
         ObjectGuid spiritGuid = caster->VariableStorage.GetValue<ObjectGuid>(MONK_TRANSCENDENCE_GUID, ObjectGuid());
@@ -1747,11 +1753,6 @@ public:
         if (Creature* spirit = GetSpirit(caster))
             spirit->DespawnOrUnsummon();
         caster->VariableStorage.Remove(MONK_TRANSCENDENCE_GUID);
-    }
-
-    void Register() override
-    {
-        OnEffectSummon += SpellOnEffectSummonFn(spell_monk_transcendence::HandleSummon);
     }
 };
 
@@ -1877,7 +1878,7 @@ public:
             targets.remove_if(Trinity::UnitAuraCheck(false, SPELL_MONK_RENEWING_MIST_HOT, GetCaster()->GetGUID()));
         }
 
-        void HandleOnPrepare()
+        void OnPrepareFunc()
         {
             if (GetCaster()->GetCurrentSpell(CURRENT_CHANNELED_SPELL) && GetCaster()->GetCurrentSpell(CURRENT_CHANNELED_SPELL)->GetSpellInfo()->Id == SPELL_MONK_SOOTHING_MIST)
             {
@@ -1900,7 +1901,7 @@ public:
 
         void Register() override
         {
-            OnPrepare += SpellOnPrepareFn(spell_monk_vivify_SpellScript::HandleOnPrepare);
+            OnPrepare += SpellOnPrepareFn(spell_monk_vivify_SpellScript::OnPrepareFunc);
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_vivify_SpellScript::FilterRenewingMist, EFFECT_1, TARGET_UNIT_DEST_AREA_ALLY);
             AfterCast += SpellCastFn(spell_monk_vivify_SpellScript::LifeCycles);
         }
@@ -2361,7 +2362,7 @@ class aura_monk_mana_tea : public AuraScript
 class spell_monk_enveloping_mist : public SpellScriptLoader
 {
 public:
-    spell_monk_enveloping_mist() : SpellScriptLoader("spell_monk_enveloping_mist") { }
+    spell_monk_enveloping_mist() : SpellScriptLoader("spell_monk_enveloping_mist") {}
 
     class spell_monk_enveloping_mist_SpellScript : public SpellScript
     {
@@ -2375,7 +2376,7 @@ public:
             }
         }
 
-        void LifeCycles()
+        void HandleAfterCast()
         {
             Player* caster = GetCaster()->ToPlayer();
             if (!caster)
@@ -2389,7 +2390,7 @@ public:
         void Register() override
         {
             OnPrepare += SpellOnPrepareFn(spell_monk_enveloping_mist_SpellScript::HandleOnPrepare);
-            AfterCast += SpellCastFn(spell_monk_enveloping_mist_SpellScript::LifeCycles);
+            AfterCast += SpellCastFn(spell_monk_enveloping_mist_SpellScript::HandleAfterCast);
         }
     };
 

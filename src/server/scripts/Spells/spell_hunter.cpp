@@ -85,6 +85,7 @@ enum HunterSpells
     SPELL_HUNTER_PET_HEART_OF_THE_PHOENIX_DEBUFF    = 55711,
     SPELL_HUNTER_POSTHASTE_INCREASE_SPEED           = 118922,
     SPELL_HUNTER_POSTHASTE_TALENT                   = 109215,
+    SPELL_HUNTER_PRECISE_SHOTS                      = 260242,
     SPELL_HUNTER_RAPID_FIRE                         = 257044,
     SPELL_HUNTER_RAPID_FIRE_DAMAGE                  = 257045,
     SPELL_HUNTER_RAPID_FIRE_ENERGIZE                = 263585,
@@ -803,6 +804,28 @@ class spell_hun_posthaste : public SpellScript
     void Register() override
     {
         AfterCast += SpellCastFn(spell_hun_posthaste::HandleAfterCast);
+    }
+};
+
+// 260240 - Precise Shots
+class spell_hun_precise_shots : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_HUNTER_PRECISE_SHOTS });
+    }
+
+    void HandleProc(ProcEventInfo const& eventInfo) const
+    {
+        eventInfo.GetActor()->CastSpell(eventInfo.GetActor(), SPELL_HUNTER_PRECISE_SHOTS, CastSpellExtraArgsInit{
+            .TriggerFlags = TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR,
+            .TriggeringSpell = eventInfo.GetProcSpell()
+        });
+    }
+
+    void Register() override
+    {
+        OnProc += AuraProcFn(spell_hun_precise_shots::HandleProc);
     }
 };
 
@@ -2372,6 +2395,7 @@ void AddSC_hunter_spell_scripts()
     RegisterSpellScript(spell_hun_multi_shot);
     RegisterSpellScript(spell_hun_pet_heart_of_the_phoenix);
     RegisterSpellScript(spell_hun_posthaste);
+    RegisterSpellScript(spell_hun_precise_shots);
     RegisterSpellScript(spell_hun_rapid_fire);
     RegisterSpellScript(spell_hun_rapid_fire_damage);
     RegisterSpellScript(spell_hun_rejuvenating_wind);

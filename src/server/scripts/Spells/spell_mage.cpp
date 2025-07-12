@@ -84,6 +84,9 @@ enum MageSpells
     SPELL_MAGE_LIVING_BOMB_PERIODIC              = 217694,
     SPELL_MAGE_MANA_SURGE                        = 37445,
     SPELL_MAGE_MASTER_OF_TIME                    = 342249,
+    SPELL_MAGE_METEOR_AREATRIGGER                = 177345,
+    SPELL_MAGE_METEOR_BURN_DAMAGE                = 155158,
+    SPELL_MAGE_METEOR_MISSILE                    = 153564,
     SPELL_MAGE_RADIANT_SPARK_PROC_BLOCKER        = 376105,
     SPELL_MAGE_RAY_OF_FROST_BONUS                = 208141,
     SPELL_MAGE_RAY_OF_FROST_FINGERS_OF_FROST     = 269748,
@@ -116,16 +119,12 @@ enum MageSpells
     SPELL_MAGE_FINGERS_OF_FROST_AURA             = 44544,
     SPELL_MAGE_FINGERS_OF_FROST_VISUAL_UI        = 126084,
     SPELL_MAGE_WATER_JET                         = 135029,
-    SPELL_MAGE_METEOR_DAMAGE                     = 153564,
-    SPELL_MAGE_METEOR_TIMER                      = 177345,
     SPELL_MAGE_ARCANE_BLAST                      = 30451,
     SPELL_MAGE_TOUCH_OF_THE_MAGI_AURA            = 210824,
     SPELL_MAGE_RULE_OF_THREES_BUFF               = 264774,
     SPELL_ARCANE_CHARGE                          = 36032,
     SPELL_MAGE_RULE_OF_THREES                    = 264354,
 
-    SPELL_MAGE_METEOR_BURN                       = 155158,
-    SPELL_MAGE_METEOR_VISUAL                     = 174556,
     SPELL_MAGE_ARCANE_ORB_DAMAGE                 = 153640,
     SPELL_MAGE_FROZEN_ORB                        = 84714,
     SPELL_MAGE_FROZEN_ORB_DAMAGE                 = 84721,
@@ -1218,6 +1217,60 @@ class spell_mage_living_bomb_periodic : public AuraScript
     }
 };
 
+// 153561 - Meteor
+class spell_mage_meteor : public SpellScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_MAGE_METEOR_AREATRIGGER });
+    }
+
+    void EffectHit(SpellEffIndex /*effIndex*/)
+    {
+        GetCaster()->CastSpell(*GetHitDest(), SPELL_MAGE_METEOR_AREATRIGGER, CastSpellExtraArgsInit{
+            .TriggerFlags = TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR,
+            .TriggeringSpell = GetSpell()
+        });
+    }
+
+    void Register() override
+    {
+        OnEffectHit += SpellEffectFn(spell_mage_meteor::EffectHit, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// 177345 - Meteor
+// Id - 3467
+struct at_mage_meteor : public AreaTriggerAI
+{
+    using AreaTriggerAI::AreaTriggerAI;
+
+    void OnRemove() override
+    {
+        if (Unit* caster = at->GetCaster())
+            caster->CastSpell(at->GetPosition(), SPELL_MAGE_METEOR_MISSILE);
+    }
+};
+
+// 175396 - Meteor Burn
+// Id - 1712
+struct at_mage_meteor_burn : public AreaTriggerAI
+{
+    using AreaTriggerAI::AreaTriggerAI;
+
+    void OnUnitEnter(Unit* unit) override
+    {
+        if (Unit* caster = at->GetCaster())
+            if (caster->IsValidAttackTarget(unit))
+                caster->CastSpell(unit, SPELL_MAGE_METEOR_BURN_DAMAGE, TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR);
+    }
+
+    void OnUnitExit(Unit* unit) override
+    {
+        unit->RemoveAurasDueToSpell(SPELL_MAGE_METEOR_BURN_DAMAGE, at->GetCasterGuid());
+    }
+};
+
 enum SilvermoonPolymorph
 {
     NPC_AUROSALIA       = 18744
@@ -1612,153 +1665,6 @@ class spell_mage_water_elemental_freeze : public SpellScript
     void Register() override
     {
         AfterHit += SpellHitFn(spell_mage_water_elemental_freeze::HandleImprovedFreeze);
-    }
-};
-
-// Meteor - 153561
-class spell_mage_meteor : public SpellScript
-{
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_MAGE_METEOR_DAMAGE });
-    }
-
-    void HandleDummy()
-    {
-        Unit* caster = GetCaster();
-        WorldLocation const* dest = GetExplTargetDest();
-        if (!caster || !dest)
-            return;
-
-        caster->CastSpell(*dest, SPELL_MAGE_METEOR_TIMER, true);
-    }
-
-    void Register() override
-    {
-        AfterCast += SpellCastFn(spell_mage_meteor::HandleDummy);
-    }
-};
-
-// Meteor Damage - 153564
-class spell_mage_meteor_damage : public SpellScript
-{
-
-    int32 _targets;
-
-    void HandleHit(SpellEffIndex /*effIndex*/)
-    {
-        Unit* unit = GetHitUnit();
-        if (!unit)
-            return;
-
-        SetHitDamage(GetHitDamage() / _targets);
-    }
-
-    void CountTargets(std::list<WorldObject*>& targets)
-    {
-        _targets = targets.size();
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_mage_meteor_damage::HandleHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_mage_meteor_damage::CountTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
-    }
-};
-
-// Meteor - 177345
-// AreaTriggerID - 3467
-class at_mage_meteor_timer : public AreaTriggerEntityScript
-{
-public:
-    at_mage_meteor_timer() : AreaTriggerEntityScript("at_mage_meteor_timer") {}
-
-    struct at_mage_meteor_timerAI : AreaTriggerAI
-    {
-        at_mage_meteor_timerAI(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
-
-        void OnCreate(Spell const* /*creatingSpell*/) override
-        {
-            Unit* caster = at->GetCaster();
-            if (!caster)
-                return;
-
-            if (TempSummon* tempSumm = caster->SummonCreature(WORLD_TRIGGER, at->GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 5000ms))
-            {
-                tempSumm->SetFaction(caster->GetFaction());
-                tempSumm->SetSummonerGUID(caster->GetGUID());
-                PhasingHandler::InheritPhaseShift(tempSumm, caster);
-                caster->CastSpell(tempSumm, SPELL_MAGE_METEOR_VISUAL, true);
-            }
-
-        }
-
-        void OnRemove() override
-        {
-            Unit* caster = at->GetCaster();
-            if (!caster)
-                return;
-
-            if (TempSummon* tempSumm = caster->SummonCreature(WORLD_TRIGGER, at->GetPosition(), TEMPSUMMON_TIMED_DESPAWN, 5000ms))
-            {
-                tempSumm->SetFaction(caster->GetFaction());
-                tempSumm->SetSummonerGUID(caster->GetGUID());
-                PhasingHandler::InheritPhaseShift(tempSumm, caster);
-                caster->CastSpell(tempSumm, SPELL_MAGE_METEOR_DAMAGE, true);
-            }
-        }
-    };
-
-    AreaTriggerAI* GetAI(AreaTrigger* areatrigger) const override
-    {
-        return new at_mage_meteor_timerAI(areatrigger);
-    }
-};
-
-// Meteor Burn - 175396
-// AreaTriggerID - 1712
-class at_mage_meteor_burn : public AreaTriggerEntityScript
-{
-public:
-    at_mage_meteor_burn() : AreaTriggerEntityScript("at_mage_meteor_burn") { }
-
-    struct at_mage_meteor_burnAI : AreaTriggerAI
-    {
-        at_mage_meteor_burnAI(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger) { }
-
-        void OnUnitEnter(Unit* unit) override
-        {
-            Unit* caster = at->GetCaster();
-
-            if (!caster || !unit)
-                return;
-
-            if (caster->GetTypeId() != TYPEID_PLAYER)
-                return;
-
-            if (caster->IsValidAttackTarget(unit))
-                caster->CastSpell(unit, SPELL_MAGE_METEOR_BURN, true);
-        }
-
-        void OnUnitExit(Unit* unit) override
-        {
-            Unit* caster = at->GetCaster();
-
-            if (!caster || !unit)
-                return;
-
-            if (caster->GetTypeId() != TYPEID_PLAYER)
-                return;
-
-            if (Aura* meteor = unit->GetAura(SPELL_MAGE_METEOR_BURN, caster->GetGUID()))
-                meteor->SetDuration(0);
-        }
-    };
-
-    AreaTriggerAI* GetAI(AreaTrigger* areatrigger) const override
-    {
-        return new at_mage_meteor_burnAI(areatrigger);
     }
 };
 
@@ -2275,6 +2181,9 @@ void AddSC_mage_spell_scripts()
     RegisterSpellScript(spell_mage_living_bomb);
     RegisterSpellScript(spell_mage_living_bomb_explosion);
     RegisterSpellScript(spell_mage_living_bomb_periodic);
+    RegisterSpellScript(spell_mage_meteor);
+    RegisterAreaTriggerAI(at_mage_meteor);
+    RegisterAreaTriggerAI(at_mage_meteor_burn);
     RegisterSpellScript(spell_mage_polymorph_visual);
     RegisterSpellScript(spell_mage_prismatic_barrier);
     RegisterSpellScript(spell_mage_radiant_spark);
@@ -2287,10 +2196,6 @@ void AddSC_mage_spell_scripts()
     RegisterSpellScript(spell_mage_water_elemental_freeze);
 
     //new
-    RegisterSpellScript(spell_mage_meteor);
-    RegisterSpellScript(spell_mage_meteor_damage);
-    new at_mage_meteor_timer();
-    new at_mage_meteor_burn();
     RegisterSpellScript(spell_mage_presence_of_mind);
     new at_mage_arcane_orb();
     RegisterAreaTriggerAI(at_mage_frozen_orb);
