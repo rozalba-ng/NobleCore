@@ -2817,16 +2817,6 @@ void SpellInfo::_LoadSpellSpecific()
                 if (Id == 12292) // Death Wish
                     return SPELL_SPECIFIC_WARRIOR_ENRAGE;
 
-                switch (Id)
-                {
-                case 386208: // Defensive Stance Aura
-                case 386164: // Battle Stance Aura
-                case 386196: // Berserker Stance Aura
-                    return SPELL_SPECIFIC_AURA;
-                default:
-                    break;
-                }
-
                 break;
             }
             case SPELLFAMILY_WARLOCK:

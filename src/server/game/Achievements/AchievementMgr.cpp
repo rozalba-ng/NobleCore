@@ -41,7 +41,6 @@
 #ifdef ELUNA
 #include "LuaEngine.h"
 #endif
-#include <sstream>
 
 struct VisibleAchievementCheck
 {
@@ -802,7 +801,6 @@ void GuildAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Prep
 void GuildAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     CharacterDatabasePreparedStatement* stmt;
-    std::ostringstream guidstr;
     for (std::pair<uint32 const, CompletedAchievementData>& completedAchievement : _completedAchievements)
     {
         if (!completedAchievement.second.Changed)
@@ -817,13 +815,18 @@ void GuildAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
         stmt->setUInt64(0, _owner->GetId());
         stmt->setUInt32(1, completedAchievement.first);
         stmt->setInt64(2, completedAchievement.second.Date);
-        for (ObjectGuid memberGuid : completedAchievement.second.CompletingPlayers)
-            guidstr << memberGuid.GetCounter() << ',';
+        std::string guidstr;
+        auto completersItr = completedAchievement.second.CompletingPlayers.begin();
+        auto completersEnd = completedAchievement.second.CompletingPlayers.end();
+        if (completersItr != completersEnd)
+        {
+            Trinity::StringFormatTo(std::back_inserter(guidstr), "{}", completersItr->GetCounter());
+            while (++completersItr != completersEnd)
+                Trinity::StringFormatTo(std::back_inserter(guidstr), ",{}", completersItr->GetCounter());
+        }
 
-        stmt->setString(3, guidstr.str());
+        stmt->setString(3, std::move(guidstr));
         trans->Append(stmt);
-
-        guidstr.str("");
 
         completedAchievement.second.Changed = false;
     }
