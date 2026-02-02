@@ -46,7 +46,6 @@ enum DruidSpells
     SPELL_DRUID_ASTRAL_SMOLDER_DAMAGE          = 394061,
     SPELL_DRUID_BALANCE_T10_BONUS              = 70718,
     SPELL_DRUID_BALANCE_T10_BONUS_PROC         = 70721,
-    SPELL_DRUID_BARKSKIN                       = 22812,
     SPELL_DRUID_BEAR_FORM                      = 5487,
     SPELL_DRUID_BLESSING_OF_CENARIUS           = 40452,
     SPELL_DRUID_BLESSING_OF_ELUNE              = 40446,
@@ -76,9 +75,6 @@ enum DruidSpells
     SPELL_DRUID_ECLIPSE_VISUAL_SOLAR           = 93430,
     SPELL_DRUID_EFFLORESCENCE_AURA             = 81262,
     SPELL_DRUID_EFFLORESCENCE_HEAL             = 81269,
-    SPELL_DRUID_ELUNES_FAVORED                 = 370586,
-    SPELL_DRUID_ELUNES_FAVORED_PROC            = 370588,
-    SPELL_DRUID_ELUNES_FAVORED_HEAL            = 370602,
     SPELL_DRUID_EMBRACE_OF_THE_DREAM_EFFECT    = 392146,
     SPELL_DRUID_EMBRACE_OF_THE_DREAM_HEAL      = 392147,
     SPELL_DRUID_ENTANGLING_ROOTS               = 339,
@@ -93,8 +89,6 @@ enum DruidSpells
     SPELL_DRUID_FORMS_TRINKET_MOONKIN          = 37343,
     SPELL_DRUID_FORMS_TRINKET_NONE             = 37344,
     SPELL_DRUID_FORMS_TRINKET_TREE             = 37342,
-    SPELL_DRUID_FLOWER_WALK                    = 439901,
-    SPELL_DRUID_FLOWER_WALK_HEAL               = 439902,
     SPELL_DRUID_FULL_MOON                      = 274283,
     SPELL_DRUID_GALACTIC_GUARDIAN_AURA         = 213708,
     SPELL_DRUID_GERMINATION                    = 155675,
@@ -102,7 +96,6 @@ enum DruidSpells
     SPELL_DRUID_GLYPH_OF_STARS_VISUAL          = 114302,
     SPELL_DRUID_GORE_PROC                      = 93622,
     SPELL_DRUID_GROWL                          = 6795,
-    SPELL_DRUID_GUARDIAN_OF_ELUNE_AURA         = 213680,
     SPELL_DRUID_HALF_MOON                      = 274282,
     SPELL_DRUID_HALF_MOON_OVERRIDE             = 274297,
     SPELL_DRUID_IDOL_OF_FERAL_SHADOWS          = 34241,
@@ -123,14 +116,12 @@ enum DruidSpells
     SPELL_DRUID_MANGLE_TALENT                  = 231064,
     SPELL_DRUID_MASS_ENTANGLEMENT              = 102359,
     SPELL_DRUID_MOONFIRE_DAMAGE                = 164812,
-    SPELL_DRUID_MOONLESS_NIGHT                 = 400278,
-    SPELL_DRUID_MOONLESS_NIGHT_DAMAGE          = 400360,
     SPELL_DRUID_NATURES_GRACE_TALENT           = 450347,
     SPELL_DRUID_NEW_MOON                       = 274281,
     SPELL_DRUID_NEW_MOON_OVERRIDE              = 274295,
     SPELL_DRUID_POWER_OF_THE_ARCHDRUID         = 392302,
     SPELL_DRUID_PROWL                          = 5215,
-    SPELL_DRUID_PULVERIZE                      = 80313,
+    SPELL_DRUID_RAKE_STUN                      = 163505,
     SPELL_DRUID_REGROWTH                       = 8936,
     SPELL_DRUID_REJUVENATION                   = 774,
     SPELL_DRUID_REJUVENATION_GERMINATION       = 155777,
@@ -149,30 +140,15 @@ enum DruidSpells
     SPELL_DRUID_TRAVEL_FORM                    = 783,
     SPELL_DRUID_TREE_OF_LIFE                   = 33891,
     SPELL_DRUID_THRASH_BEAR                    = 77758,
-    SPELL_DRUID_THRASH_BEAR_AURA               = 192090,
+    SPELL_DRUID_THRASH_BEAR_BLEED              = 192090,
     SPELL_DRUID_THRASH_CAT                     = 106830,
-    SPELL_DRUID_THRASH_PULVERIZE_TRIGGER       = 158790,
-    SPELL_DRUID_TWIN_MOONS                     = 279620,
-    SPELL_DRUID_TWIN_MOONS_EFFECT              = 281847,
-    SPELL_DRUID_TWIN_MOONFIRE                  = 372567,
+    SPELL_DRUID_THRASH_CAT_BLEED               = 405233,
     SPELL_DRUID_UMBRAL_EMBRACE                 = 393763,
     SPELL_DRUID_UMBRAL_INSPIRATION_TALENT      = 450418,
     SPELL_DRUID_UMBRAL_INSPIRATION_AURA        = 450419,
     SPELL_DRUID_URSOCS_FURY_SHIELD             = 372505,
     SPELL_DRUID_YSERAS_GIFT_HEAL_PARTY         = 145110,
-    SPELL_DRUID_YSERAS_GIFT_HEAL_SELF          = 145109,
-
-    SPELL_DRUID_SOLAR_EMPOWEREMENT             = 211089,
-    SPELL_DRUID_LUNAR_EMPOWEREMENT             = 211091,
-    SPELL_DRUID_BLESSING_OF_ELUNE_10           = 202737,
-    SPELL_DRUID_SWIPE_CAT                      = 106785,
-    SPELL_DRUID_FURY_OF_ELUNE_DAMAGE           = 211545,
-    SPELL_DRUID_SHRED                          = 5221,
-    SPELL_DRUID_RAKE                           = 1822,
-    SPELL_DRUID_RIP                            = 1079,
-    SPELL_DRUID_FEROCIOUS_BITE                 = 22568,
-    SPELL_DRUID_MOONFIRE_CAT                   = 155625,
-    SPELL_DRUID_FELINE_SWIFTNESS               = 131768,
+    SPELL_DRUID_YSERAS_GIFT_HEAL_SELF          = 145109
 };
 
 // 774 - Rejuvenation
@@ -788,78 +764,6 @@ class spell_dru_efflorescence_heal : public SpellScript
     }
 };
 
-// 370586 - Elune's Favored
-class spell_dru_elunes_favored : public AuraScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_ELUNES_FAVORED_PROC });
-    }
-
-    void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        GetTarget()->CastSpell(GetTarget(), SPELL_DRUID_ELUNES_FAVORED_PROC);
-    }
-
-    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        GetTarget()->RemoveAurasDueToSpell(SPELL_DRUID_ELUNES_FAVORED_PROC);
-    }
-
-    void Register() override
-    {
-        OnEffectApply += AuraEffectApplyFn(spell_dru_elunes_favored::HandleApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        OnEffectRemove += AuraEffectRemoveFn(spell_dru_elunes_favored::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-    }
-};
-
-// 370588 - Elune's Favored (Proc)
-class spell_dru_elunes_favored_proc : public AuraScript
-{
-    bool Validate(SpellInfo const* spellInfo) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_ELUNES_FAVORED, SPELL_DRUID_ELUNES_FAVORED_HEAL })
-            && ValidateSpellEffect({ {spellInfo->Id, EFFECT_1} });
-    }
-
-    bool CheckProc(ProcEventInfo& eventInfo)
-    {
-        return eventInfo.GetActor()->HasAura(SPELL_DRUID_BEAR_FORM);
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        DamageInfo* damageInfo = eventInfo.GetDamageInfo();
-        if (damageInfo && damageInfo->GetDamage())
-            _arcaneDamage += damageInfo->GetDamage();
-    }
-
-    void HandlePeriodic(AuraEffect const* aurEff)
-    {
-        Unit* caster = GetTarget();
-        if (!_arcaneDamage)
-            return;
-
-        int32 healPct = sSpellMgr->AssertSpellInfo(SPELL_DRUID_ELUNES_FAVORED, GetCastDifficulty())->GetEffect(EFFECT_0).CalcValue(caster);
-        int32 heal = CalculatePct(_arcaneDamage, healPct);
-
-        CastSpellExtraArgs args(aurEff);
-        args.AddSpellBP0(heal);
-        caster->CastSpell(caster, SPELL_DRUID_ELUNES_FAVORED_HEAL, args);
-
-        _arcaneDamage = 0;
-    }
-
-    void Register() override
-    {
-        DoCheckProc += AuraCheckProcFn(spell_dru_elunes_favored_proc::CheckProc);
-        OnProc += AuraProcFn(spell_dru_elunes_favored_proc::HandleProc);
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_dru_elunes_favored_proc::HandlePeriodic, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY);
-    }
-
-    uint32 _arcaneDamage{};
-};
-
 // 392124 - Embrace of the Dream
 class spell_dru_embrace_of_the_dream : public AuraScript
 {
@@ -1024,66 +928,6 @@ class spell_dru_ferocious_bite : public SpellScript
 
 private:
     float _damageMultiplier = 0.0f;
-};
-
-// 439901 - Flower Walk
-// Triggered by 22812 - Barkskin
-class spell_dru_flower_walk : public AuraScript
-{
-    bool Validate(SpellInfo const* spellInfo) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_FLOWER_WALK_HEAL })
-            && ValidateSpellEffect({ {spellInfo->Id, EFFECT_2} });
-    }
-
-    void HandlePeriodic(AuraEffect const* /*aurEff*/)
-    {
-        Unit* caster = GetTarget();
-        if (!caster->HasAura(SPELL_DRUID_FLOWER_WALK))
-            return;
-
-        caster->CastSpell(caster, SPELL_DRUID_FLOWER_WALK_HEAL, TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR);
-    }
-
-    void Register() override
-    {
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_dru_flower_walk::HandlePeriodic, EFFECT_2, SPELL_AURA_PERIODIC_DUMMY);
-    }
-};
-
-// 439902 - Flower Walk (Heal)
-class spell_dru_flower_walk_heal : public SpellScript
-{
-    bool Validate(SpellInfo const* spellInfo) override
-    {
-        return ValidateSpellEffect({ {spellInfo->Id, EFFECT_1} });
-    }
-
-    void FilterTargets(std::list<WorldObject*>& targets)
-    {
-        Unit* caster = GetCaster();
-        int32 maxTargets = GetSpellInfo()->GetEffect(EFFECT_1).CalcValue(caster);
-
-        if (targets.size() > 1)
-            targets.remove(caster);
-
-        Trinity::SelectRandomInjuredTargets(targets, maxTargets, true, caster);
-
-        if (targets.empty())
-            targets.push_back(caster);
-    }
-
-    void PreventEffect(WorldObject*& target)
-    {
-        if (target->ToUnit() == GetCaster())
-            target = nullptr;
-    }
-
-    void Register() override
-    {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_dru_flower_walk_heal::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ALLY);
-        OnObjectTargetSelect += SpellObjectTargetSelectFn(spell_dru_flower_walk_heal::PreventEffect, EFFECT_0, TARGET_UNIT_TARGET_ALLY);
-    }
 };
 
 // 37336 - Druid Forms Trinket
@@ -1280,28 +1124,6 @@ class spell_dru_gore : public AuraScript
     {
         DoCheckEffectProc += AuraCheckEffectProcFn(spell_dru_gore::CheckEffectProc, EFFECT_0, SPELL_AURA_DUMMY);
         OnEffectProc += AuraEffectProcFn(spell_dru_gore::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
-    }
-};
-
-// 213680 - Guardian of Elune
-// Triggered by 22842 - Frenzied Regeneration
-class spell_dru_guardian_of_elune_healing : public AuraScript
-{
-    void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
-    {
-        canBeRecalculated = false;
-
-        Unit* caster = GetCaster();
-        if (!caster)
-            return;
-
-        if (AuraEffect* guardianOfElune = caster->GetAuraEffect(SPELL_DRUID_GUARDIAN_OF_ELUNE_AURA, EFFECT_1))
-            AddPct(amount, guardianOfElune->GetAmount());
-    }
-
-    void Register() override
-    {
-        DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dru_guardian_of_elune_healing::CalculateAmount, EFFECT_0, SPELL_AURA_OBS_MOD_HEALTH);
     }
 };
 
@@ -1621,35 +1443,6 @@ class spell_dru_moonfire : public SpellScript
     }
 };
 
-// 400278 - Moonless Night
-class spell_dru_moonless_night : public AuraScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_MOONFIRE_DAMAGE, SPELL_DRUID_MOONLESS_NIGHT_DAMAGE });
-    }
-
-    bool CheckProc(ProcEventInfo& eventInfo)
-    {
-        return (eventInfo.GetSchoolMask() == SPELL_SCHOOL_MASK_NORMAL) && eventInfo.GetActionTarget()->HasAura(SPELL_DRUID_MOONFIRE_DAMAGE);
-    }
-
-    void HandleEffectProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
-    {
-        Unit* caster = eventInfo.GetActor();
-        Unit* target = eventInfo.GetActionTarget();
-
-        int32 damage = CalculatePct(eventInfo.GetDamageInfo()->GetDamage(), aurEff->GetAmount());
-        caster->CastSpell(target, SPELL_DRUID_MOONLESS_NIGHT_DAMAGE, CastSpellExtraArgs(TRIGGERED_FULL_MASK).AddSpellBP0(damage));
-    }
-
-    void Register() override
-    {
-        DoCheckProc += AuraCheckProcFn(spell_dru_moonless_night::CheckProc);
-        OnEffectProc += AuraEffectProcFn(spell_dru_moonless_night::HandleEffectProc, EFFECT_0, SPELL_AURA_DUMMY);
-    }
-};
-
 // 450347 - Nature's Grace
 class spell_dru_natures_grace : public AuraScript
 {
@@ -1657,7 +1450,7 @@ public:
     bool Validate(SpellInfo const* spellInfo) override
     {
         return ValidateSpellInfo({ SPELL_DRUID_NATURES_GRACE_TALENT, SPELL_DRUID_DREAMSTATE })
-            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_0 } });
+            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_2 } });
     }
 
     static void Trigger(Unit* caster, AuraEffect const* naturesGraceEffect)
@@ -1671,7 +1464,7 @@ public:
     void OnOwnerInCombat(bool isNowInCombat) const
     {
         if (isNowInCombat)
-            Trigger(GetTarget(), GetEffect(EFFECT_0));
+            Trigger(GetTarget(), GetEffect(EFFECT_2));
     }
 
     void Register() override
@@ -1832,74 +1625,44 @@ protected:
     bool ToCatForm() const override { return true; }
 };
 
-// 80313 - Pulverize
-class spell_dru_pulverize : public SpellScript
+// 1822 - Rake
+class spell_dru_rake : public SpellScript
 {
     bool Validate(SpellInfo const* spellInfo) override
     {
-        return ValidateSpellInfo({ SPELL_DRUID_THRASH_BEAR_AURA })
-            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_2 } });
-    }
-
-    void HandleEffectHit(SpellEffIndex /*effIndex*/)
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-
-        int32 stacksToRemove = GetEffectInfo(EFFECT_2).CalcValue(caster);
-
-        Aura* bleedAura = target->GetAura(SPELL_DRUID_THRASH_BEAR_AURA, caster->GetGUID());
-        if (!bleedAura)
-            return;
-
-        bleedAura->ModStackAmount(-stacksToRemove);
-        target->RemoveAurasDueToSpell(SPELL_DRUID_THRASH_PULVERIZE_TRIGGER);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_dru_pulverize::HandleEffectHit, EFFECT_1, SPELL_EFFECT_APPLY_AURA);
-    }
-};
-
-// 80313 - Pulverize (Trigger)
-// Triggered by 77758 - Thrash (Bear Form)
-class spell_dru_pulverize_thrash : public SpellScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo
-        ({
-            SPELL_DRUID_THRASH_BEAR_AURA,
-            SPELL_DRUID_PULVERIZE,
-            SPELL_DRUID_THRASH_PULVERIZE_TRIGGER
-            })
-            && ValidateSpellEffect({ {SPELL_DRUID_PULVERIZE, EFFECT_2} });
+        return ValidateSpellInfo({ SPELL_DRUID_RAKE_STUN })
+            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_3 } });
     }
 
     bool Load() override
     {
-        return GetCaster()->HasSpell(SPELL_DRUID_PULVERIZE);
+        _wasStealth = GetCaster()->HasStealthAura();
+        return true;
     }
 
-    void HandleAfterHit()
+    void CalculateDamage(SpellEffectInfo const& /*spellEffectInfo*/, Unit* /*victim*/, int32& /*damage*/, int32& /*flatMod*/, float& pctMod) const
     {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
+        if (_wasStealth)
+            AddPct(pctMod, GetEffectInfo(EFFECT_3).CalcValue(GetCaster()));
+    }
 
-        Aura* bleedAura = target->GetAura(SPELL_DRUID_THRASH_BEAR_AURA, caster->GetGUID());
-        if (!bleedAura)
-            return;
-
-        int32 thresholdStacks = sSpellMgr->AssertSpellInfo(SPELL_DRUID_PULVERIZE, GetCastDifficulty())->GetEffect(EFFECT_2).CalcValue(caster);
-        if (bleedAura->GetStackAmount() >= thresholdStacks)
-            caster->CastSpell(target, SPELL_DRUID_THRASH_PULVERIZE_TRIGGER, CastSpellExtraArgs().SetTriggeringSpell(GetSpell()));
+    void HandleEffectHit(SpellEffIndex /*effIndex*/)
+    {
+        if (_wasStealth)
+            GetCaster()->CastSpell(GetHitUnit(), SPELL_DRUID_RAKE_STUN, CastSpellExtraArgsInit{
+                .TriggerFlags = TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR,
+                .TriggeringSpell = GetSpell()
+            });
     }
 
     void Register() override
     {
-        AfterHit += SpellHitFn(spell_dru_pulverize_thrash::HandleAfterHit);
+        CalcDamage += SpellCalcDamageFn(spell_dru_rake::CalculateDamage);
+        OnEffectHitTarget += SpellEffectFn(spell_dru_rake::HandleEffectHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
     }
+
+private:
+    bool _wasStealth = false;
 };
 
 // 1079 - Rip
@@ -2433,22 +2196,27 @@ class spell_dru_thorns_of_iron_damage : public SpellScript
     }
 };
 
-// 77758 - Thrash
+// 77758 - Thrash (Bear Form)
+// 106830 - Thrash (Cat Form)
 class spell_dru_thrash : public SpellScript
 {
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_DRUID_THRASH_BEAR_AURA });
+        return ValidateSpellInfo
+        ({
+            SPELL_DRUID_THRASH_BEAR_BLEED,
+            SPELL_DRUID_THRASH_CAT_BLEED
+        });
     }
 
     void HandleOnHitTarget(SpellEffIndex /*effIndex*/)
     {
-        if (Unit* hitUnit = GetHitUnit())
-        {
-            Unit* caster = GetCaster();
+        uint32 bleedSpell = (GetSpellInfo()->Id == SPELL_DRUID_THRASH_CAT) ? SPELL_DRUID_THRASH_CAT_BLEED : SPELL_DRUID_THRASH_BEAR_BLEED;
 
-            caster->CastSpell(hitUnit, SPELL_DRUID_THRASH_BEAR_AURA, TRIGGERED_FULL_MASK);
-        }
+        GetCaster()->CastSpell(GetHitUnit(), bleedSpell, CastSpellExtraArgsInit{
+            .TriggerFlags = TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR,
+            .TriggeringSpell = GetSpell()
+        });
     }
 
     void Register() override
@@ -2457,24 +2225,31 @@ class spell_dru_thrash : public SpellScript
     }
 };
 
-// 192090 - Thrash (Aura) - SPELL_DRUID_THRASH_BEAR_AURA
-class spell_dru_thrash_aura : public AuraScript
+// 192090 - Thrash (Bear Bleed)
+class spell_dru_thrash_bear_bleed : public AuraScript
 {
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_DRUID_BLOOD_FRENZY_AURA, SPELL_DRUID_BLOOD_FRENZY_RAGE_GAIN });
+        return ValidateSpellInfo
+        ({
+            SPELL_DRUID_BLOOD_FRENZY_AURA,
+            SPELL_DRUID_BLOOD_FRENZY_RAGE_GAIN
+        });
     }
 
     void HandlePeriodic(AuraEffect const* /*aurEff*/)
     {
-        if (Unit* caster = GetCaster())
-            if (caster->HasAura(SPELL_DRUID_BLOOD_FRENZY_AURA))
-                caster->CastSpell(caster, SPELL_DRUID_BLOOD_FRENZY_RAGE_GAIN, true);
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        if (caster->HasAura(SPELL_DRUID_BLOOD_FRENZY_AURA))
+            caster->CastSpell(caster, SPELL_DRUID_BLOOD_FRENZY_RAGE_GAIN, true);
     }
 
     void Register() override
     {
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_dru_thrash_aura::HandlePeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_dru_thrash_bear_bleed::HandlePeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE);
     }
 };
 
@@ -2646,102 +2421,6 @@ class spell_dru_tiger_dash_aura : public AuraScript
     void Register() override
     {
         OnEffectPeriodic += AuraEffectPeriodicFn(spell_dru_tiger_dash_aura::HandlePeriodic, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY);
-    }
-};
-
-// 372567 - Twin Moonfire
-// Triggered by 8921 - Moonfire
-class spell_dru_twin_moonfire : public SpellScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_TWIN_MOONFIRE, SPELL_DRUID_TWIN_MOONS_EFFECT });
-    }
-
-    bool Load() override
-    {
-        return !GetSpell()->IsTriggered() && GetCaster()->HasAura(SPELL_DRUID_TWIN_MOONFIRE);
-    }
-
-    void HandleEffectHit(SpellEffIndex /*effIndex*/)
-    {
-        GetCaster()->CastSpell(GetHitUnit()->GetPosition(), SPELL_DRUID_TWIN_MOONS_EFFECT, TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_GCD);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_dru_twin_moonfire::HandleEffectHit, EFFECT_0, SPELL_EFFECT_DUMMY);
-    }
-};
-
-// 281847 - Twin Moons (Effect)
-class spell_dru_twin_moons_effect : public SpellScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_MOONFIRE_DAMAGE, SPELL_DRUID_TWIN_MOONS });
-    }
-
-    void FilterTargets(std::list<WorldObject*>& targets) const
-    {
-        Unit* caster = GetCaster();
-        Unit* explTarget = GetExplTargetUnit();
-
-        targets.remove_if([explTarget](WorldObject* obj) -> bool
-        {
-            Unit* target = obj->ToUnit();
-            return !target || target == explTarget || target->HasBreakableByDamageCrowdControlAura();
-        });
-
-        if (targets.empty())
-            return;
-
-        float maxRange = sSpellMgr->AssertSpellInfo(SPELL_DRUID_TWIN_MOONS, GetCastDifficulty())->GetEffect(EFFECT_0).CalcValue(caster);
-        uint32 maxTargets = 1;
-
-        targets.remove_if([explTarget, maxRange](WorldObject* obj)
-        {
-            return explTarget->GetExactDist(obj) > maxRange;
-        });
-
-        targets.sort([caster, explTarget](WorldObject const* lhs, WorldObject const* rhs) -> bool
-        {
-            Unit const* targetA = lhs->ToUnit();
-            Unit const* targetB = rhs->ToUnit();
-
-            Aura* auraA = targetA->GetAura(SPELL_DRUID_MOONFIRE_DAMAGE, caster->GetGUID());
-            Aura* auraB = targetB->GetAura(SPELL_DRUID_MOONFIRE_DAMAGE, caster->GetGUID());
-
-            if (!auraA)
-            {
-                if (auraB)
-                    return true;
-                return explTarget->GetExactDist(targetA) < explTarget->GetExactDist(targetB);
-            }
-
-            if (!auraB)
-                return false;
-
-            return auraA->GetDuration() < auraB->GetDuration();
-        });
-
-        if (targets.size() > maxTargets)
-            targets.resize(maxTargets);
-    }
-
-    void HandleScriptEffect(SpellEffIndex /*effIndex*/)
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-
-        uint32 moonfireSpell = GetEffectInfo(EFFECT_0).CalcValue(caster);
-        caster->CastSpell(target, moonfireSpell, TRIGGERED_FULL_MASK);
-    }
-
-    void Register() override
-    {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_dru_twin_moons_effect::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
-        OnEffectHitTarget += SpellEffectFn(spell_dru_twin_moons_effect::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
     }
 };
 
@@ -2947,274 +2626,6 @@ class spell_dru_yseras_gift_group_heal : public SpellScript
     }
 };
 
-// 190984 - Solar Wrath | 194153 - Lunar Strike
-class spell_dru_blessing_of_elune : public SpellScript
-{
-    void HandleOnHit()
-    {
-        Unit* caster = GetCaster();
-
-        if (!caster)
-            return;
-
-        uint32 power = GetHitDamage();
-
-        if (Aura* aura = caster->GetAura(SPELL_DRUID_BLESSING_OF_ELUNE_10))
-            if (AuraEffect* aurEff = aura->GetEffect(EFFECT_0))
-                power += CalculatePct(power, aurEff->GetAmount());
-
-        SetHitDamage(power);
-    }
-
-    void Register()
-    {
-        OnHit += SpellHitFn(spell_dru_blessing_of_elune::HandleOnHit);
-    }
-};
-
-// 194153 Lunar Strike
-class spell_dru_lunar_strike : public SpellScript
-{
-    enum Spells
-    {
-        SPELL_DRUID_LUNAR_STRIKE        = 194153,
-        SPELL_DRUID_WARRIOR_OF_ELUNE    = 202425,
-        SPELL_DRUID_NATURES_BALANCE     = 202430,
-    };
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_MOONFIRE_DAMAGE, SPELL_DRUID_WARRIOR_OF_ELUNE, SPELL_DRUID_LUNAR_STRIKE, SPELL_DRUID_NATURES_BALANCE });
-    }
-
-    void HandleHitTarget(SpellEffIndex /*effIndex*/)
-    {
-        Unit* explTarget = GetExplTargetUnit();
-        Unit* currentTarget = GetHitUnit();
-
-        if (!explTarget || !currentTarget)
-            return;
-
-        if (currentTarget != explTarget)
-            SetHitDamage(GetHitDamage() * GetSpellInfo()->GetEffect(EFFECT_2).BasePoints / 100);
-
-        if (GetCaster()->HasAura(SPELL_DRUID_NATURES_BALANCE))
-            if (Aura* moonfireDOT = currentTarget->GetAura(SPELL_DRUID_MOONFIRE_DAMAGE, GetCaster()->GetGUID()))
-            {
-                int32 duration = moonfireDOT->GetDuration();
-                int32 newDuration = duration + 6 * IN_MILLISECONDS;
-
-                if (newDuration > moonfireDOT->GetMaxDuration())
-                    moonfireDOT->SetMaxDuration(newDuration);
-
-                moonfireDOT->SetDuration(newDuration);
-            }
-
-        if (GetCaster() && roll_chance_f(20) && GetCaster()->HasAura(SPELL_DRUID_ECLIPSE_LUNAR_AURA))
-            GetCaster()->CastSpell(nullptr, SPELL_DRUID_SOLAR_EMPOWEREMENT, true);
-    }
-
-    void HandleHit(SpellEffIndex /*effIndex*/)
-    {
-        if (Aura* WarriorOfElune = GetCaster()->GetAura(SPELL_DRUID_WARRIOR_OF_ELUNE))
-        {
-            int32 amount = WarriorOfElune->GetEffect(EFFECT_0)->GetAmount();
-            WarriorOfElune->GetEffect(EFFECT_0)->SetAmount(amount - 1);
-            if (amount == -102)
-                GetCaster()->RemoveAurasDueToSpell(SPELL_DRUID_WARRIOR_OF_ELUNE);
-        }
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_dru_lunar_strike::HandleHitTarget, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
-        OnEffectHit += SpellEffectFn(spell_dru_lunar_strike::HandleHit, EFFECT_1, SPELL_EFFECT_ENERGIZE);
-    }
-};
-
-// 190984 Solar Wrath
-class spell_dru_solar_wrath : public SpellScript
-{
-    enum Spells
-    {
-        SPELL_DRUID_SOLAR_WRATH         = 190984,
-        SPELL_DRUID_NATURES_BALANCE     = 202430,
-        SPELL_DRUID_SUNFIRE_DOT         = 164815,
-    };
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_SUNFIRE_DOT, SPELL_DRUID_SOLAR_WRATH, SPELL_DRUID_NATURES_BALANCE });
-    }
-
-    void HandleHitTarget(SpellEffIndex /*effIndex*/)
-    {
-        if (Unit* target = GetHitUnit())
-            if (GetCaster()->HasAura(SPELL_DRUID_NATURES_BALANCE))
-                if (Aura* sunfireDOT = target->GetAura(SPELL_DRUID_SUNFIRE_DOT, GetCaster()->GetGUID()))
-                {
-                    int32 duration = sunfireDOT->GetDuration();
-                    int32 newDuration = duration + 4 * IN_MILLISECONDS;
-
-                    if (newDuration > sunfireDOT->GetMaxDuration())
-                        sunfireDOT->SetMaxDuration(newDuration);
-
-                    sunfireDOT->SetDuration(newDuration);
-                }
-        if (GetCaster() && roll_chance_f(20) && GetCaster()->HasAura(SPELL_DRUID_ECLIPSE_SOLAR_AURA))
-            GetCaster()->CastSpell(nullptr, SPELL_DRUID_LUNAR_EMPOWEREMENT, true);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_dru_solar_wrath::HandleHitTarget, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
-    }
-};
-
-// Swipe - 106785
-class spell_dru_swipe : public SpellScript
-{
-    void HandleOnHit(SpellEffIndex /*effIndex*/)
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-        if (!caster || !target)
-            return;
-
-        int32 damage = GetHitDamage();
-        int32 casterLevel = caster->GetLevelForTarget(caster);
-
-        // This prevent awarding multiple Combo Points when multiple targets hit with Swipe AoE
-        if (m_awardComboPoint)
-            // Awards the caster 1 Combo Point (get value from the spell data)
-            caster->ModifyPower(POWER_COMBO_POINTS, sSpellMgr->GetSpellInfo(SPELL_DRUID_SWIPE_CAT, DIFFICULTY_NONE)->GetEffect(EFFECT_0).BasePoints);
-
-        // If caster is level >= 44 and the target is bleeding, deals 20% increased damage (get value from the spell data)
-        if ((casterLevel >= 44) && target->HasAuraState(AURA_STATE_BLEED))
-            AddPct(damage, sSpellMgr->GetSpellInfo(SPELL_DRUID_SWIPE_CAT, DIFFICULTY_NONE)->GetEffect(EFFECT_1).BasePoints);
-
-        SetHitDamage(damage);
-
-        m_awardComboPoint = false;
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_dru_swipe::HandleOnHit, EFFECT_1, SPELL_EFFECT_DUMMY);
-    }
-
-private:
-    bool m_awardComboPoint = true;
-};
-
-// 202770 - Fury of Elune WIP
-// AreatriggerAI - 6887
-struct at_dru_fury_of_elune : public AreaTriggerAI
-{
-    at_dru_fury_of_elune(AreaTrigger* areatrigger) : AreaTriggerAI(areatrigger)
-    {
-        areatrigger->SetPeriodicProcTimer(400);
-    }
-
-    void OnPeriodicProc() override
-    {
-        if (Unit* caster = at->GetCaster())
-        {
-            for (ObjectGuid guid : at->GetInsideUnits())
-            {
-                if (Unit* target = ObjectAccessor::GetUnit(*caster, guid))
-                {
-                    at->Relocate(target->GetPosition());
-                    at->SetDestination(*target, 200);
-                    caster->CastSpell(target->GetPosition(), SPELL_DRUID_FURY_OF_ELUNE_DAMAGE, true);
-                }
-            }
-        }
-    }
-};
-
-// Brutal Slash - 202028
-class spell_dru_brutal_slash : public SpellScript
-{
-    void HandleOnHit()
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-        if (!caster || !target)
-            return;
-
-        // This prevent awarding multiple Combo Points when multiple targets hit with Brutal Slash AoE
-        if (m_awardComboPoint)
-            // Awards the caster 1 Combo Point (get value from the spell data)
-            caster->ModifyPower(POWER_COMBO_POINTS, sSpellMgr->GetSpellInfo(SPELL_DRUID_SWIPE_CAT, DIFFICULTY_NONE)->GetEffect(EFFECT_0).BasePoints);
-
-        m_awardComboPoint = false;
-    }
-
-    void Register() override
-    {
-        OnHit += SpellHitFn(spell_dru_brutal_slash::HandleOnHit);
-    }
-
-private:
-    bool m_awardComboPoint = true;
-};
-
-// 202157 - Feral Affinity
-class aura_dru_feral_affinity : public AuraScript
-{
-    const std::vector<uint32> LearnedSpells =
-    {
-        SPELL_DRUID_FELINE_SWIFTNESS,
-        SPELL_DRUID_SHRED,
-        SPELL_DRUID_RAKE,
-        SPELL_DRUID_RIP,
-        SPELL_DRUID_FEROCIOUS_BITE,
-        SPELL_DRUID_SWIPE_CAT
-    };
-
-    void AfterApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        if (Player* target = GetTarget()->ToPlayer())
-            for (uint32 spellId : LearnedSpells)
-                target->LearnSpell(spellId, false);
-    }
-
-    void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        if (Player* target = GetTarget()->ToPlayer())
-            for (uint32 spellId : LearnedSpells)
-                target->RemoveSpell(spellId);
-    }
-
-    void Register() override
-    {
-        AfterEffectApply += AuraEffectApplyFn(aura_dru_feral_affinity::AfterApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        AfterEffectRemove += AuraEffectRemoveFn(aura_dru_feral_affinity::AfterRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-    }
-};
-
-// 159286 Primal Fury
-// @Version : 7.1.0.22908
-class spell_dru_primal_fury : public AuraScript
-{
-
-    bool CheckProc(ProcEventInfo& eventInfo)
-    {
-        bool _spellCanProc = (eventInfo.GetSpellInfo()->Id == SPELL_DRUID_SHRED || eventInfo.GetSpellInfo()->Id == SPELL_DRUID_RAKE || eventInfo.GetSpellInfo()->Id == SPELL_DRUID_SWIPE_CAT || eventInfo.GetSpellInfo()->Id == SPELL_DRUID_MOONFIRE_CAT);
-
-        if ((eventInfo.GetHitMask() & PROC_HIT_CRITICAL) && _spellCanProc)
-            return true;
-
-        return false;
-    }
-
-    void Register() override
-    {
-        DoCheckProc += AuraCheckProcFn(spell_dru_primal_fury::CheckProc);
-    }
-};
-
 void AddSC_druid_spell_scripts()
 {
     RegisterSpellScript(spell_dru_abundance);
@@ -3236,20 +2647,15 @@ void AddSC_druid_spell_scripts()
     RegisterSpellScript(spell_dru_efflorescence);
     RegisterSpellScript(spell_dru_efflorescence_dummy);
     RegisterSpellScript(spell_dru_efflorescence_heal);
-    RegisterSpellScript(spell_dru_elunes_favored);
-    RegisterSpellScript(spell_dru_elunes_favored_proc);
     RegisterSpellScript(spell_dru_embrace_of_the_dream);
     RegisterSpellScript(spell_dru_embrace_of_the_dream_effect);
     RegisterSpellAndAuraScriptPair(spell_dru_entangling_roots, spell_dru_entangling_roots_aura);
     RegisterSpellScript(spell_dru_ferocious_bite);
-    RegisterSpellScript(spell_dru_flower_walk);
-    RegisterSpellScript(spell_dru_flower_walk_heal);
     RegisterSpellScript(spell_dru_forms_trinket);
     RegisterSpellScript(spell_dru_galactic_guardian);
     RegisterSpellScript(spell_dru_germination);
     RegisterSpellScript(spell_dru_glyph_of_stars);
     RegisterSpellScript(spell_dru_gore);
-    RegisterSpellScript(spell_dru_guardian_of_elune_healing);
     RegisterSpellScript(spell_dru_incapacitating_roar);
     RegisterSpellScript(spell_dru_incarnation);
     RegisterSpellScript(spell_dru_incarnation_tree_of_life);
@@ -3262,7 +2668,6 @@ void AddSC_druid_spell_scripts()
     RegisterSpellScript(spell_dru_luxuriant_soil);
     RegisterSpellScript(spell_dru_mangle);
     RegisterSpellScript(spell_dru_moonfire);
-    RegisterSpellScript(spell_dru_moonless_night);
     RegisterSpellScript(spell_dru_natures_grace);
     RegisterSpellScript(spell_dru_natures_grace_eclipse);
     RegisterSpellScriptWithArgs(spell_dru_new_moon, "spell_dru_full_moon", Optional<DruidSpells>(), Optional<DruidSpells>(SPELL_DRUID_HALF_MOON_OVERRIDE));
@@ -3272,8 +2677,7 @@ void AddSC_druid_spell_scripts()
     RegisterSpellScript(spell_dru_omen_of_clarity_restoration);
     RegisterSpellScript(spell_dru_power_of_the_archdruid);
     RegisterSpellScript(spell_dru_prowl);
-    RegisterSpellScript(spell_dru_pulverize);
-    RegisterSpellScript(spell_dru_pulverize_thrash);
+    RegisterSpellScript(spell_dru_rake);
     RegisterSpellScript(spell_dru_rip);
     RegisterSpellAndAuraScriptPair(spell_dru_savage_roar, spell_dru_savage_roar_aura);
     RegisterSpellScript(spell_dru_shooting_stars);
@@ -3294,12 +2698,10 @@ void AddSC_druid_spell_scripts()
     RegisterSpellScript(spell_dru_t10_restoration_4p_bonus_dummy);
     RegisterSpellScript(spell_dru_thorns_of_iron_damage);
     RegisterSpellScript(spell_dru_thrash);
-    RegisterSpellScript(spell_dru_thrash_aura);
+    RegisterSpellScript(spell_dru_thrash_bear_bleed);
     RegisterSpellScript(spell_dru_travel_form);
     RegisterSpellAndAuraScriptPair(spell_dru_travel_form_dummy, spell_dru_travel_form_dummy_aura);
     RegisterSpellAndAuraScriptPair(spell_dru_tiger_dash, spell_dru_tiger_dash_aura);
-    RegisterSpellScript(spell_dru_twin_moonfire);
-    RegisterSpellScript(spell_dru_twin_moons_effect);
     RegisterSpellScript(spell_dru_umbral_embrace);
     RegisterSpellScript(spell_dru_umbral_embrace_damage);
     RegisterSpellScript(spell_dru_umbral_inspiration);
@@ -3307,14 +2709,4 @@ void AddSC_druid_spell_scripts()
     RegisterSpellAndAuraScriptPair(spell_dru_wild_growth, spell_dru_wild_growth_aura);
     RegisterSpellScript(spell_dru_yseras_gift);
     RegisterSpellScript(spell_dru_yseras_gift_group_heal);
-
-    //new
-    RegisterSpellScript(spell_dru_blessing_of_elune);
-    RegisterSpellScript(spell_dru_lunar_strike);
-    RegisterSpellScript(spell_dru_solar_wrath);
-    RegisterSpellScript(spell_dru_swipe);
-    RegisterAreaTriggerAI(at_dru_fury_of_elune);
-    RegisterSpellScript(spell_dru_brutal_slash);
-    RegisterSpellScript(aura_dru_feral_affinity);
-    RegisterSpellScript(spell_dru_primal_fury);
 }
