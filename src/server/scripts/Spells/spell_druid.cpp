@@ -122,6 +122,7 @@ enum DruidSpells
     SPELL_DRUID_MANGLE                         = 33917,
     SPELL_DRUID_MANGLE_TALENT                  = 231064,
     SPELL_DRUID_MASS_ENTANGLEMENT              = 102359,
+    SPELL_DRUID_MATTED_FUR                     = 385786,
     SPELL_DRUID_MOONFIRE_DAMAGE                = 164812,
     SPELL_DRUID_MOONLESS_NIGHT                 = 400278,
     SPELL_DRUID_MOONLESS_NIGHT_DAMAGE          = 400360,
@@ -1601,6 +1602,26 @@ class spell_dru_mangle : public SpellScript
     void Register() override
     {
         CalcDamage += SpellCalcDamageFn(spell_dru_mangle::CalculateDamage);
+    }
+};
+
+// 385787 - Matted Fur (Absorb)
+class spell_dru_matted_fur_absorb : public AuraScript
+{
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellEffect({ { SPELL_DRUID_MATTED_FUR, EFFECT_0 } });
+    }
+
+    static void CalculateAmount(AuraScript const&, AuraEffect const* /*aurEff*/, Unit const* victim, int32& baseAbsorb, int32& /*flatMod*/, float& /*pctMod*/)
+    {
+        if (AuraEffect const* passiveEffect = victim->GetAuraEffect(SPELL_DRUID_MATTED_FUR, EFFECT_0))
+            baseAbsorb = static_cast<int32>(victim->GetTotalAttackPowerValue(BASE_ATTACK) * 0.0125f * passiveEffect->GetAmount());
+    }
+
+    void Register() override
+    {
+        DoEffectCalcDamageAndHealing += AuraEffectCalcAbsorbFn(spell_dru_matted_fur_absorb::CalculateAmount, EFFECT_0);
     }
 };
 
@@ -3315,6 +3336,7 @@ void AddSC_druid_spell_scripts()
     RegisterSpellScript(spell_dru_lunar_inspiration);
     RegisterSpellScript(spell_dru_luxuriant_soil);
     RegisterSpellScript(spell_dru_mangle);
+    RegisterSpellScript(spell_dru_matted_fur_absorb);
     RegisterSpellScript(spell_dru_moonfire);
     RegisterSpellScript(spell_dru_moonless_night);
     RegisterSpellScript(spell_dru_natures_grace);
