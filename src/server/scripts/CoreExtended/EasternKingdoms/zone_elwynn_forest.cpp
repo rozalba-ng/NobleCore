@@ -83,10 +83,10 @@ struct npc_stormwind_infantry : public ScriptedAI
 
         if (talkCooldown <= diff)
         {
-            Talk(0);
-
             if (Creature* paxton = me->FindNearestCreature(NPC_BROTHER_PAXTON, 30.0f))
             {
+                Talk(0);
+
                 if (paxton->IsAIEnabled())
                     paxton->AI()->DoAction(ACTION_TALK_EVENT);
             }
