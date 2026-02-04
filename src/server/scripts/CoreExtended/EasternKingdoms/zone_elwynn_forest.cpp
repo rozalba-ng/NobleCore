@@ -21,126 +21,115 @@
 #include "CreatureAI.h"
 #include "TemporarySummon.h"
 
+enum {
+    NPC_BROTHER_PAXTON = 951,
+
+    NPC_HEAL_TARGET = 49869,
+    NPC_WOLF = 49871,
+
+    SPELL_HEAL_1 = 93091,
+    SPELL_HEAL_2 = 93094,
+
+    ACTION_TALK_EVENT = 1
+};
+
 // 49869
 struct npc_stormwind_infantry : public ScriptedAI
 {
     explicit npc_stormwind_infantry(Creature* creature) : ScriptedAI(creature) {}
 
-    uint32 waitTime = 0;
+    TaskScheduler _scheduler;
     uint32 talkCooldown = 0;
-    uint32 swingTimer = 0;
-    ObjectGuid wolfTarget;
+
+    void JustAppeared() override
+    {
+        ScriptedAI::JustAppeared();
+        talkCooldown = urand(10000, 30000);
+        ScheduleCombatCheck();
+    }
 
     void Reset() override
     {
-        wolfTarget.Clear();
         me->SetSheath(SHEATH_STATE_MELEE);
-
-        swingTimer = me->GetBaseAttackTime(BASE_ATTACK);
-
-        waitTime = urand(3000, 8000);
     }
 
-    void DamageTaken(Unit* /*doneBy*/, uint32& /*damage*/, DamageEffectType /*damageType*/, SpellInfo const* /*spellInfo = nullptr*/) override
+    void ScheduleCombatCheck()
     {
-        if (talkCooldown > 0)
-            return;
+        _scheduler.Schedule(2s, [this](TaskContext context)
+            {
+                if (!me->IsInCombat())
+                {
+                    if (me->GetDistance(me->GetHomePosition()) < 2.0f)
+                    {
+                        if (Creature* wolf = me->FindNearestCreature(NPC_WOLF, 10.0f))
+                        {
+                            if (wolf->IsAlive() && !wolf->IsInCombat())
+                            {
+                                AttackStart(wolf);
 
-        if (me->GetHealthPct() <= 70.0f)
-        {
-            Talk(urand(0, 3));
-            talkCooldown = 25000;
-        }
+                                if (wolf->IsAIEnabled())
+                                    wolf->AI()->AttackStart(me);
+                            }
+                        }
+                    }
+                }
+
+                context.Repeat(2s);
+            });
     }
 
     void UpdateAI(uint32 diff) override
     {
-        if (wolfTarget.IsEmpty())
+        _scheduler.Update(diff);
+
+        if (talkCooldown <= diff)
         {
-            if (waitTime)
+            Talk(0);
+
+            if (Creature* paxton = me->FindNearestCreature(NPC_BROTHER_PAXTON, 30.0f))
             {
-                if (waitTime <= diff)
-                    waitTime = 0;
-                else
-                {
-                    waitTime -= diff;
-                    return;
-                }
+                if (paxton->IsAIEnabled())
+                    paxton->AI()->DoAction(ACTION_TALK_EVENT);
             }
+
+            talkCooldown = urand(30000, 120000);
+        }
+        else
+        {
+            talkCooldown -= diff;
         }
 
-        if (!wolfTarget.IsEmpty())
-        {
-            Creature* wolf = me->GetMap()->GetCreature(wolfTarget);
-
-            if (!wolf || !wolf->IsAlive())
-            {
-                wolfTarget.Clear();
-                waitTime = urand(5000, 10000);
-                me->AttackStop();
-                me->GetMotionMaster()->MoveIdle();
-                return;
-            }
-
-            if (me->GetVictim() != wolf)
-            {
-                me->Attack(wolf, true);
-                me->GetMotionMaster()->MoveChase(wolf);
-            }
-
-            if (wolf->IsAIEnabled() && wolf->GetVictim() != me)
-            {
-                wolf->Attack(me, true);
-                wolf->GetMotionMaster()->MoveChase(me);
-            }
-
-            if (swingTimer <= diff)
-            {
-                if (!me->HasUnitState(UNIT_STATE_CASTING))
-                {
-                    if (me->IsWithinMeleeRange(wolf))
-                        me->AttackerStateUpdate(wolf, BASE_ATTACK);
-
-                    me->setAttackTimer(BASE_ATTACK, me->GetBaseAttackTime(BASE_ATTACK));
-
-                    me->EngageWithTarget(wolf);
-                }
-                else
-                    swingTimer = 500;
-            }
-            else
-            {
-                swingTimer -= diff;
-            }
-
+        if (!UpdateVictim())
             return;
-        }
 
-        if (wolfTarget.IsEmpty() && waitTime == 0)
+        if (me->isAttackReady() && me->IsWithinMeleeRange(me->GetVictim()))
         {
-            if (Creature* wolf = me->FindNearestCreature(49871, 15.0f))
-            {
-                if (wolf->IsAlive())
-                {
-                    wolfTarget = wolf->GetGUID();
+            me->AttackerStateUpdate(me->GetVictim());
+            me->resetAttackTimer();
+        }
+    }
+};
 
-                    me->Attack(wolf, true);
-                    me->GetMotionMaster()->MoveChase(wolf);
+// 951
+struct npc_brother_paxton : public ScriptedAI
+{
+    explicit npc_brother_paxton(Creature* creature) : ScriptedAI(creature) {}
 
-                    if (wolf->IsAIEnabled())
-                    {
-                        wolf->Attack(me, true);
-                        wolf->GetMotionMaster()->MoveChase(me);
-                    }
+    void DoAction(int32 action) override
+    {
+        if (action == ACTION_TALK_EVENT)
+        {
+            std::list<Creature*> targets;
+            me->GetCreatureListWithEntryInGrid(targets, NPC_HEAL_TARGET, 30.0f);
 
-                    swingTimer = me->GetBaseAttackTime(BASE_ATTACK);
-
-                    me->setAttackTimer(BASE_ATTACK, me->GetBaseAttackTime(BASE_ATTACK));
-                }
-            }
-            else
+            for (Creature* target : targets)
             {
                 waitTime = 5000;
+                if (target->IsAlive())
+                {
+                    Talk(0);
+                    me->CastSpell(target, RAND(SPELL_HEAL_1, SPELL_HEAL_2), true);
+                }
             }
         }
     }
@@ -150,4 +139,5 @@ void AddSC_zone_elwyn_forest()
 {
     // Northshire zone
     RegisterCreatureAI(npc_stormwind_infantry);
+    RegisterCreatureAI(npc_brother_paxton);
 }
