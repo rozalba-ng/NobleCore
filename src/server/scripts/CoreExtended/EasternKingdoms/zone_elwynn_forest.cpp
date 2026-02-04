@@ -150,11 +150,6 @@ struct npc_brother_paxton : public ScriptedAI
             me->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
         }
 
-        if (!me->IsInCombat() && !me->isMoving() && !me->HasUnitState(UNIT_STATE_DISTRACTED))
-        {
-            me->GetMotionMaster()->MovePath(720313121, true);
-        }
-
         ScriptedAI::UpdateAI(diff);
     }
 };
