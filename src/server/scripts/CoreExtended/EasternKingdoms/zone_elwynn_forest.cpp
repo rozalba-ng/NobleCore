@@ -27,7 +27,7 @@ enum {
     NPC_HEAL_TARGET = 49869,
     NPC_WOLF = 49871,
 
-    SPELL_HEAL_2 = 93094,
+    SPELL_HEAL = 93094,
 
     ACTION_TALK_EVENT = 1
 };
@@ -55,26 +55,26 @@ struct npc_stormwind_infantry : public ScriptedAI
     void ScheduleCombatCheck()
     {
         _scheduler.Schedule(2s, [this](TaskContext context)
+        {
+            if (!me->IsInCombat())
             {
-                if (!me->IsInCombat())
+                if (me->GetDistance(me->GetHomePosition()) < 2.0f)
                 {
-                    if (me->GetDistance(me->GetHomePosition()) < 2.0f)
+                    if (Creature* wolf = me->FindNearestCreature(NPC_WOLF, 10.0f))
                     {
-                        if (Creature* wolf = me->FindNearestCreature(NPC_WOLF, 10.0f))
+                        if (wolf->IsAlive() && !wolf->IsInCombat())
                         {
-                            if (wolf->IsAlive() && !wolf->IsInCombat())
-                            {
-                                AttackStart(wolf);
+                            AttackStart(wolf);
 
-                                if (wolf->IsAIEnabled())
-                                    wolf->AI()->AttackStart(me);
-                            }
+                            if (wolf->IsAIEnabled())
+                                wolf->AI()->AttackStart(me);
                         }
                     }
                 }
+            }
 
-                context.Repeat(2s);
-            });
+            context.Repeat(2s);
+        });
     }
 
     void UpdateAI(uint32 diff) override
@@ -109,27 +109,53 @@ struct npc_stormwind_infantry : public ScriptedAI
     }
 };
 
-// 951
+// 951 - Brother Paxton
 struct npc_brother_paxton : public ScriptedAI
 {
     explicit npc_brother_paxton(Creature* creature) : ScriptedAI(creature) {}
 
-    void DoAction(int32 action) override
+    void JustAppeared() override
     {
-        if (action == ACTION_TALK_EVENT)
-        {
-            std::list<Creature*> targets;
-            me->GetCreatureListWithEntryInGrid(targets, NPC_HEAL_TARGET, 30.0f);
+        ScriptedAI::JustAppeared();
 
-            for (Creature* target : targets)
+        me->SetReactState(REACT_PASSIVE);
+        me->SetUnitFlag(UNIT_FLAG_IMMUNE_TO_NPC);
+
+        me->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+
+        me->GetMotionMaster()->MovePath(720313121, true);
+    }
+
+    void DoAction(int32 actionId) override
+    {
+        if (actionId == ACTION_TALK_EVENT)
+        {
+            if (Creature* soldier = me->FindNearestCreature(NPC_HEAL_TARGET, 30.0f))
             {
-                if (target->IsAlive())
-                {
-                    Talk(0);
-                    me->CastSpell(target, SPELL_HEAL_2, true);
-                }
+                Talk(0);
+                DoCast(soldier, SPELL_HEAL, true);
             }
         }
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (me->IsInCombat())
+        {
+            me->ClearInCombat();
+        }
+
+        if (!me->HasNpcFlag(UNIT_NPC_FLAG_QUESTGIVER))
+        {
+            me->SetNpcFlag(UNIT_NPC_FLAG_QUESTGIVER);
+        }
+
+        if (!me->IsInCombat() && !me->isMoving() && !me->HasUnitState(UNIT_STATE_DISTRACTED))
+        {
+            me->GetMotionMaster()->MovePath(720313121, true);
+        }
+
+        ScriptedAI::UpdateAI(diff);
     }
 };
 
