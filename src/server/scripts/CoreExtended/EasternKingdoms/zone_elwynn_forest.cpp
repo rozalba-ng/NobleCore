@@ -27,7 +27,6 @@ enum {
     NPC_HEAL_TARGET = 49869,
     NPC_WOLF = 49871,
 
-    SPELL_HEAL_1 = 93091,
     SPELL_HEAL_2 = 93094,
 
     ACTION_TALK_EVENT = 1
@@ -127,7 +126,7 @@ struct npc_brother_paxton : public ScriptedAI
                 if (target->IsAlive())
                 {
                     Talk(0);
-                    me->CastSpell(target, RAND(SPELL_HEAL_1, SPELL_HEAL_2), true);
+                    me->CastSpell(target, SPELL_HEAL_2, true);
                 }
             }
         }
