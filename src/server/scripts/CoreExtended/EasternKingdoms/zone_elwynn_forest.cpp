@@ -124,7 +124,6 @@ struct npc_brother_paxton : public ScriptedAI
 
             for (Creature* target : targets)
             {
-                waitTime = 5000;
                 if (target->IsAlive())
                 {
                     Talk(0);
