@@ -30,6 +30,7 @@
 #include "CharacterPackets.h"
 #include "Chat.h"
 #include "Common.h"
+#include "Config.h"
 #include "DB2Stores.h"
 #include "DatabaseEnv.h"
 #include "EquipmentSetPackets.h"
@@ -57,6 +58,7 @@
 #include "QueryPackets.h"
 #include "RealmList.h"
 #include "ReputationMgr.h"
+#include "RBAC.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
 #include "StringConvert.h"
@@ -480,6 +482,7 @@ void WorldSession::HandleCharEnum(CharacterDatabaseQueryHolder const& holder)
 
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_WARBAND_GROUPS);
     stmt->setUInt32(0, GetAccountId());
+    stmt->setUInt32(1, sConfigMgr->GetIntDefault("RealmID", 1));
 
     if (PreparedQueryResult groupsResult = LoginDatabase.Query(stmt))
     {
@@ -503,6 +506,7 @@ void WorldSession::HandleCharEnum(CharacterDatabaseQueryHolder const& holder)
 
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_WARBAND_GROUP_MEMBERS);
         stmt->setUInt32(0, GetAccountId());
+        stmt->setUInt32(1, sConfigMgr->GetIntDefault("RealmID", 1));
 
         if (PreparedQueryResult membersResult = LoginDatabase.Query(stmt))
         {
@@ -562,10 +566,11 @@ void WorldSession::HandleCharEnum(CharacterDatabaseQueryHolder const& holder)
         LoginDatabasePreparedStatement* insertStmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_WARBAND_GROUP);
         insertStmt->setUInt64(0, nextGroupId);
         insertStmt->setUInt32(1, GetAccountId());
-        insertStmt->setUInt8(2, 0);
-        insertStmt->setString(3, std::string(localizedGroupName));
-        insertStmt->setUInt32(4, 1);
+        insertStmt->setUInt32(2, sConfigMgr->GetIntDefault("RealmID", 1));
+        insertStmt->setUInt8(3, 0);
+        insertStmt->setString(4, std::string(localizedGroupName));
         insertStmt->setUInt32(5, 1);
+        insertStmt->setUInt32(6, 1);
         LoginDatabase.Execute(insertStmt);
     }
 
@@ -617,9 +622,11 @@ void WorldSession::HandleSetupWarbandGroups(WorldPackets::Character::SetupWarban
         setupWarbandGroups.Groups.size(), GetAccountId());
 
     uint32 accountId = GetAccountId();
+    uint32 realmId = sConfigMgr->GetIntDefault("RealmID", 1);
     LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_WARBAND_GROUPS);
     stmt->setUInt32(0, accountId);
+    stmt->setUInt32(1, realmId);
     trans->Append(stmt);
 
     for (auto const& group : setupWarbandGroups.Groups)
@@ -627,10 +634,11 @@ void WorldSession::HandleSetupWarbandGroups(WorldPackets::Character::SetupWarban
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_WARBAND_GROUP);
         stmt->setUInt64(0, group.GroupID);
         stmt->setUInt32(1, accountId);
-        stmt->setUInt8(2, group.OrderIndex);
-        stmt->setString(3, std::string(group.Name));
-        stmt->setUInt32(4, group.WarbandSceneID);
-        stmt->setUInt32(5, group.Flags);
+        stmt->setUInt32(2, realmId);
+        stmt->setUInt8(3, group.OrderIndex);
+        stmt->setString(4, std::string(group.Name));
+        stmt->setUInt32(5, group.WarbandSceneID);
+        stmt->setUInt32(6, group.Flags);
         trans->Append(stmt);
 
         for (auto const& member : group.Members)
