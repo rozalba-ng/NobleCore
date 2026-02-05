@@ -156,10 +156,6 @@ enum DruidSpells
     SPELL_DRUID_THRASH_BEAR                    = 77758,
     SPELL_DRUID_THRASH_BEAR_BLEED              = 192090,
     SPELL_DRUID_THRASH_CAT                     = 106830,
-    SPELL_DRUID_THRASH_PULVERIZE_TRIGGER       = 158790,
-    SPELL_DRUID_TWIN_MOONS                     = 279620,
-    SPELL_DRUID_TWIN_MOONS_EFFECT              = 281847,
-    SPELL_DRUID_TWIN_MOONFIRE                  = 372567,
     SPELL_DRUID_THRASH_CAT_BLEED               = 405233,
     SPELL_DRUID_THRASH_PULVERIZE_TRIGGER       = 158790,
     SPELL_DRUID_TWIN_MOONS                     = 279620,
@@ -2001,76 +1997,6 @@ class spell_dru_rake : public SpellScript
 
 private:
     bool _wasStealth = false;
-};
-
-// 80313 - Pulverize
-class spell_dru_pulverize : public SpellScript
-{
-    bool Validate(SpellInfo const* spellInfo) override
-    {
-        return ValidateSpellInfo({ SPELL_DRUID_THRASH_BEAR_BLEED })
-            && ValidateSpellEffect({ { spellInfo->Id, EFFECT_2 } });
-    }
-
-    void HandleEffectHit(SpellEffIndex /*effIndex*/)
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-
-        int32 stacksToRemove = GetEffectInfo(EFFECT_2).CalcValue(caster);
-
-        Aura* bleedAura = target->GetAura(SPELL_DRUID_THRASH_BEAR_BLEED, caster->GetGUID());
-        if (!bleedAura)
-            return;
-
-        bleedAura->ModStackAmount(-stacksToRemove);
-        target->RemoveAurasDueToSpell(SPELL_DRUID_THRASH_PULVERIZE_TRIGGER);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_dru_pulverize::HandleEffectHit, EFFECT_1, SPELL_EFFECT_APPLY_AURA);
-    }
-};
-
-// 80313 - Pulverize (Trigger)
-// Triggered by 77758 - Thrash (Bear Form)
-class spell_dru_pulverize_thrash : public SpellScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo
-        ({
-            SPELL_DRUID_THRASH_BEAR_BLEED,
-            SPELL_DRUID_PULVERIZE,
-            SPELL_DRUID_THRASH_PULVERIZE_TRIGGER
-            })
-            && ValidateSpellEffect({ {SPELL_DRUID_PULVERIZE, EFFECT_2} });
-    }
-
-    bool Load() override
-    {
-        return GetCaster()->HasSpell(SPELL_DRUID_PULVERIZE);
-    }
-
-    void HandleAfterHit()
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-
-        Aura* bleedAura = target->GetAura(SPELL_DRUID_THRASH_BEAR_BLEED, caster->GetGUID());
-        if (!bleedAura)
-            return;
-
-        int32 thresholdStacks = sSpellMgr->AssertSpellInfo(SPELL_DRUID_PULVERIZE, GetCastDifficulty())->GetEffect(EFFECT_2).CalcValue(caster);
-        if (bleedAura->GetStackAmount() >= thresholdStacks)
-            caster->CastSpell(target, SPELL_DRUID_THRASH_PULVERIZE_TRIGGER, CastSpellExtraArgs().SetTriggeringSpell(GetSpell()));
-    }
-
-    void Register() override
-    {
-        AfterHit += SpellHitFn(spell_dru_pulverize_thrash::HandleAfterHit);
-    }
 };
 
 // 1079 - Rip

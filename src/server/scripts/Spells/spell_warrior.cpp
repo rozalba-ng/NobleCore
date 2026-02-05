@@ -128,7 +128,6 @@ enum WarriorSpells
     SPELL_WARRIOR_CLEAVE                            = 845,
     SPELL_WARRIOR_RAMPAGE                           = 184367,
     SPELL_WARRIOR_REVENGE                           = 6572,
-    SPELL_WARRIOR_FROTHING_BERSERKER_ENERGIZE       = 392793,
     SPELL_WARRIOR_INTERVENE_CHARGE                  = 316531,
     SPELL_WARRIOR_INTERVENE_AURA                    = 147833,
     SPELL_WARRIOR_THUNDER_CLAP_SLOW                 = 435203,
@@ -1982,72 +1981,6 @@ private:
     uint8 _applicationCount = 0;
 };
 
-// 392792 - Frothing Berserker
-class spell_warr_frothing_berserker : public AuraScript
-{
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({
-            SPELL_WARRIOR_MORTAL_STRIKE,
-            SPELL_WARRIOR_CLEAVE,
-            SPELL_WARRIOR_RAMPAGE,
-            SPELL_WARRIOR_REVENGE,
-            SPELL_WARRIOR_FROTHING_BERSERKER_ENERGIZE
-            });
-    }
-
-    static bool CheckProc(AuraScript const&, ProcEventInfo const& eventInfo)
-    {
-        SpellInfo const* procInfo = eventInfo.GetSpellInfo();
-        if (!procInfo)
-            return false;
-
-        switch (procInfo->Id)
-        {
-        case SPELL_WARRIOR_MORTAL_STRIKE:
-        case SPELL_WARRIOR_CLEAVE:
-        case SPELL_WARRIOR_RAMPAGE:
-        case SPELL_WARRIOR_REVENGE:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        if (!roll_chance_i(20))
-            return;
-
-        Spell const* procSpell = eventInfo.GetProcSpell();
-        if (!procSpell)
-            return;
-
-        Optional<int32> spentRage = procSpell->GetPowerTypeCostAmount(POWER_RAGE);
-        if (!spentRage || *spentRage <= 0)
-            return;
-
-        int32 actualCost = *spentRage / 10;
-        SpellInfo const* procInfo = procSpell->GetSpellInfo();
-        int32 refundPct = (procInfo && procInfo->Id == SPELL_WARRIOR_REVENGE) ? 50 : 10;
-        int32 refundRage = (actualCost * refundPct) / 100;
-        if (refundRage <= 0)
-            return;
-
-        GetTarget()->CastSpell(nullptr, SPELL_WARRIOR_FROTHING_BERSERKER_ENERGIZE, CastSpellExtraArgsInit{
-            .TriggerFlags = TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_DONT_REPORT_CAST_ERROR,
-            .TriggeringSpell = procSpell,
-            .SpellValueOverrides = { { SPELLVALUE_BASE_POINT0, refundRage * 10 } }
-            });
-    }
-
-    void Register() override
-    {
-        DoCheckProc += AuraCheckProcFn(spell_warr_frothing_berserker::CheckProc);
-        OnProc += AuraProcFn(spell_warr_frothing_berserker::HandleProc);
-    }
-};
-
 // 23920 Spell Reflect
 class spell_warr_spell_reflect : public SpellScriptLoader
 {
@@ -2827,7 +2760,6 @@ void AddSC_warrior_spell_scripts()
     RegisterSpellScript(spell_warr_pain_and_gain_heal);
     RegisterSpellScript(spell_warr_thunder_clap);
     RegisterSpellScript(spell_warr_thunder_clap_rend);
-    RegisterSpellScript(spell_warr_frothing_berserker);
 
     //new
     new spell_warr_spell_reflect();
