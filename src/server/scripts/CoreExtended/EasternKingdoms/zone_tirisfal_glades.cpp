@@ -123,9 +123,10 @@ struct npc_darnell_grave : public ScriptedAI
         Player* player = ObjectAccessor::GetPlayer(*me, playerGUID);
         if (!player) return;
 
-        if (m_ItemsFound && player->GetAreaId() != AREA_NIGHT_WEBS_HOLLOW)
+        if (player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) == QUEST_STATUS_COMPLETE &&
+            player->GetAreaId() != AREA_NIGHT_WEBS_HOLLOW)
         {
-            me->DespawnOrUnsummon();
+            me->DespawnOrUnsummon(100ms);
             return;
         }
 
@@ -283,19 +284,15 @@ struct npc_darnell_grave : public ScriptedAI
 
     void SearchOnGround()
     {
+        if (m_ItemsFound)
+            return;
+
         if (CheckPlayerFoundItems())
         {
-            if (m_ItemsFound == false)
-            {
-                m_ItemsFound = true;
-                Talk(SAY_FOUND);
-                m_timer = 10000;
-                return;
-            }
-            else
-            {
-                return;
-            }
+            m_ItemsFound = true;
+            Talk(SAY_FOUND);
+            m_timer = 10000;
+            return;
         }
 
         switch (m_modus)
@@ -373,10 +370,7 @@ struct npc_darnell_grave : public ScriptedAI
         Player* player = ObjectAccessor::GetPlayer(*me, playerGUID);
         if (!player) return false;
 
-        if (player->HasItemCount(64582) && player->HasItemCount(64581))
-            return true;
-
-        return false;
+        return player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) == QUEST_STATUS_COMPLETE;
     }
 
     bool CheckPlayerValid()
@@ -386,14 +380,11 @@ struct npc_darnell_grave : public ScriptedAI
 
         if (!player->IsInWorld() ||
             player->isDead() ||
-            player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) != QUEST_STATUS_INCOMPLETE)
+            player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) == QUEST_STATUS_NONE ||
+            player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) == QUEST_STATUS_FAILED)
         {
-            if (player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) == QUEST_STATUS_NONE ||
-                player->GetQuestStatus(QUEST_THE_SHADOW_GRAVE) == QUEST_STATUS_FAILED)
-            {
-                me->DespawnOrUnsummon();
-                return false;
-            }
+            me->DespawnOrUnsummon();
+            return false;
         }
         return true;
     }
